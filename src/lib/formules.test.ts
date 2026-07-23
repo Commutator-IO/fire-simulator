@@ -1,27 +1,40 @@
 import { describe, expect, it } from 'vitest';
 import katex from 'katex';
-import { FORMULES } from './formules';
+import { FORMULES, OPTIONS_KATEX } from './formules';
+import { MATHML } from './formules.mathml';
 import { TEXTES } from './textes';
 import { LANGUES } from './i18n';
 
 /**
- * The formulas are rendered with `throwOnError` off, so a typo would show up
- * as a red blob on the page rather than as a failure. These tests compile the
- * same list strictly, which is where a typo is supposed to be caught.
+ * The formulas are rendered ahead of time by `npm run formules`, so KaTeX never
+ * reaches the browser. The price of that is a file that can fall out of step
+ * with its source; these tests are what makes that impossible to miss.
  */
 
 describe('formulas', () => {
   it('compiles every one of them', () => {
     for (const f of FORMULES) {
-      expect(() =>
-        katex.renderToString(f.tex, { output: 'mathml', throwOnError: true, strict: 'error' }),
-      ).not.toThrow();
+      expect(() => katex.renderToString(f.tex, OPTIONS_KATEX)).not.toThrow();
     }
   });
 
-  it('produces MathML, and no stylesheet-dependent markup', () => {
+  // The one that matters: editing a formula without re-running the generator
+  // would otherwise ship the old rendering, silently.
+  it('has a generated file in step with the source', () => {
     for (const f of FORMULES) {
-      const rendu = katex.renderToString(f.tex, { output: 'mathml', throwOnError: true });
+      expect(
+        MATHML[f.tex],
+        `« npm run formules » n’a pas été relancé après avoir modifié : ${f.tex}`,
+      ).toBe(katex.renderToString(f.tex, OPTIONS_KATEX));
+    }
+  });
+
+  it('has generated nothing that is no longer used', () => {
+    expect(Object.keys(MATHML).sort()).toEqual(FORMULES.map((f) => f.tex).sort());
+  });
+
+  it('produces MathML, and no stylesheet-dependent markup', () => {
+    for (const rendu of Object.values(MATHML)) {
       expect(rendu).toContain('<math');
       // KaTeX's own layout markup would drag in the stylesheet and the twenty
       // font faces the project deliberately does without.

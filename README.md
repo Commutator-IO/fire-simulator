@@ -11,7 +11,7 @@ verdict, le revenu net mensuel et la projection du capital sur quarante ans.
 ```bash
 npm install
 npm run dev      # serveur de développement
-npm test         # 131 tests sur le moteur, les formats et les traductions
+npm test         # 133 tests sur le moteur, les formats et les traductions
 npm run build    # build de production
 npm run lint
 ```
@@ -230,21 +230,22 @@ tomber juste sur les trois valeurs qu'on a pensé à écrire.
 Le graphique est du SVG écrit à la main, sans bibliothèque de visualisation.
 
 Les formules de la section « Méthode et sources » sont écrites en LaTeX dans
-[src/lib/formules.ts](src/lib/formules.ts) et rendues par KaTeX — la seule
-dépendance d'exécution du projet en dehors de React. Deux choix la rendent peu
-coûteuse :
+[src/lib/formules.ts](src/lib/formules.ts) — mais **le navigateur ne reçoit
+aucun moteur LaTeX**. Elles ne changent jamais pendant qu'on lit la page : elles
+sont donc rendues une fois pour toutes en MathML par `npm run formules`, et
+c'est ce rendu qui est commité dans `formules.mathml.ts`.
 
-- **Sortie MathML** plutôt que le balisage propre à KaTeX. Le navigateur dessine
-  les formules nativement, donc ni feuille de style ni aucune des vingt polices
-  que KaTeX embarque : le `dist` passe de 1,7 Mo et 61 fichiers à 572 Ko et 2.
-- **Chunk séparé.** KaTeX ne bouge jamais, le simulateur change à chaque
-  déploiement ; les séparer laisse le cache du navigateur garder le premier
-  quand le second est remplacé. Le paquet de l'application reste à 88 Ko gzip,
-  KaTeX en pèse 77 à côté.
+```bash
+npm run formules   # après avoir modifié une formule
+```
 
-Un test compile chaque formule en mode strict : sur la page, une coquille
-s'afficherait en rouge au lieu de faire tomber le rendu, donc c'est la suite qui
-doit l'attraper.
+KaTeX reste une dépendance de développement ; React demeure la seule dépendance
+d'exécution. Le MathML est dessiné nativement par le navigateur, sans feuille de
+style ni police embarquée : les huit formules ajoutent 0,4 Ko au paquet.
+
+Le risque de cette approche est qu'on modifie le LaTeX sans relancer la
+génération. Un test recompile la liste et compare au fichier généré ; il échoue
+en nommant la formule fautive, et la CI le fait échouer avant tout déploiement.
 
 ## Déploiement
 

@@ -1,3 +1,4 @@
+import type { KatexOptions } from 'katex';
 import type { Dictionnaire } from './textes';
 
 /**
@@ -15,6 +16,22 @@ export type Formule = {
   terme: keyof Dictionnaire['sources'];
   note?: keyof Dictionnaire['sources'];
   tex: string;
+};
+
+/**
+ * How the formulas are rendered, shared by the generator and the test that
+ * checks the generated file has not drifted.
+ *
+ * MathML rather than KaTeX's own markup: the browser draws it natively, so the
+ * page carries neither a stylesheet nor any of the twenty font faces KaTeX
+ * ships with its HTML output.
+ */
+export const OPTIONS_KATEX: KatexOptions = {
+  output: 'mathml',
+  displayMode: false,
+  throwOnError: true,
+  strict: 'error',
+  trust: false,
 };
 
 export const FORMULES: Formule[] = [

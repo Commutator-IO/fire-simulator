@@ -177,7 +177,7 @@ plus correspondu à aucun régime français après le passage de la flat tax à
 ## 8. Tests d'interface
 
 Le moteur, l'échelle, les formats, le dictionnaire et l'adresse sont couverts
-([131 tests](src/lib)). Les composants ne le sont pas du tout : aucun test ne
+([133 tests](src/lib)). Les composants ne le sont pas du tout : aucun test ne
 vérifie qu'un clic sur « Japon » recharge bien les hypothèses du pays, ni que le
 verdict bascule au bon moment.
 
