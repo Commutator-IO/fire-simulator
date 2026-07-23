@@ -9,7 +9,7 @@ import { Sources } from './components/Sources';
 import { Entete, Pied } from './components/Cadre';
 import { BoutonPartage } from './components/BoutonPartage';
 import { ContexteLangue, useFormats, useTextes, useTraduire } from './lib/contexte';
-import { langueDuNavigateur, type Langue } from './lib/i18n';
+import { LANGUE_PAR_DEFAUT, type Langue } from './lib/i18n';
 import { TEXTES } from './lib/textes';
 import {
   BORNES,
@@ -48,15 +48,16 @@ const enPoints = (v: number) => Math.round(v * 100_000) / 1_000;
 /**
  * Language ownership sits here, above the simulation itself.
  *
- * The URL only carries `lang` once the visitor has picked a language: a link
- * shared by someone who never touched the switcher stays neutral and opens in
- * the reader's own language.
+ * The application opens in French unless the URL says otherwise, and the URL
+ * only carries `lang` once the visitor has picked a language themselves — a
+ * link shared by someone who never touched the switcher stays neutral and
+ * opens on the default, like any other unset parameter.
  */
 export default function App() {
   const [langueUrl, setLangueUrl] = useState(() =>
     decoderLangue(typeof window === 'undefined' ? '' : window.location.search),
   );
-  const [langue, setLangue] = useState<Langue>(() => langueUrl ?? langueDuNavigateur());
+  const [langue, setLangue] = useState<Langue>(() => langueUrl ?? LANGUE_PAR_DEFAUT);
 
   const choisir = (l: Langue) => {
     setLangue(l);

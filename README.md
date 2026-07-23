@@ -16,9 +16,10 @@ npm run build    # build de production
 npm run lint
 ```
 
-L'interface se lit en **français ou en anglais**, au choix depuis l'en-tête. La
-langue est indépendante du pays de résidence : vivre au Japon et lire en anglais
-est une combinaison parfaitement ordinaire.
+L'interface se lit en **français ou en anglais**, au choix depuis l'en-tête.
+L'application s'ouvre en français ; le choix de l'utilisateur est retenu dans
+l'adresse. La langue est indépendante du pays de résidence : vivre au Japon et
+lire en anglais est une combinaison parfaitement ordinaire.
 
 ## Comment ça marche
 

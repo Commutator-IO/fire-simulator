@@ -19,6 +19,13 @@ export const LANGUES = ['fr', 'en'] as const;
 
 export type Langue = (typeof LANGUES)[number];
 
+/**
+ * The language the application opens in, whatever the visitor's browser asks
+ * for. The tool is written for a French audience and its wording is authored in
+ * French; deferring to the browser would show an English reader a translation
+ * where a French one was intended, on a subject where the exact words matter.
+ * Anyone who prefers English is one click away, and the URL remembers it.
+ */
 export const LANGUE_PAR_DEFAUT: Langue = 'fr';
 
 /** A string in each language. Used for data that carries its own wording. */
@@ -44,19 +51,4 @@ export const ETIQUETTES_LANGUES: Record<Langue, string> = {
 
 export function estLangue(valeur: unknown): valeur is Langue {
   return LANGUES.includes(valeur as Langue);
-}
-
-/**
- * The language the visitor's browser asks for, when the URL says nothing.
- *
- * Only the primary subtag is compared: `fr-CA` and `fr-BE` both land on French.
- * Anything unknown falls back rather than guessing.
- */
-export function langueDuNavigateur(): Langue {
-  if (typeof navigator === 'undefined') return LANGUE_PAR_DEFAUT;
-  for (const demandee of navigator.languages ?? [navigator.language]) {
-    const base = demandee?.split('-')[0]?.toLowerCase();
-    if (estLangue(base)) return base;
-  }
-  return LANGUE_PAR_DEFAUT;
 }

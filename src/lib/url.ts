@@ -74,9 +74,9 @@ const enPoints = (v: number) => arrondi(v * 100, DECIMALES_TAUX);
 export function encoderEtat(
   etat: Hypotheses,
   /**
-   * Written only when the visitor picked a language themselves. A link shared
-   * by someone who never touched the switcher stays neutral and opens in the
-   * reader's own language, which is nearly always the better guess.
+   * Written only when the visitor picked a language themselves, like every
+   * other parameter left at its default: a link shared by someone who never
+   * touched the switcher stays short and opens on the default language.
    */
   langue: Langue | null = null,
   defauts: Hypotheses = DEFAUTS,
