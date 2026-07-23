@@ -1,0 +1,650 @@
+import type { Langue } from './i18n';
+
+/**
+ * Every string the interface shows, in each language.
+ *
+ * The French entry defines the shape; every other language has to match it, key
+ * for key and signature for signature, or the build fails. That is the whole
+ * point of typing the dictionary rather than reaching for a runtime lookup: a
+ * missing translation is a compile error, not a stray French sentence
+ * discovered by an English reader.
+ *
+ * Anything that varies with a figure is a function rather than a template with
+ * placeholders, so word order stays free: a language that puts the number
+ * somewhere else in the sentence is not fighting a `{0}` to do it.
+ */
+
+const FR = {
+  meta: {
+    titre: 'Vivre de son patrimoine — simulateur FIRE',
+    description:
+      'Simulateur FIRE : à partir de quel patrimoine peut-on vivre de ses revenus sans toucher au capital ? Retrait, impôts, inflation et projection année par année.',
+  },
+
+  entete: {
+    avertissementDebut: 'Outil pédagogique de simulation —',
+    avertissementFort: 'ceci n’est pas un conseil financier.',
+    methode: 'Méthode et sources',
+    choixLangue: 'Langue de l’interface',
+  },
+
+  hero: {
+    badge: 'Règle des 4 %, impôts et inflation compris',
+    titre: 'Ai-je assez pour vivre de mon patrimoine, sans toucher au capital ?',
+    intro:
+      'Quatre paramètres suffisent : ce que vous avez, ce que cela rapporte, ce que vous en retirez chaque année et ce que l’impôt prélève. Le verdict se met à jour à chaque déplacement de curseur.',
+  },
+
+  saisie: {
+    titre: 'Vos hypothèses',
+    patrimoineLabel: 'Patrimoine net accumulé',
+    patrimoineHint:
+      'Vos actifs financiers, nets de dettes. La résidence principale n’en fait pas partie : elle réduit vos dépenses, elle ne verse pas de revenu.',
+    rendementLabel: 'Rendement annuel des actifs',
+    rendementHint:
+      'Moyenne attendue sur la durée, avant impôts, dividendes et plus-values compris. Comptez plutôt 5 % pour un portefeuille prudent, 7 à 8 % pour des actions. De −10 à +20 % par an.',
+    retraitLabel: 'Taux de retrait annuel',
+    retraitHint:
+      'Part du patrimoine retirée chaque année pour vivre. La règle des 4 % vient de là. De 0 à 20 %.',
+    paysLabel: 'Pays de résidence',
+    enveloppeLabel: 'Votre enveloppe',
+    changementPays:
+      'Changer de pays recharge ses hypothèses de départ — imposition, taux de retrait et inflation.',
+    impositionLabel: 'Imposition des retraits',
+    impositionHint: 'Appliquée à la totalité des sommes retirées, de 0 à 60 %.',
+    tauxPersonnaliseFort: 'Taux personnalisé.',
+    tauxPersonnaliseCorps: (taux: string, pays: string) =>
+      `${taux} ne correspond à aucune enveloppe de résidence en ${pays}. Choisissez-en une ci-dessus pour revenir à un taux réel.`,
+    afficher: '+ Afficher',
+    masquer: '− Masquer',
+    avanceSuite: 'l’inflation et l’horizon',
+    inflationLabel: 'Inflation annuelle',
+    inflationHint: (note: string) =>
+      `Ce qui décide du pouvoir d’achat de votre revenu dans vingt ans. ${note}`,
+    inflationRepere: (pays: string) => `Référence ${pays}`,
+    horizonLabel: 'Horizon de projection',
+    horizonUnite: 'ans',
+    horizonHint:
+      'Une retraite anticipée se compte en décennies : quarante ans n’a rien d’excessif.',
+    modeLabel: 'Façon de retirer',
+    modeIndexe: 'Montant fixe indexé',
+    modeProportionnel: '% du capital',
+    modeHintIndexe:
+      'La règle des 4 % au sens strict : le montant de la première année est fixé, puis revalorisé de l’inflation. Le pouvoir d’achat est constant, mais le capital peut s’épuiser.',
+    modeHintProportionnel:
+      'Vous retirez chaque année le même pourcentage de ce que vaut le capital. Il ne peut jamais tomber à zéro, mais votre revenu baisse avec les marchés.',
+  },
+
+  verdict: {
+    badgeOui: 'Oui',
+    badgeOuiJuste: 'Oui, tout juste',
+    badgeNon: 'Non',
+    badgePasEncore: 'Pas encore',
+    sousTitrePreserve: 'votre capital est préservé',
+    sousTitreEntame: 'vous puisez dans le capital',
+    sousTitreSans: 'aucun patrimoine à faire travailler',
+    revenuLabel: 'Revenu net disponible',
+    parMois: 'par mois',
+    soitParAn: (montant: string) => `soit ${montant} par an, une fois l’impôt payé`,
+    corpsSans:
+      'Sans capital de départ, aucun retrait n’est possible : le revenu est nul quel que soit le taux choisi. Renseignez le patrimoine déjà accumulé, ou utilisez le calcul inverse pour savoir combien il vous faudrait.',
+    corpsSansRetrait:
+      'Vous ne retirez rien : le capital est préservé par construction. Faites monter le taux de retrait pour voir ce que votre patrimoine peut vous verser.',
+    corpsPreserve: (montant: string, marge: string) =>
+      `Le rendement couvre le retrait et laisse ${montant} par an dans le capital. Marge de sécurité : ${marge} avant de commencer à y puiser.`,
+    corpsLimite:
+      'Le rendement couvre exactement le retrait : le capital reste stable en euros, mais sans la moindre marge. Une année de marché en dessous des attentes le fait aussitôt reculer.',
+    corpsEntame: (montant: string) =>
+      `À ce rythme, vous prélevez ${montant} de capital par an en plus de ce qu’il rapporte.`,
+    epuiseEn: (annee: number) => `Votre capital serait épuisé en année ${annee}.`,
+    pasEpuise: 'Le capital diminue sans s’annuler sur l’horizon simulé.',
+    reelFort: 'En pouvoir d’achat, c’est non.',
+    reelCorps: (marge: string) =>
+      `Une fois l’inflation payée, il vous manque ${marge} : le revenu affiché achètera moins chaque année.`,
+    trainCouvertFort: 'Votre train de vie est couvert.',
+    trainManqueFort: 'Il vous manque.',
+    trainCorps: (ecart: string, besoin: string, couvert: boolean) =>
+      `${couvert ? 'Excédent' : 'Manque'} de ${ecart} par mois par rapport aux ${besoin} dont vous avez besoin.`,
+  },
+
+  stats: {
+    retraitBrut: 'Retrait brut annuel',
+    impots: 'Impôts et prélèvements',
+    rendementGenere: 'Rendement annuel généré',
+    variationCapital: 'Variation du capital',
+    margeAnnexe: (points: string) => `${points} de marge`,
+    capitalDans: (annees: number) => `Capital dans ${annees} ans`,
+    eurosCourants: 'euros courants',
+    eurosAujourdhui: 'd’aujourd’hui',
+    noteImpot:
+      'L’impôt est supposé porter sur la totalité du retrait, à un taux unique. C’est une simplification volontaire : les enveloppes réelles ne taxent que la part de plus-value, chacune à sa façon.',
+    mentionLegale:
+      'Simulation indicative, à rendement constant. Elle ne remplace pas l’avis d’un professionnel et ne constitue pas un conseil en investissement.',
+  },
+
+  partage: {
+    copier: 'Copier le lien de cette simulation',
+    copie: 'Lien copié',
+    aria: 'Lien de la simulation, à copier',
+    note: 'Le lien rouvre la simulation avec tous vos paramètres. Rien n’est enregistré : tout tient dans l’adresse.',
+    noteManuelle: 'Copie automatique indisponible : sélectionnez le lien ci-dessus.',
+  },
+
+  projection: {
+    titre: (annees: number) => `Votre capital sur ${annees} ans`,
+    intro:
+      'La courbe centrale suit votre rendement, la zone claire montre ce que deux points de rendement en plus ou en moins changent au bout du compte.',
+    eurosCourants: 'Euros courants',
+    pouvoirAchat: 'Pouvoir d’achat',
+    noteCourant:
+      'En euros courants, un capital stable paraît rassurant. Basculez sur le pouvoir d’achat pour voir ce que ces euros achèteront réellement.',
+    noteConstant: (inflation: string, annees: number) =>
+      `Chaque montant est ramené en euros d’aujourd’hui, à ${inflation} d’inflation par an. C’est la lecture qui compte pour un plan qui court sur ${annees} ans.`,
+    aria: (annees: number, constant: boolean) =>
+      `Évolution du capital sur ${annees} ans, en euros ${constant ? 'constants' : 'courants'}`,
+    aujourdhui: 'aujourd’hui',
+    an: (n: number) => `an ${n}`,
+    survolAujourdhui: 'Aujourd’hui',
+    survolAnnee: (n: number) => `Année ${n}`,
+    survolCorps: (central: string, bas: string, haut: string) =>
+      `capital de ${central} dans le scénario central, entre ${bas} et ${haut} selon le rendement.`,
+    legendeCentral: (taux: string) => `Central — ${taux} par an`,
+    legendeBande: (bas: string, haut: string) => `De ${bas} à ${haut}`,
+    legendeDepart: (montant: string) => `Capital de départ — ${montant}`,
+    legendeEpuisement: (annee: number) => `Épuisement en année ${annee}`,
+    legendeEpuisementPessimiste: (annee: number) =>
+      `Épuisé en année ${annee} si le rendement déçoit`,
+  },
+
+  detail: {
+    titre: 'Le détail du calcul',
+    revenuTitre: 'Du patrimoine au revenu',
+    revenuSous: 'Ce que vous retirez la première année, et ce qu’il en reste après impôt.',
+    patrimoineNet: 'Patrimoine net',
+    retraitBrut: 'Retrait annuel brut',
+    duPatrimoine: (taux: string) => `${taux} du patrimoine`,
+    impots: 'Impôts et prélèvements',
+    revenuNetAnnuel: 'Revenu net annuel',
+    revenuNetMensuel: 'Revenu net mensuel',
+    capitalTitre: 'Ce que devient le capital',
+    capitalSous:
+      'Le rendement d’un côté, le retrait de l’autre : la différence reste dans le capital.',
+    rendementGenere: 'Rendement généré',
+    variationCapital: 'Variation du capital',
+    note: 'L’impôt est calculé sur les sommes retirées, pas sur le rendement : ce qui reste investi n’est pas imposé dans cette simulation. C’est une simplification assumée — les enveloppes réelles ont chacune leurs règles.',
+    afficherTableau: '+ Afficher la projection année par année',
+    masquerTableau: '− Masquer la projection année par année',
+    caption: 'Projection du capital et des retraits, année par année',
+    colAnnee: 'Année',
+    colCapitalDebut: 'Capital au début',
+    colRendement: 'Rendement',
+    colRetraitBrut: 'Retrait brut',
+    colImpots: 'Impôts',
+    colRevenuNet: 'Revenu net',
+    colCapitalFin: 'Capital à la fin',
+    colReel: 'En euros d’aujourd’hui',
+  },
+
+  comparaison: {
+    titre: 'Le même plan, selon où vous vivez',
+    intro: (patrimoine: string, retrait: string) =>
+      `Vos ${patrimoine} et votre retrait de ${retrait} ne bougent pas ; seule l’imposition change. L’écart entre l’enveloppe la plus lourde et la plus légère est ce que votre résidence fiscale vous coûte, ou vous rapporte.`,
+    caption:
+      'Revenu net et patrimoine nécessaire selon le pays de résidence et l’enveloppe fiscale',
+    colEnveloppe: 'Enveloppe',
+    colImposition: 'Imposition',
+    colRevenuAnnuel: 'Revenu net annuel',
+    colParMois: 'Par mois',
+    colPatrimoineNecessaire: 'Patrimoine nécessaire',
+    colEcartMensuel: 'Écart mensuel',
+    votreSituation: 'votre situation',
+    note: 'Cliquez sur une enveloppe pour l’appliquer à votre simulation. Les montants restent en euros quel que soit le pays : ce que la résidence change ici, c’est l’imposition, pas la devise ni le coût de la vie — un train de vie japonais ne coûte pas le même prix qu’un train de vie français.',
+  },
+
+  objectif: {
+    titre: 'Et si on prenait la question à l’envers ?',
+    intro:
+      'Dites ce qu’il vous faut pour vivre, le simulateur vous dit le patrimoine qu’il faut avoir pour le financer.',
+    depensesLabel: 'Ce dont vous avez besoin pour vivre, net',
+    depensesUnite: '€ / an',
+    depensesPlaceholder: 'Par exemple 30 000',
+    depensesHintVide:
+      'Renseignez votre train de vie annuel pour obtenir le patrimoine cible. Laissé vide, le simulateur se contente de dire ce que votre capital verse.',
+    depensesHintRempli: (mois: string) =>
+      `Soit ${mois} par mois. Ce montant s’entend après impôt : c’est ce qui arrive sur votre compte.`,
+    explication: (retrait: string, imposition: string, net: string) =>
+      `Le calcul renverse la formule du retrait : patrimoine requis = dépenses ÷ (taux de retrait × part qui vous reste après impôt). Avec ${retrait} de retrait et ${imposition} d’imposition, chaque euro de patrimoine vous verse ${net} net par an.`,
+    aucunTitre: 'Aucun patrimoine ne suffit',
+    aucunCorpsVide: 'Indiquez d’abord vos dépenses annuelles.',
+    aucunCorpsImpossible:
+      'Avec un taux de retrait nul, ou une imposition qui absorbe tout, aucun capital ne produit de revenu. Ajustez le taux de retrait ou l’imposition.',
+    requisLabel: 'Patrimoine nécessaire',
+    horsEchelle: 'plus de 100 M€',
+    avanceFort: (montant: string) => `${montant} d’avance`,
+    avanceCorpsDebut: 'Vous y êtes : ',
+    avanceCorpsFin: ' sur l’objectif.',
+    manqueDebut: 'Il vous manque ',
+    manqueFin: (part: string) => `, soit ${part} du chemin à parcourir.`,
+    appliquer: 'Simuler avec ce patrimoine →',
+  },
+
+  sources: {
+    titre: 'Méthode et sources',
+    intro:
+      'Le calcul tient en quatre lignes, et c’est volontaire : chaque hypothèse supplémentaire donnerait à la projection une précision qu’elle n’a pas.',
+    formulesTitre: 'Les formules',
+    fRetrait: 'Retrait brut annuel',
+    fRetraitNote: 'X le patrimoine, Z le taux de retrait',
+    fImpots: 'Impôts',
+    fImpotsNote: 'α le taux d’imposition',
+    fNet: 'Revenu net',
+    fPreserve: 'Capital préservé si',
+    fPreserveNote: 'Y le rendement annuel',
+    fReel: '… en pouvoir d’achat si',
+    fReelNote: 'i l’inflation',
+    fProjection: 'Projection, année n',
+    fCible: 'Patrimoine cible',
+    scenariosNote: (ecart: string) =>
+      `Les scénarios comparés reprennent le même calcul avec un rendement diminué puis augmenté de ${ecart}.`,
+    limitesTitre: 'Ce que le simulateur ne fait pas',
+    limiteVolatiliteFort: 'Pas de volatilité.',
+    limiteVolatilite:
+      'Le rendement est constant. Dans la réalité, l’ordre des bonnes et des mauvaises années compte autant que leur moyenne : deux krachs en début de retrait ne se rattrapent pas. Une simulation de Monte-Carlo répondrait à cette question, pas celle-ci.',
+    limiteFiscaliteFort: 'Pas de fiscalité fine.',
+    limiteFiscalite:
+      'Un taux unique s’applique à la totalité des sommes retirées, alors qu’en pratique seule la part de plus-value est imposée. Les enveloppes proposées donnent le bon taux, pas la bonne assiette : le simulateur surestime donc l’impôt, d’autant plus que le portefeuille est jeune.',
+    limitePaysFort: 'Pas de coût de la vie, ni de devise.',
+    limitePays:
+      'La comparaison entre pays ne fait varier que l’imposition. Les montants restent en euros, et un train de vie ne coûte pas le même prix à Paris et à Tokyo. Les règles de résidence fiscale, les conventions contre la double imposition et l’imposition à la sortie du territoire sont hors sujet ici.',
+    limiteRevenusFort: 'Pas d’autres revenus.',
+    limiteRevenus:
+      'Ni pension, ni salaire d’appoint, ni apport futur : le calcul part du seul patrimoine déjà accumulé. La phase d’épargne, elle, n’est pas modélisée.',
+    limiteResidenceFort: 'Pas de résidence principale.',
+    limiteResidence:
+      'Le patrimoine attendu est le patrimoine financier net de dettes. Un logement dont on est propriétaire réduit les dépenses, il ne verse pas de revenu.',
+    signaler: 'Signaler une erreur de calcul →',
+    discussions: 'Discussions ouvertes',
+    code: 'Code source',
+    liste: {
+      bengen: {
+        titre: 'La règle des 4 %',
+        detail:
+          'William Bengen, « Determining Withdrawal Rates Using Historical Data », Journal of Financial Planning, octobre 1994 : sur des portefeuilles moitié actions moitié obligations, un retrait initial de 4 % indexé sur l’inflation a tenu au moins trente ans sur toutes les périodes historiques testées depuis 1926.',
+      },
+      pfau: {
+        titre: 'La règle des 4 % hors des États-Unis',
+        detail:
+          'Wade Pfau, « An International Perspective on Safe Withdrawal Rates », Journal of Financial Planning, décembre 2010, sur les données Dimson-Marsh-Staunton depuis 1900 : six pays passent sous 3 % de retrait soutenable, dont la France et le Japon. C’est de là que viennent les taux de retrait proposés par défaut pour chaque pays.',
+      },
+      pfu: {
+        titre: 'France — flat tax sur les revenus de placement',
+        detail:
+          'Le prélèvement forfaitaire unique réunit 12,8 % d’impôt sur le revenu et les prélèvements sociaux. Ces derniers sont passés de 17,2 % à 18,6 % au 1ᵉʳ janvier 2026 (article 12 de la loi de financement de la sécurité sociale pour 2026), ce qui porte la flat tax à 31,4 % sur les revenus de capitaux mobiliers.',
+      },
+      pea: {
+        titre: 'France — PEA de plus de cinq ans',
+        detail:
+          'Après cinq ans, les gains du plan échappent à l’impôt sur le revenu ; seuls les prélèvements sociaux restent dus, au taux en vigueur le jour du retrait, soit 18,6 % depuis 2026. Les versements sont plafonnés à 150 000 €.',
+      },
+      assuranceVie: {
+        titre: 'France — assurance-vie de plus de huit ans',
+        detail:
+          'Rachat imposé à 7,5 % après un abattement annuel de 4 600 € (9 200 € pour un couple) sur la part de gains, pour les primes versées depuis le 27 septembre 2017. Les prélèvements sociaux de l’assurance-vie restent à 17,2 %.',
+      },
+      nta: {
+        titre: 'Japon — imposition des cessions de titres',
+        detail:
+          'Imposition séparée à 20 % (15 % d’impôt national et 5 % de taxe locale de résidence), majorée de la surtaxe spéciale de reconstruction de 2,1 % sur la part nationale de 2013 à 2037 — soit 20,315 % au total. Barème publié par l’administration fiscale japonaise (fiche nº 1463).',
+      },
+      nisa: {
+        titre: 'Japon — NISA',
+        detail:
+          'Enveloppe totalement exonérée, sans limite de durée depuis la réforme de 2024, dans la limite de 18 millions de yens de versements sur la vie entière, dont 12 millions pour la poche « croissance ». Site officiel de l’Agence des services financiers.',
+      },
+      bce: {
+        titre: 'Cible d’inflation de 2 % — BCE',
+        detail:
+          'La valeur par défaut de l’inflation en France reprend la cible symétrique de moyen terme de la Banque centrale européenne. L’inflation réellement constatée s’en écarte, parfois durablement : c’est le paramètre qu’il vaut la peine de faire varier en premier.',
+      },
+      boj: {
+        titre: 'Cible d’inflation de 2 % — Banque du Japon',
+        detail:
+          'Cible fixée en janvier 2013 sur la variation annuelle de l’indice des prix à la consommation. Elle est restée longtemps hors d’atteinte : projeter 2 % d’inflation sur quarante ans au Japon est une hypothèse, pas un constat.',
+      },
+    },
+  },
+
+  pied: {
+    resume: 'Simulateur d’indépendance financière — hypothèses simplifiées.',
+    signaler: 'Signaler une erreur',
+    code: 'Code source',
+    mention:
+      'Outil informatif. Les montants affichés supposent un rendement constant et une fiscalité réduite à un taux unique : ils ne constituent ni une prévision, ni un conseil en investissement. Rien n’est enregistré, aucune donnée ne quitte votre navigateur.',
+  },
+
+  mobile: {
+    revenu: 'Revenu net par mois',
+    preserve: '✓ Capital préservé',
+    entame: '✕ Capital entamé',
+    sans: 'Aucun capital',
+  },
+};
+
+export type Dictionnaire = typeof FR;
+
+const EN: Dictionnaire = {
+  meta: {
+    titre: 'Living off your capital — FIRE simulator',
+    description:
+      'FIRE simulator: how much capital does it take to live off its income without touching the principal? Withdrawal, tax, inflation and a year-by-year projection.',
+  },
+
+  entete: {
+    avertissementDebut: 'Educational simulation tool —',
+    avertissementFort: 'this is not financial advice.',
+    methode: 'Method and sources',
+    choixLangue: 'Interface language',
+  },
+
+  hero: {
+    badge: 'The 4% rule, tax and inflation included',
+    titre: 'Do I have enough to live off my capital, without touching it?',
+    intro:
+      'Four parameters are enough: what you have, what it earns, what you take out each year and what the tax takes. The verdict updates on every move of a slider.',
+  },
+
+  saisie: {
+    titre: 'Your assumptions',
+    patrimoineLabel: 'Net capital accumulated',
+    patrimoineHint:
+      'Your financial assets, net of debt. Your home is not part of it: it lowers your spending, it pays no income.',
+    rendementLabel: 'Annual return on assets',
+    rendementHint:
+      'The average expected over the long run, before tax, dividends and capital gains included. Reckon on 5% for a cautious portfolio, 7 to 8% for equities. From −10 to +20% a year.',
+    retraitLabel: 'Annual withdrawal rate',
+    retraitHint:
+      'The share of your capital taken out each year to live on. This is where the 4% rule comes from. From 0 to 20%.',
+    paysLabel: 'Country of residence',
+    enveloppeLabel: 'Your account type',
+    changementPays:
+      'Switching country reloads its starting assumptions — tax, withdrawal rate and inflation.',
+    impositionLabel: 'Tax on withdrawals',
+    impositionHint: 'Applied to the whole of every withdrawal, from 0 to 60%.',
+    tauxPersonnaliseFort: 'Custom rate.',
+    tauxPersonnaliseCorps: (taux: string, pays: string) =>
+      `${taux} matches no account type available to a resident of ${pays}. Pick one above to return to a real rate.`,
+    afficher: '+ Show',
+    masquer: '− Hide',
+    avanceSuite: 'inflation and horizon',
+    inflationLabel: 'Annual inflation',
+    inflationHint: (note: string) =>
+      `What decides the purchasing power of your income twenty years from now. ${note}`,
+    inflationRepere: (pays: string) => `${pays} reference`,
+    horizonLabel: 'Projection horizon',
+    horizonUnite: 'years',
+    horizonHint:
+      'Early retirement is counted in decades: forty years is nothing out of the ordinary.',
+    modeLabel: 'How you withdraw',
+    modeIndexe: 'Fixed amount, indexed',
+    modeProportionnel: '% of capital',
+    modeHintIndexe:
+      'The 4% rule in the strict sense: the first year’s amount is fixed, then uprated with inflation. Purchasing power stays constant, but the capital can run out.',
+    modeHintProportionnel:
+      'You take the same percentage of whatever the capital is worth each year. It can never fall to zero, but your income falls with the markets.',
+  },
+
+  verdict: {
+    badgeOui: 'Yes',
+    badgeOuiJuste: 'Yes, only just',
+    badgeNon: 'No',
+    badgePasEncore: 'Not yet',
+    sousTitrePreserve: 'your capital is preserved',
+    sousTitreEntame: 'you are eating into the capital',
+    sousTitreSans: 'no capital to put to work',
+    revenuLabel: 'Net income available',
+    parMois: 'a month',
+    soitParAn: (montant: string) => `that is ${montant} a year, once the tax is paid`,
+    corpsSans:
+      'With no starting capital, no withdrawal is possible: the income is nil whatever rate you choose. Enter the capital you have already accumulated, or use the reverse calculation to find out how much you would need.',
+    corpsSansRetrait:
+      'You are taking nothing out, so the capital is preserved by construction. Raise the withdrawal rate to see what your capital could pay you.',
+    corpsPreserve: (montant: string, marge: string) =>
+      `The return covers the withdrawal and leaves ${montant} a year in the capital. Safety margin: ${marge} before you start eating into it.`,
+    corpsLimite:
+      'The return covers the withdrawal exactly: the capital holds in euros, but with no margin at all. One year of markets below expectations and it starts falling.',
+    corpsEntame: (montant: string) =>
+      `At this pace you are taking ${montant} of capital a year on top of what it earns.`,
+    epuiseEn: (annee: number) => `Your capital would run out in year ${annee}.`,
+    pasEpuise: 'The capital falls without reaching zero over the horizon simulated.',
+    reelFort: 'In purchasing power, the answer is no.',
+    reelCorps: (marge: string) =>
+      `Once inflation is paid for, you are ${marge} short: the income shown will buy less every year.`,
+    trainCouvertFort: 'Your way of life is covered.',
+    trainManqueFort: 'You are short.',
+    trainCorps: (ecart: string, besoin: string, couvert: boolean) =>
+      `${couvert ? 'Surplus' : 'Shortfall'} of ${ecart} a month against the ${besoin} you need.`,
+  },
+
+  stats: {
+    retraitBrut: 'Gross annual withdrawal',
+    impots: 'Tax and levies',
+    rendementGenere: 'Annual return generated',
+    variationCapital: 'Change in capital',
+    margeAnnexe: (points: string) => `${points} of margin`,
+    capitalDans: (annees: number) => `Capital in ${annees} years`,
+    eurosCourants: 'nominal',
+    eurosAujourdhui: 'in today’s money',
+    noteImpot:
+      'Tax is assumed to fall on the whole withdrawal, at a single rate. That is a deliberate simplification: real accounts tax only the capital-gain share, each in its own way.',
+    mentionLegale:
+      'An indicative simulation, at a constant return. It does not replace professional advice and is not investment advice.',
+  },
+
+  partage: {
+    copier: 'Copy the link to this simulation',
+    copie: 'Link copied',
+    aria: 'Link to the simulation, to copy',
+    note: 'The link reopens the simulation with all your parameters. Nothing is stored: it all fits in the address.',
+    noteManuelle: 'Automatic copying is unavailable: select the link above.',
+  },
+
+  projection: {
+    titre: (annees: number) => `Your capital over ${annees} years`,
+    intro:
+      'The central curve follows your return; the shaded band shows what two points of return more or less change in the end.',
+    eurosCourants: 'Nominal euros',
+    pouvoirAchat: 'Purchasing power',
+    noteCourant:
+      'In nominal euros a flat capital looks reassuring. Switch to purchasing power to see what those euros will actually buy.',
+    noteConstant: (inflation: string, annees: number) =>
+      `Every amount is restated in today’s money, at ${inflation} inflation a year. That is the reading that matters for a plan running ${annees} years.`,
+    aria: (annees: number, constant: boolean) =>
+      `Capital over ${annees} years, in ${constant ? 'constant' : 'nominal'} euros`,
+    aujourdhui: 'today',
+    an: (n: number) => `year ${n}`,
+    survolAujourdhui: 'Today',
+    survolAnnee: (n: number) => `Year ${n}`,
+    survolCorps: (central: string, bas: string, haut: string) =>
+      `capital of ${central} in the central scenario, between ${bas} and ${haut} depending on the return.`,
+    legendeCentral: (taux: string) => `Central — ${taux} a year`,
+    legendeBande: (bas: string, haut: string) => `From ${bas} to ${haut}`,
+    legendeDepart: (montant: string) => `Starting capital — ${montant}`,
+    legendeEpuisement: (annee: number) => `Runs out in year ${annee}`,
+    legendeEpuisementPessimiste: (annee: number) =>
+      `Runs out in year ${annee} if the return disappoints`,
+  },
+
+  detail: {
+    titre: 'The calculation in detail',
+    revenuTitre: 'From capital to income',
+    revenuSous: 'What you take out in the first year, and what is left after tax.',
+    patrimoineNet: 'Net capital',
+    retraitBrut: 'Gross annual withdrawal',
+    duPatrimoine: (taux: string) => `${taux} of capital`,
+    impots: 'Tax and levies',
+    revenuNetAnnuel: 'Net annual income',
+    revenuNetMensuel: 'Net monthly income',
+    capitalTitre: 'What becomes of the capital',
+    capitalSous:
+      'The return on one side, the withdrawal on the other: the difference stays in the capital.',
+    rendementGenere: 'Return generated',
+    variationCapital: 'Change in capital',
+    note: 'Tax is charged on what is withdrawn, not on the return: whatever stays invested is untaxed in this simulation. That is a deliberate simplification — real accounts each have their own rules.',
+    afficherTableau: '+ Show the year-by-year projection',
+    masquerTableau: '− Hide the year-by-year projection',
+    caption: 'Year-by-year projection of capital and withdrawals',
+    colAnnee: 'Year',
+    colCapitalDebut: 'Capital at start',
+    colRendement: 'Return',
+    colRetraitBrut: 'Gross withdrawal',
+    colImpots: 'Tax',
+    colRevenuNet: 'Net income',
+    colCapitalFin: 'Capital at end',
+    colReel: 'In today’s money',
+  },
+
+  comparaison: {
+    titre: 'The same plan, depending on where you live',
+    intro: (patrimoine: string, retrait: string) =>
+      `Your ${patrimoine} and your ${retrait} withdrawal do not move; only the tax changes. The gap between the heaviest and the lightest account is what your tax residence costs you, or earns you.`,
+    caption: 'Net income and capital required by country of residence and account type',
+    colEnveloppe: 'Account type',
+    colImposition: 'Tax',
+    colRevenuAnnuel: 'Net annual income',
+    colParMois: 'A month',
+    colPatrimoineNecessaire: 'Capital required',
+    colEcartMensuel: 'Monthly gap',
+    votreSituation: 'your situation',
+    note: 'Click an account type to apply it to your simulation. Amounts stay in euros whatever the country: what residence changes here is the tax, not the currency nor the cost of living — a Japanese way of life does not cost the same as a French one.',
+  },
+
+  objectif: {
+    titre: 'What if we asked the question backwards?',
+    intro:
+      'Say what you need to live on, and the simulator tells you the capital it takes to fund it.',
+    depensesLabel: 'What you need to live on, after tax',
+    depensesUnite: '€ / year',
+    depensesPlaceholder: 'For example 30,000',
+    depensesHintVide:
+      'Enter your yearly spending to get the capital you are aiming at. Left empty, the simulator merely says what your capital pays.',
+    depensesHintRempli: (mois: string) =>
+      `That is ${mois} a month. This figure is after tax: it is what lands in your account.`,
+    explication: (retrait: string, imposition: string, net: string) =>
+      `The calculation turns the withdrawal formula around: capital required = spending ÷ (withdrawal rate × the share left to you after tax). At a ${retrait} withdrawal and ${imposition} tax, every euro of capital pays you ${net} net a year.`,
+    aucunTitre: 'No amount of capital is enough',
+    aucunCorpsVide: 'Start by entering your yearly spending.',
+    aucunCorpsImpossible:
+      'With a nil withdrawal rate, or a tax that swallows everything, no capital produces an income. Adjust the withdrawal rate or the tax.',
+    requisLabel: 'Capital required',
+    horsEchelle: 'over €100m',
+    avanceFort: (montant: string) => `${montant} ahead`,
+    avanceCorpsDebut: 'You are there: ',
+    avanceCorpsFin: ' of the target.',
+    manqueDebut: 'You are short of ',
+    manqueFin: (part: string) => `, that is ${part} of the way still to go.`,
+    appliquer: 'Simulate with this capital →',
+  },
+
+  sources: {
+    titre: 'Method and sources',
+    intro:
+      'The calculation fits in four lines, deliberately: every extra assumption would lend the projection a precision it does not have.',
+    formulesTitre: 'The formulas',
+    fRetrait: 'Gross annual withdrawal',
+    fRetraitNote: 'X the capital, Z the withdrawal rate',
+    fImpots: 'Tax',
+    fImpotsNote: 'α the tax rate',
+    fNet: 'Net income',
+    fPreserve: 'Capital preserved if',
+    fPreserveNote: 'Y the annual return',
+    fReel: '… in purchasing power if',
+    fReelNote: 'i inflation',
+    fProjection: 'Projection, year n',
+    fCible: 'Capital target',
+    scenariosNote: (ecart: string) =>
+      `The compared scenarios run the same calculation with the return lowered then raised by ${ecart}.`,
+    limitesTitre: 'What the simulator does not do',
+    limiteVolatiliteFort: 'No volatility.',
+    limiteVolatilite:
+      'The return is constant. In reality the order of the good and bad years matters as much as their average: two crashes early in retirement are never made up. A Monte-Carlo simulation would answer that question; this one does not.',
+    limiteFiscaliteFort: 'No fine-grained tax.',
+    limiteFiscalite:
+      'A single rate applies to the whole of every withdrawal, whereas in practice only the capital-gain share is taxed. The account types give the right rate, not the right base: the simulator therefore overstates the tax, the more so the younger the portfolio.',
+    limitePaysFort: 'No cost of living, no currency.',
+    limitePays:
+      'The comparison between countries varies the tax and nothing else. Amounts stay in euros, and a way of life does not cost the same in Paris and in Tokyo. Tax residence rules, double-taxation treaties and exit taxation are out of scope here.',
+    limiteRevenusFort: 'No other income.',
+    limiteRevenus:
+      'No pension, no part-time salary, no future contribution: the calculation starts from the capital already accumulated. The saving phase is not modelled.',
+    limiteResidenceFort: 'No main residence.',
+    limiteResidence:
+      'The capital expected here is financial, net of debt. A home you own lowers your spending; it pays no income.',
+    signaler: 'Report a calculation error →',
+    discussions: 'Open discussions',
+    code: 'Source code',
+    liste: {
+      bengen: {
+        titre: 'The 4% rule',
+        detail:
+          'William Bengen, “Determining Withdrawal Rates Using Historical Data”, Journal of Financial Planning, October 1994: on portfolios of half equities and half bonds, an initial 4% withdrawal uprated with inflation lasted at least thirty years over every historical period tested since 1926.',
+      },
+      pfau: {
+        titre: 'The 4% rule outside the United States',
+        detail:
+          'Wade Pfau, “An International Perspective on Safe Withdrawal Rates”, Journal of Financial Planning, December 2010, on the Dimson-Marsh-Staunton data since 1900: six countries fall below a 3% sustainable withdrawal, France and Japan among them. That is where the default withdrawal rate of each country comes from.',
+      },
+      pfu: {
+        titre: 'France — flat tax on investment income',
+        detail:
+          'The flat tax combines 12.8% income tax with social levies. Those levies rose from 17.2% to 18.6% on 1 January 2026 (article 12 of the 2026 social security finance act), taking the flat tax to 31.4% on income from securities.',
+      },
+      pea: {
+        titre: 'France — PEA held over five years',
+        detail:
+          'After five years the plan’s gains escape income tax; only social levies remain due, at the rate in force on the day of withdrawal, that is 18.6% since 2026. Contributions are capped at €150,000.',
+      },
+      assuranceVie: {
+        titre: 'France — life insurance held over eight years',
+        detail:
+          'Withdrawals taxed at 7.5% after an annual allowance of €4,600 (€9,200 for a couple) on the gain, for premiums paid since 27 September 2017. Social levies on life insurance stay at 17.2%.',
+      },
+      nta: {
+        titre: 'Japan — taxation of securities disposals',
+        detail:
+          'Taxed separately at 20% (15% national income tax and 5% local inhabitant tax), plus the 2.1% special reconstruction surtax on the national portion from 2013 to 2037 — 20.315% in total. Published by the National Tax Agency (answer no. 1463).',
+      },
+      nisa: {
+        titre: 'Japan — NISA',
+        detail:
+          'A fully exempt account, with no time limit since the 2024 reform, up to ¥18 million of lifetime contributions, of which ¥12 million for the growth quota. Official site of the Financial Services Agency.',
+      },
+      bce: {
+        titre: '2% inflation target — ECB',
+        detail:
+          'The default inflation figure for France follows the European Central Bank’s symmetric medium-term target. Inflation actually observed departs from it, sometimes for a long time: this is the parameter most worth varying first.',
+      },
+      boj: {
+        titre: '2% inflation target — Bank of Japan',
+        detail:
+          'Set in January 2013 on the year-on-year change in the consumer price index. It stayed out of reach for a long time: projecting 2% inflation over forty years in Japan is an assumption, not an observation.',
+      },
+    },
+  },
+
+  pied: {
+    resume: 'Financial independence simulator — simplified assumptions.',
+    signaler: 'Report an error',
+    code: 'Source code',
+    mention:
+      'An informational tool. The amounts shown assume a constant return and tax reduced to a single rate: they are neither a forecast nor investment advice. Nothing is stored, and no data leaves your browser.',
+  },
+
+  mobile: {
+    revenu: 'Net income a month',
+    preserve: '✓ Capital preserved',
+    entame: '✕ Capital eaten into',
+    sans: 'No capital',
+  },
+};
+
+export const TEXTES: Record<Langue, Dictionnaire> = { fr: FR, en: EN };
