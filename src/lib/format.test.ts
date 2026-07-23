@@ -5,55 +5,55 @@ import { LANGUES } from './i18n';
 const fr = formats('fr');
 const en = formats('en');
 
-describe('montants', () => {
-  it('suit les conventions de chaque langue', () => {
-    // Espace insécable et symbole après le nombre en français, symbole avant
-    // et virgule de millier en anglais.
+describe('amounts', () => {
+  it('follows the conventions of each language', () => {
+    // Non-breaking space and trailing symbol in French, leading symbol and
+    // comma thousands separator in English.
     expect(fr.eur(500_000)).toMatch(/^500.000\s?€$/u);
     expect(en.eur(500_000)).toBe('€500,000');
   });
 
-  it('arrondit à l’euro', () => {
+  it('rounds to the euro', () => {
     for (const langue of LANGUES) {
       expect(formats(langue).eur(1234.6)).toContain('1');
       expect(formats(langue).eur(1234.6)).not.toContain(',6');
     }
   });
 
-  it('abrège les grands montants dans l’unité du lecteur', () => {
+  it('shortens large amounts into the reader’s own unit', () => {
     expect(fr.eurCompact(1_200_000)).toMatch(/1,2\s?M/u);
     expect(en.eurCompact(1_200_000)).toMatch(/1\.2m/u);
   });
 });
 
-describe('taux', () => {
-  it('supprime les zéros inutiles et garde les décimales qui comptent', () => {
-    // Espace insécable avant le signe, comme le veut la typographie française :
-    // le pourcentage ne doit jamais passer seul à la ligne suivante.
+describe('rates', () => {
+  it('drops needless zeros and keeps the decimals that matter', () => {
+    // Non-breaking space before the sign, as French typography wants it: the
+    // percent sign must never wrap onto the next line by itself.
     expect(fr.tauxPct(0.314)).toBe('31,4\u00a0%');
     expect(fr.tauxPct(0.20315)).toBe('20,315\u00a0%');
     expect(fr.tauxPct(0)).toBe('0\u00a0%');
-    // L'anglais colle le signe au nombre.
+    // English closes the sign up against the number.
     expect(en.tauxPct(0.20315)).toBe('20.315%');
   });
 
-  it('complète les décimales quand une colonne doit s’aligner', () => {
+  it('pads the decimals when a column has to line up', () => {
     expect(fr.pct(0.05, 1)).toMatch(/^5,0\s?%$/u);
     expect(en.pct(0.05, 1)).toBe('5.0%');
   });
 });
 
-describe('points de pourcentage', () => {
-  it('accorde le pluriel selon la langue', () => {
+describe('percentage points', () => {
+  it('pluralises according to the language', () => {
     expect(fr.points(0.01)).toBe('1 point');
     expect(fr.points(0.03)).toBe('3 points');
-    // Le français pluralise à partir de deux, l'anglais dès que ce n'est pas un.
+    // French pluralises from two, English from anything that is not one.
     expect(fr.points(0.015)).toBe('1,5 point');
     expect(en.points(0.015)).toBe('1.5 points');
     expect(en.points(0.01)).toBe('1 point');
   });
 
-  it('emploie le vrai signe moins', () => {
+  it('uses the real minus sign', () => {
     for (const langue of LANGUES) {
       expect(formats(langue).points(-0.01)).toContain('−');
       expect(formats(langue).points(-0.01)).not.toContain('-');
@@ -61,8 +61,8 @@ describe('points de pourcentage', () => {
   });
 });
 
-describe('robustesse', () => {
-  it('ne laisse jamais fuir NaN ni Infinity', () => {
+describe('robustness', () => {
+  it('never lets NaN or Infinity through', () => {
     for (const langue of LANGUES) {
       const f = formats(langue);
       for (const rendu of [f.eur, f.num, f.eurCompact, f.tauxPct, f.points, f.eurSigne]) {
@@ -73,13 +73,13 @@ describe('robustesse', () => {
     }
   });
 
-  it('renvoie le même objet pour une langue donnée', () => {
-    // Les formateurs Intl sont coûteux à construire et servent de dépendance
-    // à un hook : leur identité doit rester stable d'un rendu à l'autre.
+  it('returns the same object for a given language', () => {
+    // Intl formatters are costly to build and act as a hook dependency: their
+    // identity has to stay stable from one render to the next.
     expect(formats('fr')).toBe(fr);
   });
 
-  it('expose le séparateur décimal attendu', () => {
+  it('exposes the expected decimal separator', () => {
     expect(fr.separateurDecimal).toBe(',');
     expect(en.separateurDecimal).toBe('.');
   });

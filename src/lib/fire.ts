@@ -166,8 +166,8 @@ export const DEFAUTS: Hypotheses = {
   imposition: regimeParDefaut(PAYS_PAR_DEFAUT).imposition,
   depensesCibles: 0,
   horizon: 40,
-  // Trente ans : l'horizon des travaux de Bengen, et une hypothèse de départ
-  // raisonnable pour un départ anticipé.
+  // Thirty years: the horizon Bengen worked with, and a reasonable starting
+  // assumption for an early retirement.
   dureeExigee: 30,
   modeRetrait: 'indexe',
   pays: PAYS_PAR_DEFAUT,
@@ -190,8 +190,8 @@ export function borner(h: Hypotheses): Hypotheses {
     depensesCibles: borne(h.depensesCibles, BORNES.depensesCibles),
     inflation: borne(h.inflation, BORNES.inflation),
     horizon,
-    // Exiger plus d'années que la projection n'en couvre reviendrait à se
-    // prononcer sur ce qu'elle ne montre pas.
+    // Requiring more years than the projection covers would be pronouncing on
+    // what it does not show.
     dureeExigee: Math.min(horizon, Math.round(borne(h.dureeExigee, BORNES.dureeExigee))),
     modeRetrait: h.modeRetrait === 'proportionnel' ? 'proportionnel' : 'indexe',
     pays: estClePays(h.pays) ? h.pays : PAYS_PAR_DEFAUT,

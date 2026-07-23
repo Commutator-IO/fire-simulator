@@ -15,12 +15,12 @@ import {
 import { PAYS, pays, regimeParDefaut } from './pays';
 
 /**
- * Les valeurs de l'exemple chiffré de la spécification, posées explicitement.
+ * The values of the worked example in the specification, stated explicitly.
  *
- * Elles ne sont plus celles du simulateur au démarrage — les valeurs de départ
- * viennent désormais du pays de résidence — et c'est précisément pour cela
- * qu'elles sont écrites ici : le critère d'acceptation porte sur ces entrées-là,
- * pas sur les valeurs par défaut du jour.
+ * They are no longer what the simulator starts on — the starting values now come
+ * from the country of residence — and that is exactly why they are written out
+ * here: the acceptance criterion is about those inputs, not about whatever the
+ * defaults happen to be today.
  */
 const BASE: Hypotheses = {
   ...DEFAUTS,
@@ -34,9 +34,9 @@ const sim = (sur: Partial<Hypotheses> = {}) => simuler({ ...BASE, ...sur });
 
 // ---------------------------------------------------------------------------
 
-describe('calculs de la première année', () => {
-  // Critère d'acceptation nº 1 de la spécification.
-  it("reproduit l'exemple chiffré du brief", () => {
+describe('first-year figures', () => {
+  // Acceptance criterion no. 1 of the specification.
+  it('reproduces the worked example of the brief', () => {
     const r = sim();
     expect(r.retraitBrut).toBeCloseTo(40_000, 6);
     expect(r.impots).toBeCloseTo(12_000, 6);
@@ -48,12 +48,12 @@ describe('calculs de la première année', () => {
     expect(r.marge).toBeCloseTo(0.01, 10);
   });
 
-  it('proportionne le revenu au patrimoine', () => {
+  it('scales the income with the capital', () => {
     expect(sim({ patrimoine: 500_000 }).revenuNetAnnuel).toBeCloseTo(14_000, 6);
     expect(sim({ patrimoine: 2_000_000 }).revenuNetAnnuel).toBeCloseTo(56_000, 6);
   });
 
-  it("laisse le revenu net égal au retrait brut quand l'imposition est nulle", () => {
+  it('leaves net income equal to the gross withdrawal when tax is nil', () => {
     const r = sim({ imposition: 0 });
     expect(r.impots).toBe(0);
     expect(r.revenuNetAnnuel).toBeCloseTo(r.retraitBrut, 6);
@@ -61,32 +61,32 @@ describe('calculs de la première année', () => {
 });
 
 describe('verdict', () => {
-  // Critère d'acceptation nº 2.
-  it('signale le capital entamé et son montant dès que Z > Y', () => {
+  // Acceptance criterion no. 2.
+  it('reports the capital being eaten into, and by how much, as soon as Z > Y', () => {
     const r = sim({ retrait: 0.06 });
     expect(r.verdict).toBe('entame');
     expect(r.variationCapital).toBeCloseTo(-10_000, 6);
   });
 
-  it('distingue le cas limite Z = Y', () => {
+  it('tells the borderline case Z = Y apart', () => {
     expect(sim({ retrait: 0.05 }).verdict).toBe('limite');
     expect(sim({ retrait: 0.05 }).variationCapital).toBeCloseTo(0, 6);
   });
 
-  it('mesure la marge en points, inflation comprise', () => {
+  it('measures the margin in points, inflation included', () => {
     const r = sim();
     expect(r.marge).toBeCloseTo(0.01, 10);
-    // 4 % > 5 % − 2 % : préservé en euros, pas en pouvoir d'achat.
+    // 4% > 5% − 2%: preserved in euros, not in purchasing power.
     expect(r.margeReelle).toBeCloseTo(-0.01, 10);
     expect(r.preserveEnReel).toBe(false);
     expect(sim({ retrait: 0.02 }).preserveEnReel).toBe(true);
   });
 });
 
-// Section 8 de la spécification : aucun de ces cas ne doit produire NaN,
-// Infinity ni erreur.
-describe('cas limites', () => {
-  it('sans patrimoine, répond « non » sans diviser par zéro', () => {
+// Section 8 of the specification: none of these cases may produce NaN,
+// Infinity or an error.
+describe('edge cases', () => {
+  it('answers no without dividing by zero when there is no capital', () => {
     const r = sim({ patrimoine: 0 });
     expect(r.verdict).toBe('sans-patrimoine');
     expect(r.revenuNetAnnuel).toBe(0);
@@ -94,19 +94,19 @@ describe('cas limites', () => {
     expect(r.variationCapital).toBe(0);
   });
 
-  it('sans retrait, préserve le capital par définition', () => {
+  it('preserves the capital by definition when nothing is withdrawn', () => {
     const r = sim({ retrait: 0 });
     expect(r.verdict).toBe('preserve');
     expect(r.revenuNetAnnuel).toBe(0);
     expect(r.preserveEnReel).toBe(true);
   });
 
-  it('accepte un rendement négatif et bascule le verdict dès qu’on retire', () => {
+  it('accepts a negative return and flips the verdict as soon as anything is withdrawn', () => {
     expect(sim({ rendement: -0.05 }).verdict).toBe('entame');
     expect(sim({ rendement: -0.05, retrait: 0 }).verdict).toBe('preserve');
   });
 
-  it('borne les saisies hors limites au lieu de propager la valeur', () => {
+  it('clamps out-of-bounds entries instead of passing them on', () => {
     const h = borner({
       ...BASE,
       patrimoine: -1,
@@ -124,20 +124,20 @@ describe('cas limites', () => {
     expect(h.horizon).toBe(BORNES.horizon.max);
   });
 
-  it('ramène un pays inconnu au pays par défaut', () => {
-    // @ts-expect-error clé volontairement invalide, comme peut en fournir l'URL
+  it('brings an unknown country back to the default one', () => {
+    // @ts-expect-error deliberately invalid key, of the kind the URL can supply
     expect(borner({ ...BASE, pays: 'atlantide' }).pays).toBe(DEFAUTS.pays);
     expect(borner({ ...BASE, pays: 'japon' }).pays).toBe('japon');
   });
 
-  it('remplace une valeur non numérique par la borne basse', () => {
+  it('replaces a non-numeric value with the lower bound', () => {
     const h = borner({ ...BASE, patrimoine: Number.NaN, rendement: Number.POSITIVE_INFINITY });
     expect(h.patrimoine).toBe(0);
     expect(h.rendement).toBe(BORNES.rendement.min);
   });
 
-  // Critère d'acceptation nº 4.
-  it('ne produit jamais NaN ni Infinity, quelles que soient les combinaisons', () => {
+  // Acceptance criterion no. 4.
+  it('never produces NaN or Infinity, whatever the combination', () => {
     const valeurs = [0, 1, 100_000_000];
     for (const patrimoine of valeurs) {
       for (const rendement of [-0.1, 0, 0.2]) {
@@ -159,7 +159,7 @@ describe('cas limites', () => {
 });
 
 describe('projection', () => {
-  it('applique le rendement avant le retrait de la même année', () => {
+  it('credits the return before the withdrawal of the same year', () => {
     const [premiere] = projeter({
       ...BASE,
       inflation: 0,
@@ -171,14 +171,14 @@ describe('projection', () => {
     expect(premiere.capitalFin).toBeCloseTo(1_010_000, 6);
   });
 
-  it('revalorise le retrait de l’inflation en mode indexé', () => {
+  it('uprates the withdrawal with inflation in indexed mode', () => {
     const { annees } = projeter({ ...BASE, horizon: 3 });
     expect(annees[0].retraitBrut).toBeCloseTo(40_000, 6);
     expect(annees[1].retraitBrut).toBeCloseTo(40_800, 6);
     expect(annees[2].retraitBrut).toBeCloseTo(41_616, 6);
   });
 
-  it('recalcule le retrait sur le capital courant en mode proportionnel', () => {
+  it('recomputes the withdrawal on the current capital in proportional mode', () => {
     const { annees } = projeter({
       ...BASE,
       modeRetrait: 'proportionnel',
@@ -189,15 +189,15 @@ describe('projection', () => {
     expect(annees[1].retraitBrut).toBeCloseTo(annees[1].capitalDebut * 1.05 * 0.04, 6);
   });
 
-  it('déflate le capital et le revenu en euros constants', () => {
+  it('restates capital and income in constant euros', () => {
     const { annees } = projeter({ ...BASE, horizon: 2 });
     expect(annees[0].capitalFinReel).toBeCloseTo(annees[0].capitalFin / 1.02, 6);
     expect(annees[1].capitalFinReel).toBeCloseTo(annees[1].capitalFin / 1.02 ** 2, 6);
-    // Le pouvoir d'achat du retrait indexé est constant par construction.
+    // The purchasing power of an indexed withdrawal is constant by construction.
     expect(annees[1].retraitNetReel).toBeCloseTo(annees[0].retraitNetReel, 6);
   });
 
-  it('date l’épuisement et arrête le capital à zéro', () => {
+  it('dates the depletion and stops the capital at zero', () => {
     const p = projeter({
       ...BASE,
       patrimoine: 200_000,
@@ -206,14 +206,14 @@ describe('projection', () => {
       inflation: 0,
       horizon: 10,
     });
-    // 40 000 € par an sur 200 000 € : la sixième année ne peut plus être servie.
+    // €40,000 a year out of €200,000: the sixth year can no longer be served.
     expect(p.anneeEpuisement).toBe(6);
     expect(p.capitalFinal).toBe(0);
     expect(p.annees.every((a) => a.capitalFin >= 0)).toBe(true);
     expect(p.annees[5].retraitBrut).toBe(0);
   });
 
-  it('n’épuise jamais le capital en mode proportionnel', () => {
+  it('never exhausts the capital in proportional mode', () => {
     const p = projeter({
       ...BASE,
       rendement: -0.1,
@@ -225,14 +225,14 @@ describe('projection', () => {
     expect(p.capitalFinal).toBeGreaterThan(0);
   });
 
-  it('produit autant de lignes que l’horizon', () => {
+  it('produces as many rows as the horizon', () => {
     expect(projeter({ ...BASE, horizon: 12 }).annees).toHaveLength(12);
     expect(projeter({ ...BASE, horizon: 5 }).annees.at(-1)?.annee).toBe(5);
   });
 });
 
-describe('scénarios comparés', () => {
-  it('encadre le scénario central de ± 2 points', () => {
+describe('compared scenarios', () => {
+  it('brackets the central scenario by ± 2 points', () => {
     const [pessimiste, central, optimiste] = scenarios(BASE);
     expect(pessimiste.rendement).toBeCloseTo(0.03, 10);
     expect(central.rendement).toBeCloseTo(0.05, 10);
@@ -245,25 +245,25 @@ describe('scénarios comparés', () => {
     );
   });
 
-  it('annonce le rendement réellement utilisé quand la borne écrête', () => {
+  it('announces the return actually used when the bound clips it', () => {
     const [pessimiste] = scenarios({ ...BASE, rendement: BORNES.rendement.min });
     expect(pessimiste.rendement).toBe(BORNES.rendement.min);
   });
 });
 
-describe('calcul inverse', () => {
-  it('donne le patrimoine nécessaire pour financer un train de vie', () => {
-    // 30 000 € nets à 4 % de retrait et 30 % d'impôts.
+describe('reverse calculation', () => {
+  it('gives the capital needed to fund a way of life', () => {
+    // €30,000 net at a 4% withdrawal and 30% tax.
     expect(patrimoineRequis(30_000, 0.04, 0.3)).toBeCloseTo(1_071_428.57, 2);
   });
 
-  it('renonce quand aucun patrimoine fini ne convient', () => {
+  it('gives up when no finite capital will do', () => {
     expect(patrimoineRequis(30_000, 0, 0.3)).toBeNull();
     expect(patrimoineRequis(30_000, 0.04, 1)).toBeNull();
     expect(patrimoineRequis(0, 0.04, 0.3)).toBeNull();
   });
 
-  it('boucle avec le calcul direct', () => {
+  it('closes the loop with the forward calculation', () => {
     const requis = patrimoineRequis(30_000, 0.04, 0.3);
     expect(requis).not.toBeNull();
     expect(sim({ patrimoine: requis!, depensesCibles: 30_000 }).revenuNetAnnuel).toBeCloseTo(
@@ -273,20 +273,20 @@ describe('calcul inverse', () => {
   });
 });
 
-describe('comparaison au train de vie', () => {
-  it('chiffre l’écart quand les dépenses sont renseignées', () => {
+describe('comparison with target spending', () => {
+  it('puts a figure on the gap once spending is entered', () => {
     expect(sim({ depensesCibles: 24_000 }).ecartDepenses).toBeCloseTo(4_000, 6);
     expect(sim({ depensesCibles: 36_000 }).ecartDepenses).toBeCloseTo(-8_000, 6);
   });
 
-  it('ne compare rien tant que les dépenses ne sont pas saisies', () => {
+  it('compares nothing until spending has been entered', () => {
     expect(sim().ecartDepenses).toBeNull();
     expect(sim().patrimoineRequis).toBeNull();
   });
 });
 
 describe('verdictDe', () => {
-  it('range les cas dans l’ordre attendu', () => {
+  it('tests the cases in the expected order', () => {
     const h = (sur: Partial<Hypotheses>) => verdictDe({ ...BASE, ...sur });
     expect(h({ patrimoine: 0, retrait: 0 })).toBe('sans-patrimoine');
     expect(h({ retrait: 0 })).toBe('preserve');
@@ -296,9 +296,9 @@ describe('verdictDe', () => {
   });
 });
 
-describe('niveau de tenue', () => {
-  // Un capital qui rapporte 0 % et dont on retire 40 000 € sur 200 000 € tient
-  // exactement cinq ans, et casse la sixième année.
+describe('how well the plan holds', () => {
+  // A capital earning 0% from which €40,000 is taken out of €200,000 lasts
+  // exactly five years, and breaks in the sixth.
   const court = (dureeExigee: number): Hypotheses => ({
     ...BASE,
     patrimoine: 200_000,
@@ -311,47 +311,47 @@ describe('niveau de tenue', () => {
 
   const niveau = (h: Hypotheses) => niveauDe(h, projeter(h));
 
-  it('reste au vert tant que rien ne s’épuise', () => {
+  it('stays green as long as nothing runs out', () => {
     expect(niveau({ ...BASE, retrait: 0.02, inflation: 0 })).toBe('preserve');
   });
 
-  it('passe à l’orange quand l’épuisement survient après la durée exigée', () => {
-    // Cinq années servies : une exigence de cinq ans est tenue.
+  it('turns orange when depletion comes after the required duration', () => {
+    // Five years served: a five-year requirement is met.
     expect(niveau(court(5))).toBe('suffisant');
   });
 
-  it('passe au rouge quand l’épuisement survient avant', () => {
+  it('turns red when depletion comes before it', () => {
     expect(niveau(court(6))).toBe('insuffisant');
     expect(niveau(court(10))).toBe('insuffisant');
   });
 
-  it('compte les années servies, pas l’année de rupture', () => {
+  it('counts the years served, not the year it breaks', () => {
     const p = projeter(court(5));
     expect(p.anneeEpuisement).toBe(6);
     expect(p.anneesTenues).toBe(5);
   });
 
-  it('donne l’horizon entier quand rien ne casse', () => {
+  it('gives the whole horizon when nothing breaks', () => {
     const p = projeter({ ...BASE, retrait: 0.02, inflation: 0, horizon: 25 });
     expect(p.anneeEpuisement).toBeNull();
     expect(p.anneesTenues).toBe(25);
   });
 
-  it('ignore le patrimoine nul avant toute autre considération', () => {
+  it('rules out an empty capital before anything else', () => {
     expect(niveau({ ...court(5), patrimoine: 0 })).toBe('sans-patrimoine');
   });
 
-  it('n’exige jamais plus d’années que la projection n’en couvre', () => {
+  it('never requires more years than the projection covers', () => {
     expect(borner({ ...BASE, horizon: 15, dureeExigee: 40 }).dureeExigee).toBe(15);
     expect(borner({ ...BASE, horizon: 40, dureeExigee: 3 }).dureeExigee).toBe(
       BORNES.dureeExigee.min,
     );
   });
 
-  // Le verdict nominal et le niveau ne disent pas la même chose, et c'est
-  // voulu : avec l'inflation, un retrait indexé sous le rendement finit tout
-  // de même par épuiser le capital.
-  it('se distingue du verdict nominal', () => {
+  // The nominal verdict and the level do not say the same thing, and that is
+  // the point: with inflation, an indexed withdrawal below the return still
+  // exhausts the capital in the end.
+  it('parts company with the nominal verdict', () => {
     const h: Hypotheses = {
       ...BASE,
       rendement: 0.05,
@@ -366,13 +366,13 @@ describe('niveau de tenue', () => {
   });
 });
 
-describe('scénarios par pays', () => {
-  it('produit une trajectoire par pays', () => {
+describe('scenarios by country', () => {
+  it('produces one trajectory per country', () => {
     const jeux = scenariosPays(BASE);
     expect(jeux.map((j) => j.pays)).toEqual(PAYS.map((p) => p.cle));
   });
 
-  it('applique à chacun ses valeurs de départ et son enveloppe', () => {
+  it('applies each country’s own starting values and account type', () => {
     for (const jeu of scenariosPays(BASE)) {
       const p = pays(jeu.pays);
       expect(jeu.hypotheses.retrait).toBeCloseTo(p.defauts.retrait, 10);
@@ -384,9 +384,9 @@ describe('scénarios par pays', () => {
     }
   });
 
-  // Le rendement est celui du portefeuille, pas du pays : un portefeuille
-  // diversifié mondialement est le même où que vive son propriétaire.
-  it('conserve ce qui ne dépend pas du lieu de résidence', () => {
+  // The return belongs to the portfolio, not to the country: a globally
+  // diversified portfolio is the same wherever its owner lives.
+  it('keeps whatever does not depend on where one lives', () => {
     const depart: Hypotheses = { ...BASE, patrimoine: 750_000, rendement: 0.07, horizon: 25 };
     for (const jeu of scenariosPays(depart)) {
       expect(jeu.hypotheses.patrimoine).toBe(750_000);
@@ -395,11 +395,11 @@ describe('scénarios par pays', () => {
     }
   });
 
-  it('sépare les pays par leur taux de retrait, pas par leur imposition', () => {
+  it('separates the countries by withdrawal rate, not by tax', () => {
     const [france, japon] = scenariosPays(BASE);
-    // Le Japon retire moins : son capital tient donc mieux.
+    // Japan withdraws less, so its capital holds up better.
     expect(japon.projection.capitalFinal).toBeGreaterThan(france.projection.capitalFinal);
-    // L'imposition, elle, ne se lit que sur le revenu.
+    // Tax, on the other hand, only shows up in the income.
     expect(japon.resultat.revenuNetAnnuel / japon.resultat.retraitBrut).toBeGreaterThan(
       france.resultat.revenuNetAnnuel / france.resultat.retraitBrut,
     );

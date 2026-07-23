@@ -4,43 +4,43 @@ import { BORNES, DEFAUTS, type Hypotheses } from './fire';
 
 const etat = (sur: Partial<Hypotheses> = {}): Hypotheses => ({ ...DEFAUTS, ...sur });
 
-describe('encodage', () => {
-  it('produit une adresse vide quand tout est par défaut', () => {
+describe('encoding', () => {
+  it('produces an empty query when everything is default', () => {
     expect(encoderEtat(DEFAUTS)).toBe('');
   });
 
-  it('n’écrit que ce qui diffère des valeurs par défaut', () => {
+  it('writes only what differs from the defaults', () => {
     expect(encoderEtat(etat({ patrimoine: 750_000 }))).toBe('?patrimoine=750000');
   });
 
-  it('exprime les taux en points de pourcentage', () => {
+  it('writes rates as percentage points', () => {
     const requete = encoderEtat(etat({ rendement: 0.07, imposition: 0.172 }));
     expect(requete).toContain('rendement=7');
     expect(requete).toContain('impots=17.2');
   });
 
-  it('transporte le mode de retrait', () => {
+  it('carries the withdrawal mode', () => {
     expect(encoderEtat(etat({ modeRetrait: 'proportionnel' }))).toBe(
       '?mode=proportionnel',
     );
   });
 
-  it('transporte le pays de résidence', () => {
+  it('carries the country of residence', () => {
     expect(encoderEtat(etat({ pays: 'japon' }))).toBe('?pays=japon');
   });
 
-  it('transporte la durée exigée', () => {
+  it('carries the required duration', () => {
     expect(encoderEtat(etat({ dureeExigee: 25 }))).toBe('?duree=25');
   });
 
-  it('garde assez de décimales pour un taux comme 20,315 %', () => {
+  it('keeps enough decimals for a rate such as 20.315%', () => {
     expect(encoderEtat(etat({ imposition: 0.20315 }))).toContain('impots=20.315');
   });
 });
 
-describe('décodage', () => {
-  // Critère d'acceptation nº 6 : un lien partagé restitue la simulation.
-  it('fait l’aller-retour sans perte', () => {
+describe('decoding', () => {
+  // Acceptance criterion no. 6: a shared link restores the simulation.
+  it('makes the round trip without loss', () => {
     const depart = etat({
       patrimoine: 1_250_000,
       rendement: 0.062,
@@ -56,19 +56,19 @@ describe('décodage', () => {
     expect(decoderEtat(encoderEtat(depart))).toEqual(depart);
   });
 
-  // Sans cela le lien rouvre sur un taux qui ne correspond plus à aucune
-  // enveloppe, et l'interface le présente comme personnalisé.
-  it('restitue un taux à trois décimales sans le dénaturer', () => {
+  // Without this the link reopens on a rate that no longer matches any tax
+  // regime, and the interface presents it as a custom one.
+  it('gives back a three-decimal rate untouched', () => {
     const depart = etat({ pays: 'japon', imposition: 0.20315 });
     expect(decoderEtat(encoderEtat(depart)).imposition).toBeCloseTo(0.20315, 10);
   });
 
-  it('retombe sur les valeurs par défaut quand la requête est vide', () => {
+  it('falls back to the defaults when the query is empty', () => {
     expect(decoderEtat('')).toEqual(DEFAUTS);
     expect(decoderEtat('?')).toEqual(DEFAUTS);
   });
 
-  it('borne les valeurs de l’adresse, qui n’est pas une entrée de confiance', () => {
+  it('clamps what the URL carries, it being untrusted input', () => {
     const h = decoderEtat(
       '?patrimoine=-500&rendement=999&retrait=-4&impots=90&horizon=1000&duree=999',
     );
@@ -80,22 +80,22 @@ describe('décodage', () => {
     expect(h.dureeExigee).toBe(BORNES.dureeExigee.max);
   });
 
-  it('ignore ce qui n’est pas un nombre', () => {
+  it('ignores anything that is not a number', () => {
     const h = decoderEtat('?patrimoine=beaucoup&rendement=&retrait=NaN');
     expect(h.patrimoine).toBe(DEFAUTS.patrimoine);
     expect(h.rendement).toBe(DEFAUTS.rendement);
     expect(h.retrait).toBe(DEFAUTS.retrait);
   });
 
-  it('ignore un mode de retrait inconnu', () => {
+  it('ignores an unknown withdrawal mode', () => {
     expect(decoderEtat('?mode=au-feeling').modeRetrait).toBe(DEFAUTS.modeRetrait);
   });
 
-  it('ignore un pays inconnu', () => {
+  it('ignores an unknown country', () => {
     expect(decoderEtat('?pays=atlantide').pays).toBe(DEFAUTS.pays);
   });
 
-  it('accepte une adresse déjà pourvue de son point d’interrogation', () => {
+  it('accepts a query that already carries its question mark', () => {
     expect(decoderEtat('?patrimoine=800000').patrimoine).toBe(800_000);
   });
 });

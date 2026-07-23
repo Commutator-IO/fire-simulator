@@ -11,20 +11,20 @@ import {
 import { BORNES, DEFAUTS, simuler } from './fire';
 import { LANGUES } from './i18n';
 
-describe('catalogue des régimes', () => {
-  it('donne une clé unique à chaque régime', () => {
+describe('catalogue of tax regimes', () => {
+  it('gives every regime a unique key', () => {
     const cles = TOUS_REGIMES.map((r) => r.cle);
     expect(new Set(cles).size).toBe(cles.length);
   });
 
-  it('reste dans les bornes de saisie de l’imposition', () => {
+  it('stays within the bounds of the tax field', () => {
     for (const r of TOUS_REGIMES) {
       expect(r.imposition).toBeGreaterThanOrEqual(BORNES.imposition.min);
       expect(r.imposition).toBeLessThanOrEqual(BORNES.imposition.max);
     }
   });
 
-  it('documente chaque régime : composition et réserve, dans chaque langue', () => {
+  it('documents every regime — composition and caveat — in each language', () => {
     for (const r of TOUS_REGIMES) {
       for (const langue of LANGUES) {
         expect(r.composition[langue].length).toBeGreaterThan(20);
@@ -35,7 +35,7 @@ describe('catalogue des régimes', () => {
     }
   });
 
-  it('traduit chaque pays et justifie ses valeurs de départ', () => {
+  it('translates every country and justifies its starting values', () => {
     for (const p of PAYS) {
       for (const langue of LANGUES) {
         expect(p.libelle[langue]).not.toBe('');
@@ -45,83 +45,83 @@ describe('catalogue des régimes', () => {
     }
   });
 
-  it('propose des valeurs de départ plausibles et propres à chaque pays', () => {
+  it('offers starting values that are plausible and specific to each country', () => {
     for (const p of PAYS) {
       expect(p.defauts.retrait).toBeGreaterThan(0);
       expect(p.defauts.retrait).toBeLessThanOrEqual(BORNES.retrait.max);
       expect(p.defauts.rendement).toBeLessThanOrEqual(BORNES.rendement.max);
       expect(p.defauts.inflation).toBeLessThanOrEqual(BORNES.inflation.max);
     }
-    // Le Japon est le contre-exemple de la règle des 4 % : son taux de départ
-    // doit rester en dessous de celui retenu pour la France.
+    // Japan is the counter-example to the 4% rule: its starting rate has to
+    // stay below the one chosen for France.
     expect(pays('japon').defauts.retrait).toBeLessThan(pays('france').defauts.retrait);
   });
 
-  it('porte les taux attendus', () => {
-    // Flat tax 2026 : 12,8 % d'IR + 18,6 % de prélèvements sociaux.
+  it('carries the expected rates', () => {
+    // 2026 flat tax: 12.8% income tax + 18.6% social levies.
     expect(regime('fr-cto')?.imposition).toBeCloseTo(0.314, 10);
-    // PEA après cinq ans : prélèvements sociaux seuls.
+    // PEA after five years: social levies only.
     expect(regime('fr-pea')?.imposition).toBeCloseTo(0.186, 10);
-    // Assurance-vie après huit ans : 7,5 % + 17,2 %, taux non relevé en 2026.
+    // Life insurance after eight years: 7.5% + 17.2%, not raised in 2026.
     expect(regime('fr-av')?.imposition).toBeCloseTo(0.247, 10);
-    // Japon : 15 % × 1,021 de surtaxe de reconstruction, plus 5 % de taxe locale.
+    // Japan: 15% × the 1.021 reconstruction surtax, plus 5% local tax.
     expect(regime('jp-tokutei')?.imposition).toBeCloseTo(0.15 * 1.021 + 0.05, 10);
     expect(regime('jp-nisa')?.imposition).toBe(0);
   });
 
-  it('rattache chaque régime à son pays', () => {
+  it('ties every regime to its country', () => {
     for (const p of PAYS) {
       for (const r of p.regimes) expect(r.pays).toBe(p.cle);
     }
   });
 });
 
-describe('recherche', () => {
-  it('reconnaît les clés de pays valides', () => {
+describe('lookup', () => {
+  it('recognises valid country keys', () => {
     expect(estClePays('france')).toBe(true);
     expect(estClePays('japon')).toBe(true);
     expect(estClePays('atlantide')).toBe(false);
     expect(estClePays(undefined)).toBe(false);
   });
 
-  it('retombe sur le premier pays pour une clé inconnue', () => {
-    // @ts-expect-error clé volontairement invalide
+  it('falls back to the first country for an unknown key', () => {
+    // @ts-expect-error deliberately invalid key
     expect(pays('atlantide').cle).toBe('france');
   });
 
-  it('propose un régime par défaut par pays', () => {
+  it('offers a default regime per country', () => {
     expect(regimeParDefaut('france').cle).toBe('fr-cto');
     expect(regimeParDefaut('japon').cle).toBe('jp-tokutei');
   });
 
-  it('retrouve le régime correspondant à un taux', () => {
+  it('finds the regime matching a rate', () => {
     expect(regimeCorrespondant('france', 0.314)?.cle).toBe('fr-cto');
     expect(regimeCorrespondant('japon', 0.20315)?.cle).toBe('jp-tokutei');
     expect(regimeCorrespondant('japon', 0)?.cle).toBe('jp-nisa');
   });
 
-  it('ne cherche que dans le pays retenu', () => {
-    // Le taux du PEA n'a pas de sens pour un résident japonais.
+  it('searches only within the country in force', () => {
+    // The PEA rate means nothing to a Japanese resident.
     expect(regimeCorrespondant('japon', 0.186)).toBeNull();
   });
 
-  it('tolère l’arrondi d’un aller-retour par l’adresse', () => {
+  it('tolerates the rounding of a round trip through the URL', () => {
     expect(regimeCorrespondant('japon', 20.315 / 100)?.cle).toBe('jp-tokutei');
     expect(regimeCorrespondant('france', 31.4 / 100)?.cle).toBe('fr-cto');
   });
 
-  it('ne reconnaît pas un taux librement saisi', () => {
+  it('does not recognise a freely typed rate', () => {
     expect(regimeCorrespondant('france', 0.3)).toBeNull();
     expect(regimeCorrespondant('france', 0.32)).toBeNull();
   });
 });
 
-describe('effet sur la simulation', () => {
-  // Retrait fixé à 4 % : les montants attendus ci-dessous se lisent alors
-  // directement, sans dépendre du taux de départ retenu pour la France.
+describe('effect on the simulation', () => {
+  // Withdrawal pinned at 4%: the amounts expected below then read directly,
+  // without depending on the starting rate chosen for France.
   const base = { ...DEFAUTS, patrimoine: 1_000_000, retrait: 0.04 };
 
-  it('classe les enveloppes du revenu le plus faible au plus élevé', () => {
+  it('ranks the regimes from the lowest income to the highest', () => {
     const revenus = TOUS_REGIMES.map((r) => ({
       cle: r.cle,
       net: simuler({ ...base, imposition: r.imposition }).revenuNetAnnuel,
@@ -130,10 +130,10 @@ describe('effet sur la simulation', () => {
     expect(trie).toEqual(['fr-cto', 'fr-av', 'jp-tokutei', 'fr-pea', 'jp-nisa']);
   });
 
-  it('chiffre l’écart entre la flat tax française et le NISA japonais', () => {
+  it('puts a figure on the gap between the French flat tax and the Japanese NISA', () => {
     const flatTax = simuler({ ...base, imposition: 0.314 }).revenuNetAnnuel;
     const nisa = simuler({ ...base, imposition: 0 }).revenuNetAnnuel;
-    // 40 000 € de retrait brut : la flat tax en prélève 12 560 €.
+    // €40,000 of gross withdrawal: the flat tax takes €12,560 of it.
     expect(nisa - flatTax).toBeCloseTo(12_560, 6);
   });
 });
