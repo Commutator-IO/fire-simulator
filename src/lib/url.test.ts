@@ -29,6 +29,10 @@ describe('encodage', () => {
     expect(encoderEtat(etat({ pays: 'japon' }))).toBe('?pays=japon');
   });
 
+  it('transporte la durée exigée', () => {
+    expect(encoderEtat(etat({ dureeExigee: 25 }))).toBe('?duree=25');
+  });
+
   it('garde assez de décimales pour un taux comme 20,315 %', () => {
     expect(encoderEtat(etat({ imposition: 0.20315 }))).toContain('impots=20.315');
   });
@@ -45,6 +49,7 @@ describe('décodage', () => {
       depensesCibles: 42_000,
       inflation: 0.015,
       horizon: 25,
+      dureeExigee: 20,
       modeRetrait: 'proportionnel',
       pays: 'japon',
     });
@@ -65,13 +70,14 @@ describe('décodage', () => {
 
   it('borne les valeurs de l’adresse, qui n’est pas une entrée de confiance', () => {
     const h = decoderEtat(
-      '?patrimoine=-500&rendement=999&retrait=-4&impots=90&horizon=1000',
+      '?patrimoine=-500&rendement=999&retrait=-4&impots=90&horizon=1000&duree=999',
     );
     expect(h.patrimoine).toBe(BORNES.patrimoine.min);
     expect(h.rendement).toBe(BORNES.rendement.max);
     expect(h.retrait).toBe(BORNES.retrait.min);
     expect(h.imposition).toBe(BORNES.imposition.max);
     expect(h.horizon).toBe(BORNES.horizon.max);
+    expect(h.dureeExigee).toBe(BORNES.dureeExigee.max);
   });
 
   it('ignore ce qui n’est pas un nombre', () => {

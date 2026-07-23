@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Curseur, CurseurLog, Montant, Segments } from './components/Champs';
 import { Verdict } from './components/Verdict';
-import { Projection, type ModeAffichage } from './components/Projection';
+import { Projection, type ModeAffichage, type Serie } from './components/Projection';
 import { Detail } from './components/Detail';
 import { Objectif } from './components/Objectif';
 import { Comparaison } from './components/Comparaison';
@@ -11,7 +11,15 @@ import { BoutonPartage } from './components/BoutonPartage';
 import { ContexteLangue, useFormats, useTextes, useTraduire } from './lib/contexte';
 import { langueDuNavigateur, type Langue } from './lib/i18n';
 import { TEXTES } from './lib/textes';
-import { BORNES, DEFAUTS, scenarios, simuler, type Hypotheses } from './lib/fire';
+import {
+  BORNES,
+  DEFAUTS,
+  niveauDe,
+  scenarios,
+  scenariosPays,
+  simuler,
+  type Hypotheses,
+} from './lib/fire';
 import {
   PAYS,
   pays as paysDe,
@@ -91,6 +99,7 @@ function Simulateur({
     decoderEtat(typeof window === 'undefined' ? '' : window.location.search),
   );
   const [mode, setMode] = useState<ModeAffichage>('courant');
+  const [comparaison, setComparaison] = useState<'rendement' | 'pays'>('rendement');
   const [avanceOuvert, setAvanceOuvert] = useState(
     () =>
       h.inflation !== DEFAUTS.inflation ||
@@ -126,6 +135,39 @@ function Simulateur({
   const r = useMemo(() => simuler(h), [h]);
   const jeux = useMemo(() => scenarios(h), [h]);
   const central = jeux.find((s) => s.cle === 'central') ?? jeux[0];
+  const jeuxPays = useMemo(() => scenariosPays(h), [h]);
+  // The verdict is pronounced on the central scenario: it is the plan as the
+  // user stated it, the other two being what-ifs around it.
+  const niveau = niveauDe(h, central.projection);
+
+  const libelleScenario = {
+    pessimiste: t.projection.libellePessimiste,
+    central: t.projection.libelleCentral,
+    optimiste: t.projection.libelleOptimiste,
+  };
+
+  const series: Serie[] =
+    comparaison === 'rendement'
+      ? jeux.map((s) => ({
+          cle: s.cle,
+          libelle: libelleScenario[s.cle],
+          legende: t.projection.serieTaux(libelleScenario[s.cle], pct(s.rendement, 1)),
+          couleur:
+            s.cle === 'central' ? 'var(--color-brand-600)' : 'var(--color-brand-400)',
+          trajectoire: s.projection,
+          secondaire: s.cle !== 'central',
+        }))
+      : jeuxPays.map((sp) => ({
+          cle: sp.pays,
+          libelle: tr(paysDe(sp.pays).libelle),
+          legende: t.projection.seriePays(
+            tr(paysDe(sp.pays).libelle),
+            tauxPct(sp.hypotheses.retrait),
+            eur(sp.resultat.revenuNetMensuel),
+          ),
+          couleur: paysDe(sp.pays).couleur,
+          trajectoire: sp.projection,
+        }));
 
   // The URL follows the state without pushing a history entry on every slider
   // notch. The delay avoids calling replaceState dozens of times during a
@@ -345,6 +387,20 @@ function Simulateur({
                       }))}
                       hint={t.saisie.horizonHint}
                     />
+                    <Curseur
+                      label={t.saisie.dureeLabel}
+                      valeur={h.dureeExigee}
+                      min={BORNES.dureeExigee.min}
+                      max={h.horizon}
+                      pas={1}
+                      onChange={(v) => maj('dureeExigee', v)}
+                      rendu={(v) => `${v} ${t.saisie.horizonUnite}`}
+                      saisie={{ suffixe: t.saisie.horizonUnite }}
+                      reperes={[20, 30, 40]
+                        .filter((v) => v <= h.horizon)
+                        .map((v) => ({ valeur: v, label: String(v) }))}
+                      hint={t.saisie.dureeHint}
+                    />
                     <div className="sm:col-span-2">
                       <Segments
                         label={t.saisie.modeLabel}
@@ -372,11 +428,7 @@ function Simulateur({
             <div className="lg:col-span-5">
               <div className="lg:sticky lg:top-24">
                 <div className="card overflow-hidden">
-                  <Verdict
-                    h={h}
-                    r={r}
-                    anneeEpuisement={central.projection.anneeEpuisement}
-                  />
+                  <Verdict h={h} r={r} niveau={niveau} projection={central.projection} />
 
                   <div className="px-6 py-6 sm:px-8">
                     <dl className="space-y-3">
@@ -436,10 +488,23 @@ function Simulateur({
                   {t.projection.titre(h.horizon)}
                 </h2>
                 <p className="mt-2 max-w-2xl leading-relaxed text-ink-500">
-                  {t.projection.intro}
+                  {comparaison === 'rendement'
+                    ? t.projection.introRendement
+                    : t.projection.introPays}
                 </p>
               </div>
-              <div className="w-full sm:w-72">
+              <div className="grid w-full gap-3 sm:w-80">
+                <Segments
+                  valeur={comparaison}
+                  options={[
+                    {
+                      valeur: 'rendement' as const,
+                      label: t.projection.comparerRendement,
+                    },
+                    { valeur: 'pays' as const, label: t.projection.comparerPays },
+                  ]}
+                  onChange={setComparaison}
+                />
                 <Segments
                   valeur={mode}
                   options={[
@@ -452,10 +517,17 @@ function Simulateur({
             </div>
 
             <div className="card mt-8 p-5 sm:p-8">
-              <Projection scenarios={jeux} patrimoineInitial={h.patrimoine} mode={mode} />
+              <Projection
+                series={series}
+                bande={comparaison === 'rendement' ? ['pessimiste', 'optimiste'] : undefined}
+                patrimoineInitial={h.patrimoine}
+                mode={mode}
+                dureeExigee={h.dureeExigee}
+              />
             </div>
 
             <p className="mt-4 max-w-3xl text-sm leading-relaxed text-ink-500">
+              {comparaison === 'pays' && `${t.projection.notePays} `}
               {mode === 'courant'
                 ? t.projection.noteCourant
                 : t.projection.noteConstant(pct(h.inflation, 1), h.horizon)}
@@ -520,18 +592,22 @@ function Simulateur({
           <span
             className={[
               'shrink-0 rounded-full px-3 py-1.5 text-xs font-medium',
-              r.verdict === 'entame'
+              niveau === 'insuffisant'
                 ? 'bg-brique-50 text-brique-700'
-                : r.verdict === 'sans-patrimoine'
-                  ? 'bg-ink-100 text-ink-600'
-                  : 'bg-jade-50 text-jade-700',
+                : niveau === 'suffisant'
+                  ? 'bg-brand-50 text-brand-700'
+                  : niveau === 'sans-patrimoine'
+                    ? 'bg-ink-100 text-ink-600'
+                    : 'bg-jade-50 text-jade-700',
             ].join(' ')}
           >
-            {r.verdict === 'entame'
-              ? t.mobile.entame
-              : r.verdict === 'sans-patrimoine'
-                ? t.mobile.sans
-                : t.mobile.preserve}
+            {niveau === 'insuffisant'
+              ? t.mobile.insuffisant
+              : niveau === 'suffisant'
+                ? t.mobile.suffisant
+                : niveau === 'sans-patrimoine'
+                  ? t.mobile.sans
+                  : t.mobile.preserve}
           </span>
         </div>
       </div>

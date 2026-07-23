@@ -1,35 +1,40 @@
 import { useFormats, useTextes } from '../lib/contexte';
-import type { Hypotheses, Resultat } from '../lib/fire';
+import type { Hypotheses, Niveau, Projection, Resultat } from '../lib/fire';
 
 /**
  * The answer to the question the tool exists for, as one dominant banner.
  *
- * Three things are said, in decreasing order of importance: is the capital
- * preserved, how much that leaves per month, and whether it covers the life the
- * user actually wants. The colour split is reserved for the first one — the
- * only genuinely binary statement of the three — and it never carries the
- * meaning alone: the banner always spells out the answer in words.
+ * Three things are said, in decreasing order of importance: how well the plan
+ * holds, how much that leaves per month, and whether it covers the life the
+ * user actually wants.
+ *
+ * The colour comes from the level, not from the nominal verdict, because "the
+ * capital runs out" is not one situation but two: running out after the years
+ * the user asked for is a plan, running out before them is a failure. Green,
+ * orange and red say which, and never alone — the banner always spells the
+ * answer out in words.
  */
 
 type Props = {
   h: Hypotheses;
   r: Resultat;
-  /** Depletion year of the central scenario, when the plan breaks. */
-  anneeEpuisement: number | null;
+  niveau: Niveau;
+  /** Central scenario, which is the one the verdict is pronounced on. */
+  projection: Projection;
 };
 
-const HABILLAGE = {
+const HABILLAGE: Record<Niveau, { fond: string; accent: string; puce: string }> = {
   preserve: {
     fond: 'bg-jade-700',
     accent: 'text-jade-100',
     puce: 'bg-jade-600 text-white',
   },
-  limite: {
-    fond: 'bg-jade-800',
-    accent: 'text-jade-100',
-    puce: 'bg-jade-700 text-white',
+  suffisant: {
+    fond: 'bg-brand-700',
+    accent: 'text-brand-100',
+    puce: 'bg-brand-600 text-white',
   },
-  entame: {
+  insuffisant: {
     fond: 'bg-brique-700',
     accent: 'text-brique-100',
     puce: 'bg-brique-600 text-white',
@@ -39,43 +44,52 @@ const HABILLAGE = {
     accent: 'text-ink-300',
     puce: 'bg-ink-600 text-white',
   },
-} as const;
+};
 
-export function Verdict({ h, r, anneeEpuisement }: Props) {
+export function Verdict({ h, r, niveau, projection }: Props) {
   const t = useTextes();
   const { eur, points } = useFormats();
-  const style = HABILLAGE[r.verdict];
+  const style = HABILLAGE[niveau];
 
   const badge = {
-    preserve: t.verdict.badgeOui,
-    limite: t.verdict.badgeOuiJuste,
-    entame: t.verdict.badgeNon,
+    preserve: t.verdict.badgePreserve,
+    suffisant: t.verdict.badgeSuffisant,
+    insuffisant: t.verdict.badgeInsuffisant,
     'sans-patrimoine': t.verdict.badgePasEncore,
-  }[r.verdict];
+  }[niveau];
 
   const sousTitre = {
     preserve: t.verdict.sousTitrePreserve,
-    limite: t.verdict.sousTitrePreserve,
-    entame: t.verdict.sousTitreEntame,
+    suffisant: t.verdict.sousTitreSuffisant(h.dureeExigee),
+    insuffisant: t.verdict.sousTitreInsuffisant(h.dureeExigee),
     'sans-patrimoine': t.verdict.sousTitreSans,
-  }[r.verdict];
+  }[niveau];
 
   const corps = () => {
-    switch (r.verdict) {
+    const epuisement = projection.anneeEpuisement;
+    switch (niveau) {
       case 'sans-patrimoine':
         return t.verdict.corpsSans;
       case 'preserve':
-        return h.retrait === 0
-          ? t.verdict.corpsSansRetrait
-          : t.verdict.corpsPreserve(eur(r.variationCapital), points(r.marge));
-      case 'limite':
-        return t.verdict.corpsLimite;
-      case 'entame':
-        return `${t.verdict.corpsEntame(eur(-r.variationCapital))} ${
-          anneeEpuisement !== null
-            ? t.verdict.epuiseEn(anneeEpuisement)
-            : t.verdict.pasEpuise
-        }`;
+        // Nothing runs out over the horizon, but the capital may still be
+        // shrinking — the nominal verdict is what tells the two apart.
+        if (h.retrait === 0) return t.verdict.corpsSansRetrait;
+        if (r.verdict === 'entame')
+          return t.verdict.corpsDeclinSansFin(eur(-r.variationCapital));
+        if (r.verdict === 'limite') return t.verdict.corpsLimite;
+        return t.verdict.corpsPreserve(eur(r.variationCapital), points(r.marge));
+      case 'suffisant':
+        return t.verdict.corpsSuffisant(
+          projection.anneesTenues,
+          h.dureeExigee,
+          epuisement ?? projection.anneesTenues + 1,
+        );
+      case 'insuffisant':
+        return t.verdict.corpsInsuffisant(
+          projection.anneesTenues,
+          h.dureeExigee,
+          epuisement ?? projection.anneesTenues + 1,
+        );
     }
   };
 
@@ -109,7 +123,7 @@ export function Verdict({ h, r, anneeEpuisement }: Props) {
 
       {/* The real-terms caveat is what turns a comfortable "yes" into a slow
           erosion, so it sits inside the banner rather than in a footnote. */}
-      {r.verdict !== 'sans-patrimoine' && h.retrait > 0 && !r.preserveEnReel && (
+      {niveau !== 'sans-patrimoine' && h.retrait > 0 && !r.preserveEnReel && (
         <p className="mt-3 rounded-xl bg-black/15 px-4 py-3 text-xs leading-relaxed">
           <strong className="font-semibold">{t.verdict.reelFort}</strong>{' '}
           {t.verdict.reelCorps(points(-r.margeReelle))}

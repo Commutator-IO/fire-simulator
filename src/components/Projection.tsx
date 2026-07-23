@@ -1,13 +1,36 @@
 import { useMemo, useRef, useState } from 'react';
 import { useFormats, useTextes } from '../lib/contexte';
-import type { Scenario } from '../lib/fire';
+import type { Projection as Trajectoire } from '../lib/fire';
 
 export type ModeAffichage = 'courant' | 'constant';
 
+/**
+ * One curve on the chart.
+ *
+ * The component knows nothing of returns or countries: it draws whatever series
+ * it is handed. That is what lets the same chart compare three returns in one
+ * view and two countries in the next, without a branch per comparison.
+ */
+export type Serie = {
+  cle: string;
+  /** Short form, used in the hovered read-out where space is scarce. */
+  libelle: string;
+  /** Long form for the legend; falls back to the short one. */
+  legende?: string;
+  couleur: string;
+  trajectoire: Trajectoire;
+  /** Drawn thin and dashed, and left out of the hovered read-out. */
+  secondaire?: boolean;
+};
+
 type Props = {
-  scenarios: Scenario[];
+  series: Serie[];
+  /** Keys of the two series enclosing the shaded band, when there is one. */
+  bande?: [string, string];
   patrimoineInitial: number;
   mode: ModeAffichage;
+  /** Year the capital is required to reach, drawn as a vertical marker. */
+  dureeExigee: number;
 };
 
 const L = 64; // left margin
@@ -27,7 +50,7 @@ function pasLisible(brut: number): number {
 }
 
 /**
- * Capital over the horizon, under the three compared returns.
+ * Capital over the horizon.
  *
  * Drawn as SVG and scaled through the viewBox — no external dependency.
  *
@@ -37,33 +60,30 @@ function pasLisible(brut: number): number {
  * as a horizontal reference: staying above that line *is* the answer to
  * "without touching the capital".
  */
-export function Projection({ scenarios, patrimoineInitial, mode }: Props) {
+export function Projection({ series, bande, patrimoineInitial, mode, dureeExigee }: Props) {
   const t = useTextes();
-  const { eur, eurCompact, pct } = useFormats();
+  const { eur, eurCompact } = useFormats();
   const svgRef = useRef<SVGSVGElement>(null);
   const [survol, setSurvol] = useState<number | null>(null);
 
-  const central = scenarios.find((s) => s.cle === 'central') ?? scenarios[0];
-  const pessimiste = scenarios.find((s) => s.cle === 'pessimiste') ?? central;
-  const optimiste = scenarios.find((s) => s.cle === 'optimiste') ?? central;
-
-  const horizon = central.projection.annees.length;
+  const principale = series.find((s) => !s.secondaire) ?? series[0];
+  const horizon = principale.trajectoire.annees.length;
 
   // Year 0 is the starting capital: without it the curves would appear to
   // begin after the first withdrawal.
-  const serie = useMemo(
-    () => (s: Scenario) =>
+  const valeurs = useMemo(
+    () => (s: Serie) =>
       [
         patrimoineInitial,
-        ...s.projection.annees.map((a) =>
+        ...s.trajectoire.annees.map((a) =>
           mode === 'courant' ? a.capitalFin : a.capitalFinReel,
         ),
       ],
     [patrimoineInitial, mode],
   );
 
-  const { x, y, cheminDe, bande, graduationsY, graduationsX } = useMemo(() => {
-    const toutes = scenarios.flatMap(serie);
+  const { x, y, cheminDe, aireBande, graduationsY, graduationsX } = useMemo(() => {
+    const toutes = series.flatMap(valeurs);
     const maxBrut = Math.max(...toutes, patrimoineInitial, 1);
     const pasY = pasLisible(maxBrut / 4);
     const maxY = Math.ceil(maxBrut / pasY) * pasY;
@@ -71,20 +91,23 @@ export function Projection({ scenarios, patrimoineInitial, mode }: Props) {
     const x = (annee: number) => L + (annee / Math.max(1, horizon)) * (W - L - R);
     const y = (valeur: number) => T + (1 - valeur / maxY) * (H - T - B);
 
-    const cheminDe = (valeurs: number[]) =>
-      valeurs
+    const cheminDe = (points: number[]) =>
+      points
         .map((v, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(v).toFixed(1)}`)
         .join(' ');
 
-    // Out along the optimistic curve, back along the pessimistic one: the
-    // enclosed area is the spread between the two.
-    const basses = serie(pessimiste);
-    const retour = basses
-      .map((valeur, annee) => ({ valeur, annee }))
-      .reverse()
-      .map(({ valeur, annee }) => `L${x(annee).toFixed(1)},${y(valeur).toFixed(1)}`)
-      .join(' ');
-    const bande = `${cheminDe(serie(optimiste))} ${retour} Z`;
+    // Out along the upper curve, back along the lower one: the enclosed area is
+    // the spread between the two.
+    const haute = bande && series.find((s) => s.cle === bande[1]);
+    const basse = bande && series.find((s) => s.cle === bande[0]);
+    const aireBande =
+      haute && basse
+        ? `${cheminDe(valeurs(haute))} ${valeurs(basse)
+            .map((valeur, annee) => ({ valeur, annee }))
+            .reverse()
+            .map(({ valeur, annee }) => `L${x(annee).toFixed(1)},${y(valeur).toFixed(1)}`)
+            .join(' ')} Z`
+        : null;
 
     const graduationsY: number[] = [];
     for (let v = 0; v <= maxY + 1; v += pasY) graduationsY.push(v);
@@ -93,11 +116,11 @@ export function Projection({ scenarios, patrimoineInitial, mode }: Props) {
     const graduationsX: number[] = [];
     for (let v = 0; v <= horizon; v += pasX) graduationsX.push(Math.round(v));
 
-    return { x, y, cheminDe, bande, graduationsY, graduationsX };
-  }, [scenarios, serie, patrimoineInitial, horizon, optimiste, pessimiste]);
+    return { x, y, cheminDe, aireBande, graduationsY, graduationsX };
+  }, [series, valeurs, bande, patrimoineInitial, horizon]);
 
   const anneeSurvolee = survol ?? horizon;
-  const valeurA = (s: Scenario, annee: number) => serie(s)[annee] ?? 0;
+  const valeurA = (s: Serie, annee: number) => valeurs(s)[annee] ?? 0;
 
   const anneeDepuisX = (clientX: number): number | null => {
     const svg = svgRef.current;
@@ -108,10 +131,7 @@ export function Projection({ scenarios, patrimoineInitial, mode }: Props) {
     return Math.min(horizon, Math.max(0, annee));
   };
 
-  const epuisement = central.projection.anneeEpuisement;
-  // Worth showing separately: the central scenario can hold while the
-  // pessimistic one breaks, and that is exactly the risk being taken.
-  const epuisementPessimiste = pessimiste.projection.anneeEpuisement;
+  const principales = series.filter((s) => !s.secondaire);
 
   return (
     <figure className="m-0">
@@ -126,8 +146,8 @@ export function Projection({ scenarios, patrimoineInitial, mode }: Props) {
       >
         <defs>
           <linearGradient id="degradeCapital" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--color-brand-500)" stopOpacity="0.16" />
-            <stop offset="100%" stopColor="var(--color-brand-500)" stopOpacity="0" />
+            <stop offset="0%" stopColor={principale.couleur} stopOpacity="0.16" />
+            <stop offset="100%" stopColor={principale.couleur} stopOpacity="0" />
           </linearGradient>
         </defs>
 
@@ -170,12 +190,16 @@ export function Projection({ scenarios, patrimoineInitial, mode }: Props) {
           </text>
         ))}
 
-        {/* Spread between the pessimistic and optimistic scenarios */}
-        <path d={bande} fill="var(--color-brand-500)" opacity="0.1" />
-        <path
-          d={`${cheminDe(serie(central))} L${x(horizon).toFixed(1)},${H - B} L${L},${H - B} Z`}
-          fill="url(#degradeCapital)"
-        />
+        {aireBande && <path d={aireBande} fill={principale.couleur} opacity="0.1" />}
+
+        {/* Only a single leading curve gets a filled area: two of them would
+            muddy each other exactly where the comparison is read. */}
+        {principales.length === 1 && (
+          <path
+            d={`${cheminDe(valeurs(principale))} L${x(horizon).toFixed(1)},${H - B} L${L},${H - B} Z`}
+            fill="url(#degradeCapital)"
+          />
+        )}
 
         {/* Starting capital: the line that must not be crossed downwards.
             Neutral on purpose — it is a reference, not a value, and colouring
@@ -190,61 +214,71 @@ export function Projection({ scenarios, patrimoineInitial, mode }: Props) {
           strokeDasharray="5 4"
         />
 
-        <path
-          d={cheminDe(serie(pessimiste))}
-          fill="none"
-          stroke="var(--color-brand-400)"
-          strokeWidth="1.5"
-          strokeDasharray="4 3"
-        />
-        <path
-          d={cheminDe(serie(optimiste))}
-          fill="none"
-          stroke="var(--color-brand-400)"
-          strokeWidth="1.5"
-          strokeDasharray="4 3"
-        />
-        <path
-          d={cheminDe(serie(central))}
-          fill="none"
-          stroke="var(--color-brand-600)"
-          strokeWidth="2.5"
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
-
-        {epuisementPessimiste !== null && epuisementPessimiste !== epuisement && (
-          <circle
-            cx={x(epuisementPessimiste)}
-            cy={y(0)}
-            r="4"
-            fill="var(--color-brique-200)"
-            stroke="#fff"
-            strokeWidth="2"
-          />
-        )}
-
-        {/* Depletion of the central scenario */}
-        {epuisement !== null && (
-          <>
+        {/* The year the capital is asked to reach. */}
+        {dureeExigee > 0 && dureeExigee < horizon && (
+          <g>
             <line
-              x1={x(epuisement)}
-              x2={x(epuisement)}
+              x1={x(dureeExigee)}
+              x2={x(dureeExigee)}
               y1={T}
               y2={H - B}
-              stroke="var(--color-brique-500)"
-              strokeWidth="1.5"
+              stroke="var(--color-ink-300)"
+              strokeWidth="1"
+              strokeDasharray="2 3"
             />
-            <circle
-              cx={x(epuisement)}
-              cy={y(0)}
-              r="5"
-              fill="var(--color-brique-500)"
-              stroke="#fff"
-              strokeWidth="2"
-            />
-          </>
+            <text
+              x={x(dureeExigee) + 5}
+              y={T + 11}
+              fontSize="10"
+              fill="var(--color-ink-400)"
+            >
+              {t.projection.repereDuree(dureeExigee)}
+            </text>
+          </g>
         )}
+
+        {series.map((s) => (
+          <path
+            key={s.cle}
+            d={cheminDe(valeurs(s))}
+            fill="none"
+            stroke={s.couleur}
+            strokeWidth={s.secondaire ? 1.5 : 2.5}
+            strokeDasharray={s.secondaire ? '4 3' : undefined}
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            opacity={s.secondaire ? 0.8 : 1}
+          />
+        ))}
+
+        {/* Depletion, in the colour of the curve it belongs to. */}
+        {series.map((s) => {
+          const epuisement = s.trajectoire.anneeEpuisement;
+          if (epuisement === null) return null;
+          return (
+            <g key={`fin-${s.cle}`}>
+              {!s.secondaire && (
+                <line
+                  x1={x(epuisement)}
+                  x2={x(epuisement)}
+                  y1={T}
+                  y2={H - B}
+                  stroke={s.couleur}
+                  strokeWidth="1.5"
+                  strokeDasharray="3 3"
+                />
+              )}
+              <circle
+                cx={x(epuisement)}
+                cy={y(0)}
+                r={s.secondaire ? 4 : 5.5}
+                fill={s.couleur}
+                stroke="#fff"
+                strokeWidth="2"
+              />
+            </g>
+          );
+        })}
 
         {/* Hovered year */}
         <line
@@ -255,14 +289,17 @@ export function Projection({ scenarios, patrimoineInitial, mode }: Props) {
           stroke="var(--color-ink-300)"
           strokeWidth="1"
         />
-        <circle
-          cx={x(anneeSurvolee)}
-          cy={y(valeurA(central, anneeSurvolee))}
-          r="6"
-          fill="var(--color-brand-600)"
-          stroke="#fff"
-          strokeWidth="2.5"
-        />
+        {principales.map((s) => (
+          <circle
+            key={`point-${s.cle}`}
+            cx={x(anneeSurvolee)}
+            cy={y(valeurA(s, anneeSurvolee))}
+            r="6"
+            fill={s.couleur}
+            stroke="#fff"
+            strokeWidth="2.5"
+          />
+        ))}
       </svg>
 
       <figcaption className="mt-3 space-y-2 text-xs text-ink-500">
@@ -270,41 +307,27 @@ export function Projection({ scenarios, patrimoineInitial, mode }: Props) {
           {anneeSurvolee === 0
             ? t.projection.survolAujourdhui
             : t.projection.survolAnnee(anneeSurvolee)}{' '}
-          —{' '}
-          {t.projection.survolCorps(
-            eur(valeurA(central, anneeSurvolee)),
-            eur(valeurA(pessimiste, anneeSurvolee)),
-            eur(valeurA(optimiste, anneeSurvolee)),
-          )}
+          — {series.map((s) => `${s.libelle} ${eur(valeurA(s, anneeSurvolee))}`).join(' · ')}
         </p>
         <p className="flex flex-wrap items-center gap-x-5 gap-y-1">
+          {series.map((s) => (
+            <span key={`legende-${s.cle}`} className="flex items-center gap-1.5">
+              <span
+                className="h-0.5 w-4 shrink-0 rounded-full"
+                style={{ backgroundColor: s.couleur }}
+              />
+              {s.legende ?? s.libelle}
+              {s.trajectoire.anneeEpuisement !== null && (
+                <span className="text-brique-600">
+                  {t.projection.legendeEpuisement(s.trajectoire.anneeEpuisement)}
+                </span>
+              )}
+            </span>
+          ))}
           <span className="flex items-center gap-1.5">
-            <span className="h-0.5 w-4 rounded-full bg-brand-600" />
-            {t.projection.legendeCentral(pct(central.rendement, 1))}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-4 rounded-sm bg-brand-500/20" />
-            {t.projection.legendeBande(
-              pct(pessimiste.rendement, 1),
-              pct(optimiste.rendement, 1),
-            )}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-0.5 w-4 rounded-full bg-ink-400" />
+            <span className="h-0.5 w-4 shrink-0 rounded-full bg-ink-400" />
             {t.projection.legendeDepart(eur(patrimoineInitial))}
           </span>
-          {epuisement !== null && (
-            <span className="flex items-center gap-1.5 text-brique-600">
-              <span className="h-2.5 w-0.5 rounded-full bg-brique-500" />
-              {t.projection.legendeEpuisement(epuisement)}
-            </span>
-          )}
-          {epuisementPessimiste !== null && epuisementPessimiste !== epuisement && (
-            <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-brique-200" />
-              {t.projection.legendeEpuisementPessimiste(epuisementPessimiste)}
-            </span>
-          )}
         </p>
       </figcaption>
     </figure>

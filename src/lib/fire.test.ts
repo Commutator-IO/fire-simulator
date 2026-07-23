@@ -3,13 +3,16 @@ import {
   BORNES,
   DEFAUTS,
   borner,
+  niveauDe,
   patrimoineRequis,
   projeter,
   scenarios,
+  scenariosPays,
   simuler,
   verdictDe,
   type Hypotheses,
 } from './fire';
+import { PAYS, pays, regimeParDefaut } from './pays';
 
 /**
  * Les valeurs de l'exemple chiffré de la spécification, posées explicitement.
@@ -290,5 +293,115 @@ describe('verdictDe', () => {
     expect(h({ retrait: 0.04, rendement: 0.05 })).toBe('preserve');
     expect(h({ retrait: 0.05, rendement: 0.05 })).toBe('limite');
     expect(h({ retrait: 0.05, rendement: 0.04 })).toBe('entame');
+  });
+});
+
+describe('niveau de tenue', () => {
+  // Un capital qui rapporte 0 % et dont on retire 40 000 € sur 200 000 € tient
+  // exactement cinq ans, et casse la sixième année.
+  const court = (dureeExigee: number): Hypotheses => ({
+    ...BASE,
+    patrimoine: 200_000,
+    rendement: 0,
+    retrait: 0.2,
+    inflation: 0,
+    horizon: 20,
+    dureeExigee,
+  });
+
+  const niveau = (h: Hypotheses) => niveauDe(h, projeter(h));
+
+  it('reste au vert tant que rien ne s’épuise', () => {
+    expect(niveau({ ...BASE, retrait: 0.02, inflation: 0 })).toBe('preserve');
+  });
+
+  it('passe à l’orange quand l’épuisement survient après la durée exigée', () => {
+    // Cinq années servies : une exigence de cinq ans est tenue.
+    expect(niveau(court(5))).toBe('suffisant');
+  });
+
+  it('passe au rouge quand l’épuisement survient avant', () => {
+    expect(niveau(court(6))).toBe('insuffisant');
+    expect(niveau(court(10))).toBe('insuffisant');
+  });
+
+  it('compte les années servies, pas l’année de rupture', () => {
+    const p = projeter(court(5));
+    expect(p.anneeEpuisement).toBe(6);
+    expect(p.anneesTenues).toBe(5);
+  });
+
+  it('donne l’horizon entier quand rien ne casse', () => {
+    const p = projeter({ ...BASE, retrait: 0.02, inflation: 0, horizon: 25 });
+    expect(p.anneeEpuisement).toBeNull();
+    expect(p.anneesTenues).toBe(25);
+  });
+
+  it('ignore le patrimoine nul avant toute autre considération', () => {
+    expect(niveau({ ...court(5), patrimoine: 0 })).toBe('sans-patrimoine');
+  });
+
+  it('n’exige jamais plus d’années que la projection n’en couvre', () => {
+    expect(borner({ ...BASE, horizon: 15, dureeExigee: 40 }).dureeExigee).toBe(15);
+    expect(borner({ ...BASE, horizon: 40, dureeExigee: 3 }).dureeExigee).toBe(
+      BORNES.dureeExigee.min,
+    );
+  });
+
+  // Le verdict nominal et le niveau ne disent pas la même chose, et c'est
+  // voulu : avec l'inflation, un retrait indexé sous le rendement finit tout
+  // de même par épuiser le capital.
+  it('se distingue du verdict nominal', () => {
+    const h: Hypotheses = {
+      ...BASE,
+      rendement: 0.05,
+      retrait: 0.04,
+      inflation: 0.02,
+      horizon: 60,
+      dureeExigee: 30,
+    };
+    expect(simuler(h).verdict).toBe('preserve');
+    expect(projeter(h).anneeEpuisement).not.toBeNull();
+    expect(niveau(h)).toBe('suffisant');
+  });
+});
+
+describe('scénarios par pays', () => {
+  it('produit une trajectoire par pays', () => {
+    const jeux = scenariosPays(BASE);
+    expect(jeux.map((j) => j.pays)).toEqual(PAYS.map((p) => p.cle));
+  });
+
+  it('applique à chacun ses valeurs de départ et son enveloppe', () => {
+    for (const jeu of scenariosPays(BASE)) {
+      const p = pays(jeu.pays);
+      expect(jeu.hypotheses.retrait).toBeCloseTo(p.defauts.retrait, 10);
+      expect(jeu.hypotheses.inflation).toBeCloseTo(p.defauts.inflation, 10);
+      expect(jeu.hypotheses.imposition).toBeCloseTo(
+        regimeParDefaut(jeu.pays).imposition,
+        10,
+      );
+    }
+  });
+
+  // Le rendement est celui du portefeuille, pas du pays : un portefeuille
+  // diversifié mondialement est le même où que vive son propriétaire.
+  it('conserve ce qui ne dépend pas du lieu de résidence', () => {
+    const depart: Hypotheses = { ...BASE, patrimoine: 750_000, rendement: 0.07, horizon: 25 };
+    for (const jeu of scenariosPays(depart)) {
+      expect(jeu.hypotheses.patrimoine).toBe(750_000);
+      expect(jeu.hypotheses.rendement).toBeCloseTo(0.07, 10);
+      expect(jeu.hypotheses.horizon).toBe(25);
+    }
+  });
+
+  it('sépare les pays par leur taux de retrait, pas par leur imposition', () => {
+    const [france, japon] = scenariosPays(BASE);
+    // Le Japon retire moins : son capital tient donc mieux.
+    expect(japon.projection.capitalFinal).toBeGreaterThan(france.projection.capitalFinal);
+    // L'imposition, elle, ne se lit que sur le revenu.
+    expect(japon.resultat.revenuNetAnnuel / japon.resultat.retraitBrut).toBeGreaterThan(
+      france.resultat.revenuNetAnnuel / france.resultat.retraitBrut,
+    );
   });
 });

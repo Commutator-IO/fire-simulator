@@ -23,8 +23,9 @@ si la moyenne sur trente ans reste excellente — on retire des parts au plus ba
 et il n'en reste plus assez pour profiter du rebond. C'est le *sequence of
 returns risk*, et il est invisible dans la version actuelle.
 
-**Ce que ça donnerait.** Au lieu d'un verdict binaire, un taux de réussite :
-« ce plan tient dans 87 % des scénarios ». Et une lecture du risque par période :
+**Ce que ça donnerait.** Au lieu d'une trajectoire unique, un taux de réussite :
+« ce plan tient dans 87 % des scénarios ». La durée exigée est déjà en place et
+servirait de critère de réussite, sans rien changer à l'interface. Et une lecture du risque par période :
 « dans les cas d'échec, la rupture se joue toujours avant l'année 12 ».
 
 **Pistes, de la moins à la plus coûteuse.**
@@ -176,7 +177,7 @@ plus correspondu à aucun régime français après le passage de la flat tax à
 ## 8. Tests d'interface
 
 Le moteur, l'échelle, les formats, le dictionnaire et l'adresse sont couverts
-([84 tests](src/lib)). Les composants ne le sont pas du tout : aucun test ne
+([97 tests](src/lib)). Les composants ne le sont pas du tout : aucun test ne
 vérifie qu'un clic sur « Japon » recharge bien les hypothèses du pays, ni que le
 verdict bascule au bon moment.
 

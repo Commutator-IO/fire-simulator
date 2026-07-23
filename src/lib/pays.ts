@@ -43,6 +43,12 @@ export type Pays = {
    * figures and not others — an unexplained default is an opinion in disguise.
    */
   defauts: { rendement: number; retrait: number; inflation: number };
+  /**
+   * Colour of this country's curve when several are drawn together. Held here
+   * rather than in the chart so a country always looks the same wherever it
+   * appears, and so adding one means picking its colour once.
+   */
+  couleur: string;
   justification: Traduit;
   noteInflation: Traduit;
   regimes: Regime[];
@@ -146,6 +152,7 @@ export const PAYS: Pays[] = [
     cle: 'france',
     libelle: { fr: 'France', en: 'France' },
     defauts: { rendement: 0.05, retrait: 0.035, inflation: 0.02 },
+    couleur: 'var(--color-brand-600)',
     justification: {
       fr: 'Un retrait de 4 % a échoué dans 71,3 % des périodes de trente ans en France, sur les données historiques réunies par Wade Pfau : 3,5 % est un point de départ plus sobre. Le rendement de 5 % suppose un portefeuille diversifié, et l’inflation reprend la cible de la BCE.',
       en: 'A 4% withdrawal failed in 71.3% of thirty-year periods in France on the historical data assembled by Wade Pfau, so 3.5% is a soberer starting point. The 5% return assumes a diversified portfolio, and inflation follows the ECB target.',
@@ -160,6 +167,7 @@ export const PAYS: Pays[] = [
     cle: 'japon',
     libelle: { fr: 'Japon', en: 'Japan' },
     defauts: { rendement: 0.05, retrait: 0.03, inflation: 0.02 },
+    couleur: 'var(--color-azur-600)',
     justification: {
       fr: 'Le Japon est le contre-exemple de la règle des 4 % : sur un portefeuille purement domestique, le retrait historiquement soutenable tombe à 0,25 %, et ne remonte qu’à 2,2 % avec une diversification mondiale. Partir de 3 % reste optimiste. Le rendement de 5 % suppose un portefeuille diversifié, et l’inflation reprend la cible de la Banque du Japon.',
       en: 'Japan is the counter-example to the 4% rule: on a purely domestic portfolio the historically sustainable withdrawal falls to 0.25%, and rises only to 2.2% with global diversification. Starting at 3% is still optimistic. The 5% return assumes a diversified portfolio, and inflation follows the Bank of Japan target.',

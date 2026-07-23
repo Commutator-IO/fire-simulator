@@ -28,6 +28,7 @@ const CLES = {
   depenses: 'depenses',
   inflation: 'inflation',
   horizon: 'horizon',
+  duree: 'duree',
   mode: 'mode',
   pays: 'pays',
   langue: 'lang',
@@ -93,6 +94,7 @@ export function encoderEtat(
   ajouter(CLES.depenses, arrondi(etat.depensesCibles), arrondi(defauts.depensesCibles));
   ajouter(CLES.inflation, enPoints(etat.inflation), enPoints(defauts.inflation));
   ajouter(CLES.horizon, arrondi(etat.horizon), arrondi(defauts.horizon));
+  ajouter(CLES.duree, arrondi(etat.dureeExigee), arrondi(defauts.dureeExigee));
   ajouter(CLES.mode, etat.modeRetrait, defauts.modeRetrait);
   ajouter(CLES.pays, etat.pays, defauts.pays);
   if (langue !== null) params.set(CLES.langue, langue);
@@ -156,6 +158,12 @@ export function decoderEtat(recherche: string, defauts: Hypotheses = DEFAUTS): H
       defauts.horizon,
       BORNES.horizon.min,
       BORNES.horizon.max,
+    ),
+    dureeExigee: nombre(
+      p.get(CLES.duree),
+      defauts.dureeExigee,
+      BORNES.dureeExigee.min,
+      BORNES.dureeExigee.max,
     ),
     modeRetrait: (mode === 'indexe' || mode === 'proportionnel'
       ? mode

@@ -39,6 +39,12 @@
   --color-jade-700: #0c624a;
   --color-jade-800: #0b4e3c;
 
+  /* Second curve when countries are drawn together. Cool enough not to be
+     taken for the orange chrome, and far from both verdict colours. */
+  --color-azur-100: #e2edf8;
+  --color-azur-500: #4a7fc1;
+  --color-azur-600: #35619b;
+
   --color-brique-50: #fdf2f5;
   --color-brique-100: #fbdfe7;
   --color-brique-200: #f2bccc;

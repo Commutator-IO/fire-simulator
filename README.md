@@ -11,7 +11,7 @@ verdict, le revenu net mensuel et la projection du capital sur quarante ans.
 ```bash
 npm install
 npm run dev      # serveur de développement
-npm test         # 84 tests sur le moteur, les formats et les traductions
+npm test         # 97 tests sur le moteur, les formats et les traductions
 npm run build    # build de production
 npm run lint
 ```
@@ -47,9 +47,27 @@ retrait. En pouvoir d'achat, la condition devient `Z ≤ Y − i`, et c'est souv
 là que le « oui » se transforme en « non » : 4 % de retrait pour 5 % de rendement
 et 2 % d'inflation préserve le capital en euros mais l'érode en pouvoir d'achat.
 
-Trois paramètres complètent la projection : les dépenses annuelles cibles **D**
+### Trois réponses, pas deux
+
+« Le capital s'épuise » n'est pas une situation mais deux, et le verdict le dit
+avec trois couleurs plutôt qu'un oui/non. Vous indiquez **combien d'années le
+capital doit tenir** (30 par défaut, l'horizon des travaux de Bengen) :
+
+| | Ce qui se passe |
+| --- | --- |
+| **Vert** | Rien ne s'épuise sur tout l'horizon de projection |
+| **Orange** | Le capital s'épuise, mais après les années demandées — c'est un plan, pas un échec : à 65 ans on n'a pas de raison d'exiger un capital qui vous survive |
+| **Rouge** | Il s'épuise avant |
+
+Cette lecture ne dit pas la même chose que le verdict nominal `Z ≤ Y`, et le
+désaccord est instructif : avec l'inflation, un retrait indexé sous le rendement
+finit tout de même par vider le capital, si bien qu'un « oui » en euros peut
+recouvrir un plan qui s'arrête en année 38.
+
+Quatre paramètres complètent la projection : les dépenses annuelles cibles **D**
 (pour comparer le revenu au train de vie et calculer le patrimoine nécessaire,
-`X = D ÷ (Z × (1 − α))`), l'inflation **i** et l'horizon **N**.
+`X = D ÷ (Z × (1 − α))`), l'inflation **i**, l'horizon **N** et la durée que le
+capital doit tenir.
 
 ### Les deux façons de retirer
 
@@ -126,9 +144,25 @@ régimes avec leur taux, leur composition et leur réserve, plus les sources dan
 
 ### Scénarios comparés
 
-La projection est jouée trois fois, à `Y − 2 points`, `Y` et `Y + 2 points`. Un
-rendement constant n'a pas la précision qu'une courbe unique laisserait croire ;
-ce qui compte est la marge dont le plan dispose avant de casser.
+Le graphique se lit de deux façons, au choix.
+
+**Par rendement** — la projection est jouée trois fois, à `Y − 2 points`, `Y` et
+`Y + 2 points`. Un rendement constant n'a pas la précision qu'une courbe unique
+laisserait croire ; ce qui compte est la marge dont le plan dispose avant de
+casser.
+
+**Par pays** — les deux pays sont superposés, chacun avec son plan de départ :
+son taux de retrait, son imposition et son inflation de référence. Le patrimoine,
+le rendement et l'horizon sont ceux de l'utilisateur, puisqu'ils ne dépendent pas
+du lieu de résidence.
+
+À noter, parce que ce n'est pas intuitif : **l'imposition ne déforme pas une
+courbe de capital**. Ce qui sort du portefeuille est le retrait brut ; l'impôt ne
+mord qu'ensuite, sur le revenu. Deux pays qui ne différeraient que par leur
+fiscalité donneraient donc deux courbes identiques. Ce sont les taux de retrait
+qui les séparent, et l'écart d'imposition se lit sur le revenu net indiqué en
+légende — avec les valeurs par défaut, la France et le Japon versent presque le
+même revenu mensuel, mais le capital japonais finit à 1,10 M€ contre 0,70 M€.
 
 ## Hypothèses assumées
 

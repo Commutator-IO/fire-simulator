@@ -1,4 +1,5 @@
 import {
+  PAYS,
   PAYS_PAR_DEFAUT,
   estClePays,
   pays,
@@ -42,6 +43,19 @@ export type Hypotheses = {
   inflation: number;
   /** N — projection horizon, in years. */
   horizon: number;
+  /**
+   * How many years the capital has to last before the plan counts as holding.
+   *
+   * Preserving the capital for ever and running it down over a lifetime are two
+   * different plans, and both are legitimate: someone retiring at sixty-five
+   * has no reason to demand a capital that outlives them. This is where that
+   * intent is stated, and it is what turns the verdict from a yes/no into three
+   * answers — never depleted, depleted late enough, depleted too soon.
+   *
+   * Capped by the horizon, since nothing can be said about years the projection
+   * does not cover.
+   */
+  dureeExigee: number;
   modeRetrait: ModeRetrait;
   /**
    * Country of residence. It changes nothing in the arithmetic — the tax
@@ -105,6 +119,12 @@ export type Projection = {
   annees: AnneeProjection[];
   /** First year the planned withdrawal can no longer be honoured, if any. */
   anneeEpuisement: number | null;
+  /**
+   * Years fully served, which is one less than the depletion year — breaking in
+   * year 30 means twenty-nine years were paid in full. The whole horizon when
+   * nothing breaks.
+   */
+  anneesTenues: number;
   capitalFinal: number;
   capitalFinalReel: number;
 };
@@ -128,6 +148,7 @@ export const BORNES = {
   depensesCibles: { min: 0, max: 100_000_000 },
   inflation: { min: -0.02, max: 0.1 },
   horizon: { min: 5, max: 60 },
+  dureeExigee: { min: 5, max: 60 },
 } as const;
 
 /**
@@ -145,6 +166,9 @@ export const DEFAUTS: Hypotheses = {
   imposition: regimeParDefaut(PAYS_PAR_DEFAUT).imposition,
   depensesCibles: 0,
   horizon: 40,
+  // Trente ans : l'horizon des travaux de Bengen, et une hypothèse de départ
+  // raisonnable pour un départ anticipé.
+  dureeExigee: 30,
   modeRetrait: 'indexe',
   pays: PAYS_PAR_DEFAUT,
 };
@@ -157,6 +181,7 @@ const borne = (v: number, { min, max }: { min: number; max: number }) =>
 
 /** Clamps every parameter to its bounds; the entry point of the engine. */
 export function borner(h: Hypotheses): Hypotheses {
+  const horizon = Math.round(borne(h.horizon, BORNES.horizon));
   return {
     patrimoine: borne(h.patrimoine, BORNES.patrimoine),
     rendement: borne(h.rendement, BORNES.rendement),
@@ -164,7 +189,10 @@ export function borner(h: Hypotheses): Hypotheses {
     imposition: borne(h.imposition, BORNES.imposition),
     depensesCibles: borne(h.depensesCibles, BORNES.depensesCibles),
     inflation: borne(h.inflation, BORNES.inflation),
-    horizon: Math.round(borne(h.horizon, BORNES.horizon)),
+    horizon,
+    // Exiger plus d'années que la projection n'en couvre reviendrait à se
+    // prononcer sur ce qu'elle ne montre pas.
+    dureeExigee: Math.min(horizon, Math.round(borne(h.dureeExigee, BORNES.dureeExigee))),
     modeRetrait: h.modeRetrait === 'proportionnel' ? 'proportionnel' : 'indexe',
     pays: estClePays(h.pays) ? h.pays : PAYS_PAR_DEFAUT,
   };
@@ -309,9 +337,39 @@ export function projeter(hypotheses: Hypotheses, rendement?: number): Projection
   return {
     annees,
     anneeEpuisement,
+    anneesTenues: anneeEpuisement === null ? h.horizon : anneeEpuisement - 1,
     capitalFinal: derniere?.capitalFin ?? h.patrimoine,
     capitalFinalReel: derniere?.capitalFinReel ?? h.patrimoine,
   };
+}
+
+// ---------------------------------------------------------------------------
+// How well the plan holds
+// ---------------------------------------------------------------------------
+
+/**
+ * Three answers rather than two, because "the capital runs out" is not one
+ * situation but two.
+ *
+ *  - `preserve` — nothing is ever exhausted over the horizon.
+ *  - `suffisant` — the capital does run out, but only after the years the user
+ *    said they needed. That is a plan, not a failure, and it deserves its own
+ *    colour instead of being lumped in with the red.
+ *  - `insuffisant` — it runs out too soon.
+ *
+ * This is deliberately not the same statement as `Verdict`, which answers the
+ * literal question of the brief — is the capital preserved, Z ≤ Y. The two can
+ * disagree, and that disagreement is informative: with inflation, an indexed
+ * withdrawal below the return still exhausts the capital eventually, so a
+ * nominal "yes" can hold a plan that ends in year 38.
+ */
+export type Niveau = 'sans-patrimoine' | 'preserve' | 'suffisant' | 'insuffisant';
+
+export function niveauDe(hypotheses: Hypotheses, projection: Projection): Niveau {
+  const h = borner(hypotheses);
+  if (h.patrimoine <= 0) return 'sans-patrimoine';
+  if (projection.anneeEpuisement === null) return 'preserve';
+  return projection.anneesTenues >= h.dureeExigee ? 'suffisant' : 'insuffisant';
 }
 
 export type Scenario = {
@@ -346,6 +404,53 @@ export function scenarios(hypotheses: Hypotheses): Scenario[] {
       libelle: s.libelle,
       rendement,
       projection: projeter(h, rendement),
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Countries side by side
+// ---------------------------------------------------------------------------
+
+export type ScenarioPays = {
+  pays: ClePays;
+  hypotheses: Hypotheses;
+  projection: Projection;
+  resultat: Resultat;
+};
+
+/**
+ * The same capital, run under each country's own plan.
+ *
+ * What carries over from the user's simulation is what does not depend on where
+ * they live: the capital, the expected return, the horizon and the way they
+ * withdraw. What each country brings is its own starting point — withdrawal
+ * rate, tax and reference inflation — because that is precisely what differs.
+ *
+ * Note that tax alone would change nothing on a capital curve: what leaves the
+ * portfolio is the gross withdrawal, and the tax only bites afterwards, on the
+ * income. Comparing countries on this chart is therefore only meaningful
+ * because their withdrawal rates differ too — the tax shows up in the income
+ * shown alongside each curve.
+ */
+export function scenariosPays(hypotheses: Hypotheses): ScenarioPays[] {
+  return PAYS.map((p) => {
+    // The expected return is deliberately *not* taken from the country: it
+    // belongs to the portfolio, and a globally diversified portfolio is the
+    // same wherever its owner lives. Only what residence actually decides —
+    // withdrawal rate, tax and reference inflation — is swapped in.
+    const propres = borner({
+      ...hypotheses,
+      retrait: p.defauts.retrait,
+      inflation: p.defauts.inflation,
+      pays: p.cle,
+      imposition: regimeParDefaut(p.cle).imposition,
+    });
+    return {
+      pays: p.cle,
+      hypotheses: propres,
+      projection: projeter(propres),
+      resultat: simuler(propres),
     };
   });
 }

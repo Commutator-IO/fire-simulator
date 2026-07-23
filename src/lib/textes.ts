@@ -66,6 +66,9 @@ const FR = {
     horizonUnite: 'ans',
     horizonHint:
       'Une retraite anticipée se compte en décennies : quarante ans n’a rien d’excessif.',
+    dureeLabel: 'Le capital doit tenir au moins',
+    dureeHint:
+      'C’est ce qui départage les trois réponses : capital jamais épuisé, épuisé après cette durée, ou avant. Préserver le capital pour toujours et le consommer sur une vie sont deux plans également valables. Plafonné par l’horizon de projection.',
     modeLabel: 'Façon de retirer',
     modeIndexe: 'Montant fixe indexé',
     modeProportionnel: '% du capital',
@@ -76,12 +79,14 @@ const FR = {
   },
 
   verdict: {
-    badgeOui: 'Oui',
-    badgeOuiJuste: 'Oui, tout juste',
-    badgeNon: 'Non',
+    badgePreserve: 'Oui',
+    badgeSuffisant: 'Oui, sur la durée voulue',
+    badgeInsuffisant: 'Non',
     badgePasEncore: 'Pas encore',
     sousTitrePreserve: 'votre capital est préservé',
-    sousTitreEntame: 'vous puisez dans le capital',
+    sousTitreSuffisant: (duree: number) =>
+      `le capital tient les ${duree} ans demandés, puis s’épuise`,
+    sousTitreInsuffisant: (duree: number) => `le capital ne tient pas ${duree} ans`,
     sousTitreSans: 'aucun patrimoine à faire travailler',
     revenuLabel: 'Revenu net disponible',
     parMois: 'par mois',
@@ -94,10 +99,12 @@ const FR = {
       `Le rendement couvre le retrait et laisse ${montant} par an dans le capital. Marge de sécurité : ${marge} avant de commencer à y puiser.`,
     corpsLimite:
       'Le rendement couvre exactement le retrait : le capital reste stable en euros, mais sans la moindre marge. Une année de marché en dessous des attentes le fait aussitôt reculer.',
-    corpsEntame: (montant: string) =>
-      `À ce rythme, vous prélevez ${montant} de capital par an en plus de ce qu’il rapporte.`,
-    epuiseEn: (annee: number) => `Votre capital serait épuisé en année ${annee}.`,
-    pasEpuise: 'Le capital diminue sans s’annuler sur l’horizon simulé.',
+    corpsDeclinSansFin: (montant: string) =>
+      `À ce rythme, vous prélevez ${montant} de capital par an en plus de ce qu’il rapporte, sans toutefois l’annuler sur l’horizon simulé.`,
+    corpsSuffisant: (tenues: number, duree: number, epuisement: number) =>
+      `Le capital est servi pendant ${tenues} ans et s’épuise en année ${epuisement} : au-delà des ${duree} ans que vous demandez. Le plan tient la distance voulue, mais il y consomme le capital — il ne restera rien après.`,
+    corpsInsuffisant: (tenues: number, duree: number, epuisement: number) =>
+      `Le capital n’est servi que ${tenues} ans et s’épuise en année ${epuisement}, avant les ${duree} ans que vous demandez. Il manque ${duree - tenues} ans.`,
     reelFort: 'En pouvoir d’achat, c’est non.',
     reelCorps: (marge: string) =>
       `Une fois l’inflation payée, il vous manque ${marge} : le revenu affiché achètera moins chaque année.`,
@@ -132,8 +139,21 @@ const FR = {
 
   projection: {
     titre: (annees: number) => `Votre capital sur ${annees} ans`,
-    intro:
+    comparerRendement: 'Par rendement',
+    comparerPays: 'Par pays',
+    introRendement:
       'La courbe centrale suit votre rendement, la zone claire montre ce que deux points de rendement en plus ou en moins changent au bout du compte.',
+    introPays:
+      'Le même capital, mené selon le plan de départ de chaque pays : son taux de retrait, son imposition et son inflation de référence. Votre rendement et votre horizon sont conservés — ils ne dépendent pas du lieu de résidence.',
+    notePays:
+      'L’impôt ne déforme pas ces courbes : ce qui sort du portefeuille est le retrait brut, et l’imposition ne mord qu’ensuite, sur le revenu. Ce sont donc les taux de retrait qui les séparent — l’écart d’imposition, lui, se lit sur le revenu indiqué en légende.',
+    libelleCentral: 'Central',
+    libellePessimiste: 'Pessimiste',
+    libelleOptimiste: 'Optimiste',
+    serieTaux: (libelle: string, taux: string) => `${libelle} — ${taux} par an`,
+    seriePays: (libelle: string, retrait: string, mensuel: string) =>
+      `${libelle} — retrait ${retrait}, ${mensuel} net par mois`,
+    repereDuree: (annees: number) => `${annees} ans exigés`,
     eurosCourants: 'Euros courants',
     pouvoirAchat: 'Pouvoir d’achat',
     noteCourant:
@@ -146,14 +166,8 @@ const FR = {
     an: (n: number) => `an ${n}`,
     survolAujourdhui: 'Aujourd’hui',
     survolAnnee: (n: number) => `Année ${n}`,
-    survolCorps: (central: string, bas: string, haut: string) =>
-      `capital de ${central} dans le scénario central, entre ${bas} et ${haut} selon le rendement.`,
-    legendeCentral: (taux: string) => `Central — ${taux} par an`,
-    legendeBande: (bas: string, haut: string) => `De ${bas} à ${haut}`,
     legendeDepart: (montant: string) => `Capital de départ — ${montant}`,
-    legendeEpuisement: (annee: number) => `Épuisement en année ${annee}`,
-    legendeEpuisementPessimiste: (annee: number) =>
-      `Épuisé en année ${annee} si le rendement déçoit`,
+    legendeEpuisement: (annee: number) => `épuisé en année ${annee}`,
   },
 
   detail: {
@@ -325,7 +339,8 @@ const FR = {
   mobile: {
     revenu: 'Revenu net par mois',
     preserve: '✓ Capital préservé',
-    entame: '✕ Capital entamé',
+    suffisant: '✓ Tient la durée voulue',
+    insuffisant: '✕ Trop court',
     sans: 'Aucun capital',
   },
 };
@@ -384,6 +399,9 @@ const EN: Dictionnaire = {
     horizonUnite: 'years',
     horizonHint:
       'Early retirement is counted in decades: forty years is nothing out of the ordinary.',
+    dureeLabel: 'The capital has to last at least',
+    dureeHint:
+      'This is what separates the three answers: capital never exhausted, exhausted after this many years, or before. Preserving capital for ever and spending it over a lifetime are both legitimate plans. Capped by the projection horizon.',
     modeLabel: 'How you withdraw',
     modeIndexe: 'Fixed amount, indexed',
     modeProportionnel: '% of capital',
@@ -394,12 +412,15 @@ const EN: Dictionnaire = {
   },
 
   verdict: {
-    badgeOui: 'Yes',
-    badgeOuiJuste: 'Yes, only just',
-    badgeNon: 'No',
+    badgePreserve: 'Yes',
+    badgeSuffisant: 'Yes, for as long as asked',
+    badgeInsuffisant: 'No',
     badgePasEncore: 'Not yet',
     sousTitrePreserve: 'your capital is preserved',
-    sousTitreEntame: 'you are eating into the capital',
+    sousTitreSuffisant: (duree: number) =>
+      `the capital lasts the ${duree} years asked for, then runs out`,
+    sousTitreInsuffisant: (duree: number) =>
+      `the capital does not last ${duree} years`,
     sousTitreSans: 'no capital to put to work',
     revenuLabel: 'Net income available',
     parMois: 'a month',
@@ -412,10 +433,12 @@ const EN: Dictionnaire = {
       `The return covers the withdrawal and leaves ${montant} a year in the capital. Safety margin: ${marge} before you start eating into it.`,
     corpsLimite:
       'The return covers the withdrawal exactly: the capital holds in euros, but with no margin at all. One year of markets below expectations and it starts falling.',
-    corpsEntame: (montant: string) =>
-      `At this pace you are taking ${montant} of capital a year on top of what it earns.`,
-    epuiseEn: (annee: number) => `Your capital would run out in year ${annee}.`,
-    pasEpuise: 'The capital falls without reaching zero over the horizon simulated.',
+    corpsDeclinSansFin: (montant: string) =>
+      `At this pace you are taking ${montant} of capital a year on top of what it earns, without bringing it to zero over the horizon simulated.`,
+    corpsSuffisant: (tenues: number, duree: number, epuisement: number) =>
+      `The capital pays out for ${tenues} years and runs out in year ${epuisement}: beyond the ${duree} years you asked for. The plan goes the distance, but it spends the capital doing so — nothing will be left after that.`,
+    corpsInsuffisant: (tenues: number, duree: number, epuisement: number) =>
+      `The capital pays out for only ${tenues} years and runs out in year ${epuisement}, short of the ${duree} you asked for. That is ${duree - tenues} years missing.`,
     reelFort: 'In purchasing power, the answer is no.',
     reelCorps: (marge: string) =>
       `Once inflation is paid for, you are ${marge} short: the income shown will buy less every year.`,
@@ -450,8 +473,21 @@ const EN: Dictionnaire = {
 
   projection: {
     titre: (annees: number) => `Your capital over ${annees} years`,
-    intro:
+    comparerRendement: 'By return',
+    comparerPays: 'By country',
+    introRendement:
       'The central curve follows your return; the shaded band shows what two points of return more or less change in the end.',
+    introPays:
+      'The same capital, run under each country’s own starting plan: its withdrawal rate, its tax and its reference inflation. Your return and your horizon carry over — they do not depend on where you live.',
+    notePays:
+      'Tax does not bend these curves: what leaves the portfolio is the gross withdrawal, and tax only bites afterwards, on the income. So it is the withdrawal rates that separate them — the difference in tax shows up in the income given in the legend.',
+    libelleCentral: 'Central',
+    libellePessimiste: 'Pessimistic',
+    libelleOptimiste: 'Optimistic',
+    serieTaux: (libelle: string, taux: string) => `${libelle} — ${taux} a year`,
+    seriePays: (libelle: string, retrait: string, mensuel: string) =>
+      `${libelle} — ${retrait} withdrawal, ${mensuel} net a month`,
+    repereDuree: (annees: number) => `${annees} years required`,
     eurosCourants: 'Nominal euros',
     pouvoirAchat: 'Purchasing power',
     noteCourant:
@@ -464,14 +500,8 @@ const EN: Dictionnaire = {
     an: (n: number) => `year ${n}`,
     survolAujourdhui: 'Today',
     survolAnnee: (n: number) => `Year ${n}`,
-    survolCorps: (central: string, bas: string, haut: string) =>
-      `capital of ${central} in the central scenario, between ${bas} and ${haut} depending on the return.`,
-    legendeCentral: (taux: string) => `Central — ${taux} a year`,
-    legendeBande: (bas: string, haut: string) => `From ${bas} to ${haut}`,
     legendeDepart: (montant: string) => `Starting capital — ${montant}`,
-    legendeEpuisement: (annee: number) => `Runs out in year ${annee}`,
-    legendeEpuisementPessimiste: (annee: number) =>
-      `Runs out in year ${annee} if the return disappoints`,
+    legendeEpuisement: (annee: number) => `runs out in year ${annee}`,
   },
 
   detail: {
@@ -642,7 +672,8 @@ const EN: Dictionnaire = {
   mobile: {
     revenu: 'Net income a month',
     preserve: '✓ Capital preserved',
-    entame: '✕ Capital eaten into',
+    suffisant: '✓ Lasts long enough',
+    insuffisant: '✕ Too short',
     sans: 'No capital',
   },
 };
