@@ -186,6 +186,18 @@ nul, retrait nul, rendement négatif, saisie hors bornes) ont chacun leur test.
 
 Le graphique est du SVG écrit à la main, sans bibliothèque de visualisation.
 
+## Déploiement
+
+Chaque poussée sur `main` déclenche [le workflow GitHub Actions](.github/workflows/deploy.yml) :
+lint, tests, build, puis publication sur GitHub Pages. Une pull request fait
+tourner les vérifications sans déployer.
+
+Le site est actuellement servi depuis
+<https://commutator-io.github.io/fire-simulator/>. Les chemins produits par le
+build sont relatifs, si bien qu'aucun réglage n'est à changer le jour où un
+domaine dédié le servira depuis la racine — il suffira d'ajouter
+l'enregistrement DNS et le domaine dans les réglages Pages du dépôt.
+
 ## La suite
 
 Les améliorations envisagées sont dans [TODO.md](TODO.md), par ordre de valeur
