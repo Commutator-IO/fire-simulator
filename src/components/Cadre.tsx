@@ -22,7 +22,9 @@ export function Entete({
   return (
     <header className="sticky top-0 z-30 border-b border-ink-200/70 bg-white/85 backdrop-blur">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-5 py-3.5">
-        <a href="/" className="flex shrink-0 items-center gap-2.5">
+        {/* Relatif, comme les fichiers du build : le site vit indifféremment
+            à la racine d'un domaine ou sous /<dépôt>/ sur GitHub Pages. */}
+        <a href="./" className="flex shrink-0 items-center gap-2.5">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-sm font-bold text-white">
             F
           </span>
