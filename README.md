@@ -11,7 +11,7 @@ verdict, le revenu net mensuel et la projection du capital sur quarante ans.
 ```bash
 npm install
 npm run dev      # serveur de développement
-npm test         # 126 tests sur le moteur, les formats et les traductions
+npm test         # 131 tests sur le moteur, les formats et les traductions
 npm run build    # build de production
 npm run lint
 ```
@@ -228,6 +228,23 @@ classe d'erreurs que les premiers laissent passer, une formule fausse pouvant
 tomber juste sur les trois valeurs qu'on a pensé à écrire.
 
 Le graphique est du SVG écrit à la main, sans bibliothèque de visualisation.
+
+Les formules de la section « Méthode et sources » sont écrites en LaTeX dans
+[src/lib/formules.ts](src/lib/formules.ts) et rendues par KaTeX — la seule
+dépendance d'exécution du projet en dehors de React. Deux choix la rendent peu
+coûteuse :
+
+- **Sortie MathML** plutôt que le balisage propre à KaTeX. Le navigateur dessine
+  les formules nativement, donc ni feuille de style ni aucune des vingt polices
+  que KaTeX embarque : le `dist` passe de 1,7 Mo et 61 fichiers à 572 Ko et 2.
+- **Chunk séparé.** KaTeX ne bouge jamais, le simulateur change à chaque
+  déploiement ; les séparer laisse le cache du navigateur garder le premier
+  quand le second est remplacé. Le paquet de l'application reste à 88 Ko gzip,
+  KaTeX en pèse 77 à côté.
+
+Un test compile chaque formule en mode strict : sur la page, une coquille
+s'afficherait en rouge au lieu de faire tomber le rendu, donc c'est la suite qui
+doit l'attraper.
 
 ## Déploiement
 

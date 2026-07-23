@@ -256,7 +256,9 @@ const FR = {
     fPreserveNote: 'Y le rendement annuel',
     fReel: '… en pouvoir d’achat si',
     fReelNote: 'i l’inflation',
-    fProjection: 'Projection, année n',
+    fRetraitIndexe: 'Retrait de l’année n',
+    fRetraitIndexeNote: 'en mode indexé, X₀ le patrimoine de départ',
+    fProjection: 'Capital de l’année n',
     fCible: 'Patrimoine cible',
     scenariosNote: (ecart: string) =>
       `Les scénarios comparés reprennent le même calcul avec un rendement diminué puis augmenté de ${ecart}.`,
@@ -589,7 +591,9 @@ const EN: Dictionnaire = {
     fPreserveNote: 'Y the annual return',
     fReel: '… in purchasing power if',
     fReelNote: 'i inflation',
-    fProjection: 'Projection, year n',
+    fRetraitIndexe: 'Withdrawal in year n',
+    fRetraitIndexeNote: 'in indexed mode, X₀ the starting capital',
+    fProjection: 'Capital in year n',
     fCible: 'Capital target',
     scenariosNote: (ecart: string) =>
       `The compared scenarios run the same calculation with the return lowered then raised by ${ecart}.`,

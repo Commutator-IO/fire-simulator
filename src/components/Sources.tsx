@@ -1,4 +1,6 @@
 import { ECART_SCENARIO } from '../lib/fire';
+import { FORMULES } from '../lib/formules';
+import { Latex } from './Latex';
 import { useFormats, useTextes } from '../lib/contexte';
 import type { Dictionnaire } from '../lib/textes';
 import { DEPOT, LIEN_ISSUES, lienNouvelleIssue } from '../lib/depot';
@@ -68,32 +70,14 @@ export function Sources({ lienSimulation }: { lienSimulation: string }) {
               {t.sources.formulesTitre}
             </h3>
             <dl className="mt-4 space-y-3 text-sm">
-              <Formule
-                terme={t.sources.fRetrait}
-                valeur="R = X × Z"
-                note={t.sources.fRetraitNote}
-              />
-              <Formule
-                terme={t.sources.fImpots}
-                valeur="T = R × α"
-                note={t.sources.fImpotsNote}
-              />
-              <Formule terme={t.sources.fNet} valeur="Rnet = X × Z × (1 − α)" />
-              <Formule
-                terme={t.sources.fPreserve}
-                valeur="Z ≤ Y"
-                note={t.sources.fPreserveNote}
-              />
-              <Formule
-                terme={t.sources.fReel}
-                valeur="Z ≤ Y − i"
-                note={t.sources.fReelNote}
-              />
-              <Formule
-                terme={t.sources.fProjection}
-                valeur="Capital(n) = Capital(n−1) × (1 + Y) − Retrait(n)"
-              />
-              <Formule terme={t.sources.fCible} valeur="X = D ÷ (Z × (1 − α))" />
+              {FORMULES.map((f) => (
+                <Formule
+                  key={f.tex}
+                  terme={t.sources[f.terme] as string}
+                  tex={f.tex}
+                  note={f.note ? (t.sources[f.note] as string) : undefined}
+                />
+              ))}
             </dl>
             <p className="mt-5 text-xs leading-relaxed text-ink-500">
               {t.sources.scenariosNote(pct(ECART_SCENARIO, 0))}
@@ -174,19 +158,19 @@ export function Sources({ lienSimulation }: { lienSimulation: string }) {
 
 function Formule({
   terme,
-  valeur,
+  tex,
   note,
 }: {
   terme: string;
-  valeur: string;
+  tex: string;
   note?: string;
 }) {
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-ink-100 pb-3 last:border-0 last:pb-0">
       <dt className="text-ink-500">{terme}</dt>
-      <dd className="tabular font-semibold text-ink-900">
-        {valeur}
-        {note && <span className="ml-2 font-normal text-ink-400">({note})</span>}
+      <dd className="text-ink-900">
+        <Latex tex={tex} />
+        {note && <span className="ml-2 text-xs text-ink-400">({note})</span>}
       </dd>
     </div>
   );

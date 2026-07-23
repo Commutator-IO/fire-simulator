@@ -71,6 +71,13 @@
   .tabular {
     font-variant-numeric: tabular-nums;
   }
+
+  /* Formulas, rendered as MathML and drawn by the browser with its own maths
+     font. That difference from Inter is the point — a formula should not read
+     as running text — but it comes out a shade small beside it. */
+  math {
+    font-size: 1.08em;
+  }
 }
 
 @layer components {
