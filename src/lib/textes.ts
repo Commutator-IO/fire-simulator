@@ -57,7 +57,7 @@ const FR = {
       `${taux} ne correspond à aucune enveloppe de résidence en ${pays}. Choisissez-en une ci-dessus pour revenir à un taux réel.`,
     afficher: '+ Afficher',
     masquer: '− Masquer',
-    avanceSuite: 'l’inflation et l’horizon',
+    avanceSuite: 'les hypothèses de long terme',
     inflationLabel: 'Inflation annuelle',
     inflationHint: (note: string) =>
       `Ce qui décide du pouvoir d’achat de votre revenu dans vingt ans. ${note}`,
@@ -390,7 +390,7 @@ const EN: Dictionnaire = {
       `${taux} matches no account type available to a resident of ${pays}. Pick one above to return to a real rate.`,
     afficher: '+ Show',
     masquer: '− Hide',
-    avanceSuite: 'inflation and horizon',
+    avanceSuite: 'the long-term assumptions',
     inflationLabel: 'Annual inflation',
     inflationHint: (note: string) =>
       `What decides the purchasing power of your income twenty years from now. ${note}`,

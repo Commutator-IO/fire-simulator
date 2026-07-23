@@ -104,6 +104,9 @@ function Simulateur({
     () =>
       h.inflation !== DEFAUTS.inflation ||
       h.horizon !== DEFAUTS.horizon ||
+      // La durée exigée décide de la couleur du verdict : un lien qui la
+      // personnalise doit s'ouvrir sur le réglage qui l'explique.
+      h.dureeExigee !== DEFAUTS.dureeExigee ||
       h.modeRetrait !== DEFAUTS.modeRetrait,
   );
 
