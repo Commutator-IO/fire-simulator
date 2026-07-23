@@ -11,7 +11,7 @@ verdict, le revenu net mensuel et la projection du capital sur quarante ans.
 ```bash
 npm install
 npm run dev      # serveur de développement
-npm test         # 97 tests sur le moteur, les formats et les traductions
+npm test         # 126 tests sur le moteur, les formats et les traductions
 npm run build    # build de production
 npm run lint
 ```
@@ -218,6 +218,14 @@ Le moteur ne dépend de rien et sort des nombres finis quoi qu'on lui donne :
 toute entrée passe d'abord par `borner()`, et l'URL — entrée non fiable — est
 elle aussi bornée à la lecture. Les cas limites de la spécification (patrimoine
 nul, retrait nul, rendement négatif, saisie hors bornes) ont chacun leur test.
+
+Les tests du moteur se lisent à deux niveaux. `fire.test.ts` fixe des exemples
+choisis — celui du brief, ceux de la section 8 de la spécification.
+`fire.invariants.test.ts` énonce ce qui doit tenir pour **toute** entrée :
+l'identité comptable d'une année, les formes closes auxquelles se réduisent les
+deux modes de retrait, les monotonies attendues. Les seconds attrapent une
+classe d'erreurs que les premiers laissent passer, une formule fausse pouvant
+tomber juste sur les trois valeurs qu'on a pensé à écrire.
 
 Le graphique est du SVG écrit à la main, sans bibliothèque de visualisation.
 
