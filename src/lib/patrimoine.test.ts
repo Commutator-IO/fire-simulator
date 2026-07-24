@@ -10,6 +10,7 @@ import {
   ailleurs,
   bilan,
   bornerComposition,
+  chronique,
   compositionVide,
   coutDetention,
   impotFortuneImmobiliere,
@@ -342,14 +343,14 @@ describe('what holding it costs', () => {
 describe('bounding', () => {
   it('clamps amounts and rates, the URL not being trusted input', () => {
     const b = bornerComposition([
-      { cle: 'pea', montant: -5_000, rendement: 3, loyer: 0, charges: 0, impositionRevenus: 0 },
+      { cle: 'pea', montant: -5_000, rendement: 3, loyer: 0, charges: 0, impositionRevenus: 0, duree: 0 },
       {
         cle: 'immobilierLocatif',
         montant: 1e12,
         rendement: 0,
         loyer: -9,
         charges: 1e12,
-        impositionRevenus: 9,
+        impositionRevenus: 9, duree: 0,
       },
     ]);
     const trouve = (cle: CleActif) => b.find((l) => l.cle === cle)!;
@@ -370,8 +371,8 @@ describe('bounding', () => {
   it('drops a line that names no known asset', () => {
     const b = bornerComposition([
       // @ts-expect-error deliberately invalid key
-      { cle: 'yacht', montant: 90_000, rendement: 0.01, loyer: 0, charges: 0, impositionRevenus: 0 },
-      { cle: 'pea', montant: 10_000, rendement: 0.07, loyer: 0, charges: 0, impositionRevenus: 0 },
+      { cle: 'yacht', montant: 90_000, rendement: 0.01, loyer: 0, charges: 0, impositionRevenus: 0, duree: 0 },
+      { cle: 'pea', montant: 10_000, rendement: 0.07, loyer: 0, charges: 0, impositionRevenus: 0, duree: 0 },
     ]);
     expect(b.reduce((s, l) => s + l.montant, 0)).toBe(10_000);
   });
@@ -385,7 +386,7 @@ describe('bounding', () => {
           rendement: Number.POSITIVE_INFINITY,
           loyer: Number.NaN,
           charges: Number.NaN,
-          impositionRevenus: Number.NaN,
+          impositionRevenus: Number.NaN, duree: 0,
         },
       ],
       'france',
@@ -438,5 +439,73 @@ describe('the statement it opens on', () => {
 
   it('is emptied by clearing, and stays empty', () => {
     expect(estRenseignee(compositionVide())).toBe(false);
+  });
+});
+
+describe('the loan and the taxman over time', () => {
+  const emprunte = avec(
+    { pea: 200_000, residencePrincipale: 400_000, creditResidence: 150_000 },
+    { creditResidence: { rendement: 0.03, duree: 12 } },
+  );
+
+  it('runs at least as long as the longest loan', () => {
+    expect(chronique(emprunte, 'france').length).toBeGreaterThanOrEqual(12);
+  });
+
+  it('pays the loan off on its term, and stops charging interest after it', () => {
+    // Huit ans de prêt sur un horizon d'au moins dix : les dernières années
+    // montrent bien un crédit soldé.
+    const court = avec(
+      { pea: 200_000, residencePrincipale: 400_000, creditResidence: 150_000 },
+      { creditResidence: { rendement: 0.03, duree: 8 } },
+    );
+    const annees = chronique(court, 'france');
+    expect(annees[7].detteRestante).toBeCloseTo(0, 0);
+    expect(annees[7].interets).toBeGreaterThan(0);
+    expect(annees[8].interets).toBe(0);
+    expect(annees.at(-1)!.detteRestante).toBe(0);
+  });
+
+  it('never lets the debt grow', () => {
+    const annees = chronique(emprunte, 'france');
+    for (let i = 1; i < annees.length; i++) {
+      expect(annees[i].detteRestante).toBeLessThanOrEqual(annees[i - 1].detteRestante + 1e-6);
+    }
+  });
+
+  it('accumulates, never subtracting from what was already paid', () => {
+    const annees = chronique(emprunte, 'france');
+    for (let i = 1; i < annees.length; i++) {
+      expect(annees[i].interetsCumules).toBeGreaterThanOrEqual(annees[i - 1].interetsCumules);
+      expect(annees[i].impotsCumules).toBeGreaterThanOrEqual(annees[i - 1].impotsCumules);
+    }
+  });
+
+  // The point of drawing it: loans are deductible from the wealth tax base, so
+  // repaying one raises the tax owed on the property it bought.
+  it('raises the wealth tax as the loan is repaid', () => {
+    // 4 M€ comptés à 70 % font 2,8 M€ d'assiette, moins 900 000 € de crédit :
+    // au-dessus du seuil dès la première année, et davantage ensuite.
+    const riche = avec(
+      { residencePrincipale: 4_000_000, creditResidence: 900_000 },
+      { creditResidence: { rendement: 0.02, duree: 10 } },
+    );
+    const annees = chronique(riche, 'france');
+    expect(annees[0].impotFortune).toBeGreaterThan(0);
+    expect(annees.at(-1)!.impotFortune).toBeGreaterThan(annees[0].impotFortune);
+  });
+
+  it('knows Japan taxes the roof but not the fortune', () => {
+    const annees = chronique(avec({ residenceJp: 400_000 }), 'japon');
+    expect(annees[0].taxeFonciere).toBeGreaterThan(0);
+    expect(annees.every((a) => a.impotFortune === 0)).toBe(true);
+  });
+
+  it('produces finite figures on an empty statement', () => {
+    for (const a of chronique(compositionVide(), 'france')) {
+      for (const v of [a.detteRestante, a.interets, a.impots, a.patrimoineNet]) {
+        expect(Number.isFinite(v)).toBe(true);
+      }
+    }
   });
 });

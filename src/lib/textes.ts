@@ -113,7 +113,10 @@ const FR = {
     applique: (patrimoine: string, rendement: string) =>
       `Le simulateur de retraits partira de ${patrimoine} à ${rendement}.`,
     dejaApplique: 'Ces chiffres sont déjà ceux du simulateur de retraits.',
-    effacer: 'Tout remettre à zéro',
+    effacer: 'Vider les montants',
+    reinitialiser: 'Réinitialiser l’outil',
+    reinitialiserAide:
+      'Vos saisies restent dans ce navigateur, et nulle part ailleurs. Réinitialiser les oublie et rétablit l’exemple de départ — utile après une erreur, ou quand une mise à jour a changé la forme des données.',
     note: 'Les taux réglementés — Livret A, LDDS, LEP — sont ceux en vigueur. Tous les autres sont des hypothèses de départ, à ajuster ligne par ligne : ce sont vos placements, pas les nôtres.',
     negatif:
       'Vos dettes dépassent vos avoirs. Le rendement n’a plus de sens tant que c’est le cas : il n’y a pas de capital à faire travailler, seulement un crédit à rembourser.',
@@ -252,6 +255,20 @@ const FR = {
     survolAnnee: (n: number) => `Année ${n}`,
     legendeDepart: (montant: string) => `Capital de départ — ${montant}`,
     legendeEpuisement: (annee: number) => `épuisé en année ${annee}`,
+  },
+
+  chronique: {
+    titre: 'Le poids du crédit et de l’impôt, année après année',
+    intro:
+      'Les deux se croisent, et le second mouvement surprend : rembourser un crédit allège la dette, mais gonfle l’assiette de l’impôt sur la fortune immobilière, dont les emprunts se déduisent. Payer sa maison peut donc augmenter l’impôt qu’on paie dessus.',
+    dette: 'Capital restant dû',
+    interets: 'Intérêts payés, cumulés',
+    impots: 'Impôts de détention, cumulés',
+    aria: (annees: number) =>
+      `Poids du crédit et des impôts de détention sur ${annees} ans`,
+    poids: (part: string, net: string) =>
+      `Cette année-là, la dette restante et l’impôt de l’année pèsent ${part} d’un patrimoine net de ${net}.`,
+    note: 'Tout est en euros courants : aucune inflation n’est appliquée, les courbes disent ce qui est dû, pas ce que cela coûtera à ressentir. Les actifs progressent à leur propre rendement, les prêts s’amortissent par annuités constantes.',
   },
 
   detail: {
@@ -537,7 +554,10 @@ const EN: Dictionnaire = {
     applique: (patrimoine: string, rendement: string) =>
       `The withdrawal simulator will start from ${patrimoine} at ${rendement}.`,
     dejaApplique: 'These figures are already the ones the withdrawal simulator uses.',
-    effacer: 'Clear everything',
+    effacer: 'Clear the amounts',
+    reinitialiser: 'Reset the tool',
+    reinitialiserAide:
+      'What you type stays in this browser and nowhere else. Resetting forgets it and restores the opening example — handy after a mistake, or when an update has changed the shape of the data.',
     note: 'The regulated rates — Livret A, LDDS, LEP — are the ones in force. Every other one is a starting hypothesis, to be adjusted line by line: they are your holdings, not ours.',
     negatif:
       'Your debts exceed your holdings. A return means nothing while that is the case: there is no capital at work, only a loan to repay.',
@@ -677,6 +697,20 @@ const EN: Dictionnaire = {
     survolAnnee: (n: number) => `Year ${n}`,
     legendeDepart: (montant: string) => `Starting capital — ${montant}`,
     legendeEpuisement: (annee: number) => `runs out in year ${annee}`,
+  },
+
+  chronique: {
+    titre: 'What the loan and the taxman weigh, year after year',
+    intro:
+      'The two cross, and the second move surprises people: repaying a loan lightens the debt but swells the base of the wealth tax on property, from which loans are deductible. Paying off a house can therefore raise the tax owed on it.',
+    dette: 'Capital still owed',
+    interets: 'Interest paid, cumulative',
+    impots: 'Holding taxes, cumulative',
+    aria: (annees: number) =>
+      `Weight of the loan and holding taxes over ${annees} years`,
+    poids: (part: string, net: string) =>
+      `That year, the remaining debt and the year’s tax weigh ${part} of a net worth of ${net}.`,
+    note: 'Everything is in nominal euros: no inflation is applied, so the curves say what is owed rather than what it will feel like. Assets grow at their own rate, loans amortise on a constant annuity.',
   },
 
   detail: {

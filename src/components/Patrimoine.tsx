@@ -7,6 +7,7 @@ import {
   actifsDe,
   ailleurs,
   bilan,
+  chronique,
   coutDetention,
   locatif,
   rendementEffectif,
@@ -18,6 +19,7 @@ import {
 import { useChampNumerique } from '../lib/champNumerique';
 import { Segments } from './Champs';
 import { Avertissement } from './Cadre';
+import { Chronique } from './Chronique';
 
 /**
  * The second simulator: what you own, what it earns, and what it costs to keep.
@@ -34,6 +36,7 @@ type Props = {
   onPays: (p: ClePays) => void;
   onLigne: (cle: CleActif, ligne: Partial<Ligne>) => void;
   onEffacer: () => void;
+  onReinitialiser: () => void;
   onAppliquer: (patrimoine: number, rendement: number) => void;
   /** Whether the withdrawal simulator already runs on these figures. */
   dejaApplique: boolean;
@@ -46,6 +49,7 @@ export function Patrimoine({
   onPays,
   onLigne,
   onEffacer,
+  onReinitialiser,
   onAppliquer,
   dejaApplique,
 }: Props) {
@@ -136,22 +140,35 @@ export function Patrimoine({
                 <p className="max-w-xl text-xs leading-relaxed text-ink-500">
                   {t.patrimoine.note}
                 </p>
-                {b.renseigne && (
+                <span className="flex shrink-0 gap-4">
+                  {b.renseigne && (
+                    <button
+                      type="button"
+                      onClick={onEffacer}
+                      className="text-xs font-medium text-ink-500 underline decoration-ink-300 underline-offset-2 transition hover:text-ink-800"
+                    >
+                      {t.patrimoine.effacer}
+                    </button>
+                  )}
                   <button
                     type="button"
-                    onClick={onEffacer}
-                    className="shrink-0 text-xs font-medium text-ink-500 underline decoration-ink-300 underline-offset-2 transition hover:text-brique-600"
+                    onClick={onReinitialiser}
+                    title={t.patrimoine.reinitialiserAide}
+                    className="text-xs font-medium text-ink-500 underline decoration-ink-300 underline-offset-2 transition hover:text-brique-600"
                   >
-                    {t.patrimoine.effacer}
+                    {t.patrimoine.reinitialiser}
                   </button>
-                )}
+                </span>
               </div>
             </div>
           </div>
 
           {/* ------------------------------------------------------- Bilan */}
           <div className="lg:col-span-5">
-            <div className="lg:sticky lg:top-24">
+            {/* Le panneau a fini par dépasser la hauteur d'un écran : collé
+                par le haut, son bas devenait inatteignable. Il défile donc
+                dans lui-même au-delà de cette limite. */}
+            <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:overscroll-contain">
               <div className="card overflow-hidden">
                 <div className="bg-brand-700 px-6 py-7 text-white sm:px-8">
                   <p className="text-sm text-brand-100">{t.patrimoine.productif}</p>
@@ -163,6 +180,10 @@ export function Patrimoine({
                     <strong className="font-semibold text-white">
                       {tauxPct(b.rendementRecompose)}
                     </strong>
+                  </p>
+
+                  <p className="mt-3 text-xs leading-relaxed text-brand-100">
+                    {t.patrimoine.productifAide}
                   </p>
 
                   {b.renseigne && b.productif <= 0 && (
@@ -195,16 +216,10 @@ export function Patrimoine({
                           fort
                         />
                         <Poste
-                          label={t.patrimoine.productif}
-                          valeur={eur(b.productif)}
-                          aide={t.patrimoine.productifAide}
-                        />
-                        <Poste
-                          label={t.patrimoine.rendement}
-                          valeur={tauxPct(b.rendementRecompose)}
+                          label={t.patrimoine.gains}
+                          valeur={eur(b.gainsAnnuels)}
                           aide={t.patrimoine.rendementAide}
                         />
-                        <Poste label={t.patrimoine.gains} valeur={eur(b.gainsAnnuels)} />
                       </dl>
 
                       {b.parCategorie.length > 0 && (
@@ -285,6 +300,7 @@ export function Patrimoine({
         <>
           <Graphique composition={composition} pays={pays} />
           <Detention cout={cout} bilan={b} imposition={imposition} />
+          <SectionChronique composition={composition} pays={pays} />
         </>
       )}
     </main>
@@ -376,6 +392,37 @@ function Detention({
             </div>
           </div>
         )}
+      </div>
+    </section>
+  );
+}
+
+/** The loan and the taxman over time, with its own heading. */
+function SectionChronique({
+  composition,
+  pays,
+}: {
+  composition: Ligne[];
+  pays: ClePays;
+}) {
+  const t = useTextes();
+  const annees = chronique(composition, pays);
+  const utile = annees.some((a) => a.detteRestante > 0 || a.impots > 0);
+  if (!utile) return null;
+
+  return (
+    <section className="border-t border-ink-200/70 bg-white">
+      <div className="mx-auto max-w-6xl px-5 py-12 sm:py-16">
+        <h2 className="text-2xl font-semibold tracking-tight text-ink-900">
+          {t.chronique.titre}
+        </h2>
+        <p className="mt-2 max-w-3xl leading-relaxed text-ink-500">{t.chronique.intro}</p>
+        <div className="card mt-8 p-5 sm:p-8">
+          <Chronique annees={annees} />
+        </div>
+        <p className="mt-4 max-w-3xl text-sm leading-relaxed text-ink-500">
+          {t.chronique.note}
+        </p>
       </div>
     </section>
   );

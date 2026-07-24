@@ -29,6 +29,7 @@ import {
   type ClePays,
   type Regime,
 } from './lib/pays';
+import { charger, enregistrer, oublier } from './lib/stockage';
 import {
   decoderComposition,
   decoderEtat,
@@ -120,9 +121,12 @@ function Simulateur({
   const [vue, setVue] = useState<Vue>(() =>
     decoderVue(typeof window === 'undefined' ? '' : window.location.search),
   );
+  // L'adresse d'abord — c'est elle qu'on partage —, puis ce que le navigateur
+  // a retenu de la dernière visite, puis l'exemple.
   const [composition, setComposition] = useState<Ligne[]>(
     () =>
       decoderComposition(typeof window === 'undefined' ? '' : window.location.search) ??
+      charger() ??
       compositionParDefaut(),
   );
   const [avanceOuvert, setAvanceOuvert] = useState(
@@ -212,6 +216,12 @@ function Simulateur({
     return () => clearTimeout(minuteur);
   }, [h, langueUrl, composition, vue]);
 
+  // Rien ne quitte le navigateur : c'est un filet pour revenir sans lien, pas
+  // un compte utilisateur.
+  useEffect(() => {
+    enregistrer(composition);
+  }, [composition]);
+
   const capitalFinal =
     mode === 'courant'
       ? central.projection.capitalFinal
@@ -257,6 +267,10 @@ function Simulateur({
           onPays={(cle) => maj('pays', cle)}
           onLigne={majLigne}
           onEffacer={() => setComposition(compositionVide())}
+          onReinitialiser={() => {
+            oublier();
+            setComposition(compositionParDefaut());
+          }}
           onAppliquer={appliquerPatrimoine}
           dejaApplique={dejaApplique}
         />
@@ -493,7 +507,10 @@ function Simulateur({
             </div>
 
             <div className="lg:col-span-5">
-              <div className="lg:sticky lg:top-24">
+              {/* Le panneau dépasse la hauteur d'un écran dès que le train de
+                  vie est renseigné : collé par le haut, son bas restait hors
+                  d'atteinte. Il défile donc dans lui-même au-delà. */}
+              <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:overscroll-contain">
                 <div className="card overflow-hidden">
                   <Verdict h={h} r={r} niveau={niveau} projection={central.projection} />
 

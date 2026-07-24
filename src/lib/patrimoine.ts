@@ -108,6 +108,12 @@ export type Actif = {
   rendementParDefaut: number;
   /** Tax on the net rental income, for lines that declare `revenus`. */
   impositionParDefaut?: number;
+  /**
+   * Levy taken every year on the line's gains, withdrawal or no withdrawal.
+   * The euro fund of a French life insurance policy is the case that matters:
+   * its published rate is before those levies, and they fall due annually.
+   */
+  prelevementsAnnuels?: number;
   /** Statutory ceiling, when the product has one. */
   plafond?: number;
   libelle: Traduit;
@@ -164,10 +170,11 @@ const FRANCE: Actif[] = [
     signe: 1,
     productif: true,
     rendementParDefaut: 0.025,
+    prelevementsAnnuels: 0.186,
     libelle: { fr: 'Assurance-vie — fonds euros', en: 'Life insurance — euro fund' },
     note: {
-      fr: 'Capital garanti, rendement de l’ordre de 2,5 % ces dernières années.',
-      en: 'Capital guaranteed, returning around 2.5% in recent years.',
+      fr: 'Capital garanti, rendement de l’ordre de 2,5 % ces dernières années. Les 18,6 % de prélèvements sociaux sont retenus chaque année sur les intérêts, que vous retiriez ou non : le rendement retenu ici en tient compte.',
+      en: 'Capital guaranteed, returning around 2.5% in recent years. The 18.6% of social levies are taken every year on the interest, whether you withdraw or not: the rate used here allows for that.',
     },
   },
   {
@@ -519,6 +526,8 @@ export type Ligne = {
   charges: number;
   /** Tax on the net rental income. */
   impositionRevenus: number;
+  /** Years left to run, for a debt. */
+  duree: number;
 };
 
 /** Amounts and rates share the bounds of the simulator they feed. */
@@ -527,6 +536,7 @@ export const BORNES_LIGNE = {
   rendement: { min: -0.1, max: 0.2 },
   loyer: { min: 0, max: 10_000_000 },
   impositionRevenus: { min: 0, max: 0.6 },
+  duree: { min: 0, max: 40 },
 } as const;
 
 const borne = (v: number, { min, max }: { min: number; max: number }) =>
@@ -541,6 +551,7 @@ export function ligneVide(a: Actif): Ligne {
     loyer: 0,
     charges: 0,
     impositionRevenus: a.impositionParDefaut ?? 0,
+    duree: a.signe === -1 ? 15 : 0,
   };
 }
 
@@ -568,6 +579,7 @@ export function bornerComposition(lignes: Ligne[]): Ligne[] {
         lue.impositionRevenus ?? vide.impositionRevenus,
         BORNES_LIGNE.impositionRevenus,
       ),
+      duree: Math.round(borne(lue.duree ?? vide.duree, BORNES_LIGNE.duree)),
     };
   });
 }
@@ -600,9 +612,16 @@ export function locatif(ligne: Ligne): Locatif {
   };
 }
 
-/** The return a line actually contributes, computed for rented property. */
+/**
+ * The return a line actually contributes.
+ *
+ * Computed from the rent for a let property; net of the yearly levies for a
+ * product that suffers them whether or not anything is withdrawn.
+ */
 export function rendementEffectif(ligne: Ligne): number {
-  return actif(ligne.cle)?.revenus ? locatif(ligne).rendement : ligne.rendement;
+  const a = actif(ligne.cle);
+  if (a?.revenus) return locatif(ligne).rendement;
+  return ligne.rendement * (1 - (a?.prelevementsAnnuels ?? 0));
 }
 
 export type PartCategorie = {
@@ -851,4 +870,118 @@ export function ailleurs(lignes: Ligne[], pays: ClePays): number {
     .filter((l) => actif(l.cle)?.pays !== pays)
     .filter((l) => l.montant !== exemple.find((e) => e.cle === l.cle)?.montant)
     .reduce((somme, l) => somme + l.montant, 0);
+}
+
+// ---------------------------------------------------------------------------
+// Ce que le temps fait au crédit et à l'impôt
+// ---------------------------------------------------------------------------
+
+export type AnneeDetention = {
+  annee: number;
+  /** Capital still owed at the end of the year. */
+  detteRestante: number;
+  /** Interest paid over the year, and since the start. */
+  interets: number;
+  interetsCumules: number;
+  /** Holding taxes owed for the year, and since the start. */
+  taxeFonciere: number;
+  impotFortune: number;
+  impots: number;
+  impotsCumules: number;
+  /** Net worth at the end of the year, assets grown and debts amortised. */
+  patrimoineNet: number;
+};
+
+/** Yearly instalment repaying `capital` at `taux` over `duree` years. */
+function annuite(capital: number, taux: number, duree: number): number {
+  if (duree <= 0 || capital <= 0) return capital;
+  if (taux <= 0) return capital / duree;
+  return (capital * taux) / (1 - (1 + taux) ** -duree);
+}
+
+/**
+ * How the loan and the taxman weigh on a portfolio, year after year.
+ *
+ * Worth drawing because the two move in opposite directions, and the second
+ * move surprises people: as the mortgage is repaid the debt weighs less, but
+ * the wealth tax base — net property, loans deducted — grows by exactly the
+ * capital repaid. Paying off a house can therefore raise the tax owed on it.
+ *
+ * Assets grow at their own rate, a let property at its rent-derived one, and
+ * loans amortise on a standard annuity. Everything is nominal: no inflation is
+ * applied, so the curves say what is owed rather than what it will feel like.
+ */
+export function chronique(lignes: Ligne[], pays: ClePays): AnneeDetention[] {
+  const retenues = bornerComposition(lignes).filter((l) => actif(l.cle)?.pays === pays);
+  const horizon = Math.min(
+    30,
+    Math.max(10, ...retenues.filter((l) => l.montant > 0).map((l) => l.duree)),
+  );
+
+  // Une copie mutable : les valeurs évoluent d'une année sur l'autre.
+  const etat = retenues.map((l) => ({ ligne: l, valeur: l.montant }));
+  const annees: AnneeDetention[] = [];
+  let interetsCumules = 0;
+  let impotsCumules = 0;
+
+  for (let annee = 1; annee <= horizon; annee++) {
+    let interets = 0;
+
+    for (const e of etat) {
+      const a = actif(e.ligne.cle);
+      if (a === undefined || e.valeur <= 0) continue;
+
+      if (a.signe === -1) {
+        const versement = annuite(e.ligne.montant, e.ligne.rendement, e.ligne.duree);
+        const du = e.valeur * e.ligne.rendement;
+        interets += du;
+        const solde = e.valeur + du - versement;
+        // Une dette de quelques milliardièmes d'euro n'est pas une dette : sans
+        // ce coup de gomme, l'arrondi de la dernière annuité laisserait un
+        // cheveu de courbe et une ligne d'intérêts pour l'éternité.
+        e.valeur = solde < 0.01 ? 0 : solde;
+      } else {
+        e.valeur *= 1 + rendementEffectif(e.ligne);
+      }
+    }
+
+    const valeurDe = (predicat: (a: Actif) => boolean) =>
+      etat.reduce((somme, e) => {
+        const a = actif(e.ligne.cle);
+        return a !== undefined && predicat(a) ? somme + e.valeur : somme;
+      }, 0);
+
+    const taxeFonciere = etat.reduce((somme, e) => {
+      const a = actif(e.ligne.cle);
+      return somme + (a?.tauxTaxeFonciere ?? 0) * e.valeur;
+    }, 0);
+
+    const assiette = etat.reduce((somme, e) => {
+      const a = actif(e.ligne.cle);
+      if (!a?.immobilierTaxable) return somme;
+      const coefficient = a.cle === 'residencePrincipale' ? 1 - ABATTEMENT_RESIDENCE : 1;
+      return somme + a.signe * e.valeur * coefficient;
+    }, 0);
+
+    const impotFortune =
+      pays === 'france' ? impotFortuneImmobiliere(Math.max(0, assiette)) : 0;
+    const impots = taxeFonciere + impotFortune;
+
+    interetsCumules += interets;
+    impotsCumules += impots;
+
+    annees.push({
+      annee,
+      detteRestante: valeurDe((a) => a.signe === -1),
+      interets,
+      interetsCumules,
+      taxeFonciere,
+      impotFortune,
+      impots,
+      impotsCumules,
+      patrimoineNet: valeurDe((a) => a.signe === 1) - valeurDe((a) => a.signe === -1),
+    });
+  }
+
+  return annees;
 }

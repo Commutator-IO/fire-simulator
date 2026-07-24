@@ -19,7 +19,7 @@ de l'un à l'autre, rien ne se propage tout seul.
 ```bash
 npm install
 npm run dev      # serveur de développement
-npm test         # 185 tests sur les moteurs, les formats et les traductions
+npm test         # 202 tests sur les moteurs, les formats et les traductions
 npm run build    # build de production
 npm run lint
 ```
@@ -108,6 +108,34 @@ Le simulateur les additionne et en tire le **revenu minimum** : ce qu'il faut
 retirer brut, imposition du retrait comprise, uniquement pour rester
 propriétaire. Un bien loué n'entre pas dans la taxe foncière du calcul — la
 sienne figure déjà dans ce que ses loyers coûtent.
+
+Un troisième graphique suit ces poids **dans le temps**, et montre un mouvement
+contre-intuitif : rembourser un crédit allège la dette mais gonfle l'assiette de
+l'IFI, dont les emprunts se déduisent. Payer sa maison peut augmenter l'impôt
+qu'on paie dessus.
+
+**Les impôts pris en compte**, et ceux qui ne le sont pas :
+
+| Prélèvement | Traitement |
+| --- | --- |
+| Taxe foncière du logement | Ligne dédiée, taux paramétrable |
+| Impôt sur la fortune immobilière | Barème complet, décote, résidence à 70 %, crédits déduits |
+| 固定資産税 et 都市計画税 (Japon) | Ligne dédiée, 1,2 % par défaut |
+| Prélèvements sociaux du fonds euros | Retenus chaque année sur les intérêts : le rendement de la ligne en tient compte |
+| Impôt sur les revenus fonciers | Dans le calcul du bien loué |
+| Taxe foncière d'un bien loué | Dans ses charges, jamais comptée deux fois |
+| Imposition des retraits | Onglet « vivre de mon patrimoine » |
+| Droits de succession, imposition de sortie | Hors périmètre |
+| Taxe d'habitation | Supprimée sur les résidences principales |
+
+### Ce qui reste dans le navigateur
+
+Les saisies de l'estimateur sont conservées **dans le navigateur**, et nulle part
+ailleurs. L'adresse reste prioritaire — c'est elle qu'on partage —, le stockage
+local ne servant qu'à revenir sans lien. Il porte un numéro de version : une
+mise à jour qui change la forme d'une ligne jette ce qu'elle ne sait plus lire
+plutôt que de le lire à moitié. Et un bouton **réinitialise tout**, pour le jour
+où quelque chose se passe mal quand même.
 
 Seuls les taux réglementés — Livret A et LDDS à 1,7 %, LEP à 2,5 % au 1ᵉʳ août
 2026 — sont des valeurs officielles. Tous les autres rendements proposés sont
