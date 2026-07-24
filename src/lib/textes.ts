@@ -49,6 +49,42 @@ const FR = {
     colMontant: 'Montant',
     colRendement: 'Rendement attendu',
     colRendementCourt: 'Rendement',
+    paysHint:
+      'Chaque pays a ses enveloppes, ses plafonds et ses taux. Changer de pays change la liste des lignes proposées.',
+    horsPays: (montant: string) =>
+      `${montant} sont renseignés sur des lignes d’un autre pays. Ils ne sont pas comptés ici, mais rien n’est perdu : ils réapparaissent en changeant de pays de résidence.`,
+    horsRetraits: 'hors retraits',
+    loyer: 'Loyers encaissés sur l’année',
+    charges: 'Ce qu’ils coûtent',
+    impositionLoyers: 'Imposition des loyers',
+    detailLoyers: (loyer: string, charges: string, impots: string, net: string) =>
+      `${loyer} de loyers, moins ${charges} de charges, moins ${impots} d’impôt : il reste ${net}.`,
+    rendementLoyers: (taux: string) => `Soit ${taux} net sur la valeur du bien.`,
+    detentionTitre: 'Ce que la détention coûte, avant même de gagner quoi que ce soit',
+    detentionIntro:
+      'Certains impôts tombent chaque année du seul fait que vous possédez, quoi que fassent les marchés. Il faut bien les payer avec quelque chose.',
+    detentionRien:
+      'Aucun impôt de détention ici : vous ne déclarez pas de logement, et votre immobilier reste sous le seuil de l’impôt sur la fortune immobilière.',
+    taxeFonciere: 'Taxe foncière de la résidence principale',
+    taxeFonciereAide:
+      'Un bien loué n’apparaît pas ici : sa propre taxe foncière figure déjà dans ce que ses loyers coûtent, et la compter deux fois serait pire que de ne pas la compter.',
+    impotFortune: 'Impôt sur la fortune immobilière',
+    impotFortuneAide:
+      'Dû au-delà de 1 300 000 € d’immobilier net, mais calculé dès 800 000 € une fois le seuil franchi — c’est la subtilité que tout le monde manque. La résidence principale n’entre que pour 70 % de sa valeur, et les crédits immobiliers se déduisent.',
+    detentionTotal: 'Total dû chaque année',
+    detentionPart: 'Part du patrimoine productif',
+    detentionPartAide:
+      'À comparer à votre rendement : c’est autant qui part avant que le premier euro ne soit disponible.',
+    revenuMinimum: 'Revenu minimum pour payer ces impôts',
+    revenuMinimumAide: (total: string, taux: string, mois: string) =>
+      `Il faut retirer ce montant brut pour régler ${total}, une fois ${taux} d’imposition sur le retrait. Soit ${mois} par mois qui ne financent rien d’autre.`,
+    revenuMinimumPart: (part: string, gains: string) =>
+      `Cela consomme ${part} des ${gains} que votre patrimoine produit dans l’année.`,
+    graphiqueTitre: 'Ligne par ligne',
+    graphiqueIntro:
+      'Chaque ligne à l’échelle, sur un axe commun. Une colonne de chiffres fait comparer des nombres ; des barres font voir la forme d’un patrimoine.',
+    graphiqueNote:
+      'Les barres pâles ne financent pas vos retraits : la résidence principale et le crédit qui la finance comptent dans le patrimoine, pas dans le capital mobilisable.',
     categorie: {
       liquide: 'Épargne de précaution',
       assurance: 'Assurance-vie et retraite',
@@ -437,6 +473,42 @@ const EN: Dictionnaire = {
     colMontant: 'Amount',
     colRendement: 'Expected return',
     colRendementCourt: 'Return',
+    paysHint:
+      'Each country has its own accounts, ceilings and rates. Switching country switches the list of lines you are asked about.',
+    horsPays: (montant: string) =>
+      `${montant} is entered on lines belonging to another country. It is not counted here, but nothing is lost: it reappears when you switch back.`,
+    horsRetraits: 'not for withdrawals',
+    loyer: 'Rent collected over the year',
+    charges: 'What it costs',
+    impositionLoyers: 'Tax on the rent',
+    detailLoyers: (loyer: string, charges: string, impots: string, net: string) =>
+      `${loyer} of rent, less ${charges} of costs, less ${impots} of tax: ${net} is left.`,
+    rendementLoyers: (taux: string) => `That is ${taux} net on the value of the property.`,
+    detentionTitre: 'What holding it costs, before earning anything at all',
+    detentionIntro:
+      'Some taxes fall due every year for the sole reason that you own, whatever the markets do. They have to be paid with something.',
+    detentionRien:
+      'No holding tax here: you are not declaring a home, and your property stays below the wealth tax threshold.',
+    taxeFonciere: 'Property tax on the main residence',
+    taxeFonciereAide:
+      'A let property does not appear here: its own property tax already sits in what its rent costs, and counting it twice would be worse than not counting it at all.',
+    impotFortune: 'Wealth tax on property',
+    impotFortuneAide:
+      'Owed above €1,300,000 of net property, but computed from €800,000 once the threshold is passed — the subtlety everyone misses. The main residence counts for only 70% of its value, and property loans are deductible.',
+    detentionTotal: 'Total owed each year',
+    detentionPart: 'Share of the productive capital',
+    detentionPartAide:
+      'Worth comparing to your return: this much leaves before the first euro is available.',
+    revenuMinimum: 'Minimum income to pay those taxes',
+    revenuMinimumAide: (total: string, taux: string, mois: string) =>
+      `You have to withdraw this much gross to settle ${total}, once ${taux} of withdrawal tax has had its share. That is ${mois} a month funding nothing else.`,
+    revenuMinimumPart: (part: string, gains: string) =>
+      `That eats ${part} of the ${gains} your capital produces in a year.`,
+    graphiqueTitre: 'Line by line',
+    graphiqueIntro:
+      'Every line to scale, on a shared axis. A column of figures makes you compare numbers; bars make you see the shape of a portfolio.',
+    graphiqueNote:
+      'The pale bars do not fund your withdrawals: the main residence and the loan against it count in your net worth, not in the capital you can draw on.',
     categorie: {
       liquide: 'Rainy-day savings',
       assurance: 'Life insurance and pensions',

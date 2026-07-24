@@ -121,7 +121,7 @@ describe('holdings in the address', () => {
   // A statement left at the catalogue's own rates is the common case, and it
   // should not double the length of the address.
   it('writes a rate only when it differs from the product’s own', () => {
-    const defaut = actif('pea').rendementParDefaut;
+    const defaut = actif('pea')!.rendementParDefaut;
     expect(encoderEtat(DEFAUTS, { composition: avec({ pea: 1_000 }) })).not.toContain(
       'pea-taux',
     );

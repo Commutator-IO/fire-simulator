@@ -218,7 +218,7 @@ function Simulateur({
    * sliders of the other tab have to stay free. The button says so by going
    * quiet when the two already agree.
    */
-  const bilanCourant = bilan(composition);
+  const bilanCourant = bilan(composition, h.pays);
   const dejaApplique =
     Math.round(bilanCourant.productif) === Math.round(h.patrimoine) &&
     Math.abs(bilanCourant.rendementRecompose - h.rendement) < 5e-6;
@@ -241,6 +241,9 @@ function Simulateur({
       {vue === 'patrimoine' ? (
         <Patrimoine
           composition={composition}
+          pays={h.pays}
+          imposition={h.imposition}
+          onPays={(cle) => appliquerRegime(cle, regimeParDefaut(cle))}
           onLigne={majLigne}
           onEffacer={() => setComposition(compositionVide())}
           onAppliquer={appliquerPatrimoine}

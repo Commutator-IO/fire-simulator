@@ -15,7 +15,7 @@ premier pose.
 ```bash
 npm install
 npm run dev      # serveur de développement
-npm test         # 165 tests sur les moteurs, les formats et les traductions
+npm test         # 180 tests sur les moteurs, les formats et les traductions
 npm run build    # build de production
 npm run lint
 ```
@@ -55,10 +55,15 @@ et 2 % d'inflation préserve le capital en euros mais l'érode en pouvoir d'acha
 ### Le patrimoine, recomposé à partir de ce qu'on possède
 
 Le premier onglet s'ouvre sur deux chiffres que personne n'a en tête : un
-patrimoine et un rendement. Le second les fabrique à partir de quatorze lignes
-classiques — Livret A, LEP, liquidités, fonds euros, unités de compte, PER, PEA,
-compte-titres, SCPI, immobilier locatif, résidence principale, autres actifs, et
-deux lignes de crédits.
+patrimoine et un rendement. Le second les fabrique à partir des placements
+réels, **et le catalogue dépend du pays** : un PEA ne veut rien dire pour un
+résident japonais, un NISA rien pour un résident français, et un dépôt à vue ne
+rapporte pas la même chose à Tokyo et à Paris.
+
+| | Lignes proposées |
+| --- | --- |
+| France | Livret A et LDDS, LEP, liquidités, fonds euros, unités de compte, PER, PEA, compte-titres, SCPI, immobilier locatif, résidence principale, autres actifs, crédit de la résidence, autres crédits |
+| Japon | Dépôt à vue, dépôt à terme, NISA, compte-titres imposable, iDeCo, J-REIT, immobilier locatif, résidence principale, autres actifs, crédit de la résidence, autres crédits |
 
 **Le rendement recomposé** est la moyenne des rendements, pondérée par les
 montants :
@@ -80,6 +85,25 @@ crédit qui la finance sortent donc du patrimoine qui alimente les retraits, mai
 restent dans le patrimoine net : c'est une richesse réelle, elle ne paie
 simplement pas les courses. Les exclure séparément fausserait le total, d'où
 deux lignes de crédit distinctes.
+
+**Un bien loué gagne son loyer, pas un taux.** Son rendement est donc calculé et
+non saisi : loyers de l'année, moins ce qu'ils coûtent — taxe foncière,
+copropriété, gestion, vacance —, moins l'impôt sur ce qui reste, le tout sur la
+valeur du bien. Un rendement annoncé sur le loyer brut vaut couramment le double
+du vrai.
+
+### Ce que la détention coûte
+
+Certains impôts tombent chaque année du seul fait qu'on possède, quoi que
+fassent les marchés : la taxe foncière du logement, et en France l'impôt sur la
+fortune immobilière au-delà de 1 300 000 € d'immobilier net — calculé, une fois
+le seuil franchi, **dès 800 000 €**, ce que tout le monde manque. La résidence
+principale n'y entre que pour 70 % de sa valeur.
+
+Le simulateur les additionne et en tire le **revenu minimum** : ce qu'il faut
+retirer brut, imposition du retrait comprise, uniquement pour rester
+propriétaire. Un bien loué n'entre pas dans la taxe foncière du calcul — la
+sienne figure déjà dans ce que ses loyers coûtent.
 
 Seuls les taux réglementés — Livret A et LDDS à 1,7 %, LEP à 2,5 % au 1ᵉʳ août
 2026 — sont des valeurs officielles. Tous les autres rendements proposés sont

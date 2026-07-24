@@ -57,6 +57,9 @@ export type Vue = 'fire' | 'patrimoine';
  * when it differs from the product's own, so a plain statement stays short.
  */
 const SUFFIXE_TAUX = '-taux';
+const SUFFIXE_LOYER = '-loyer';
+const SUFFIXE_CHARGES = '-charges';
+const SUFFIXE_IMPOTS = '-impots';
 
 /**
  * Decimals kept on a rate travelling through the URL.
@@ -132,10 +135,26 @@ export function encoderEtat(
   if (vue !== undefined && vue !== 'fire') params.set(CLES.vue, vue);
 
   for (const ligne of composition ?? []) {
-    if (ligne.montant <= 0) continue;
+    const a = actif(ligne.cle);
+    if (a === undefined || ligne.montant <= 0) continue;
     params.set(ligne.cle, String(arrondi(ligne.montant)));
-    const defaut = actif(ligne.cle).rendementParDefaut;
-    if (enPoints(ligne.rendement) !== enPoints(defaut)) {
+
+    if (a.revenus) {
+      // A rented flat carries its rent rather than a rate: the rate is the
+      // result, not an input.
+      if (ligne.loyer > 0) params.set(`${ligne.cle}${SUFFIXE_LOYER}`, String(arrondi(ligne.loyer)));
+      if (ligne.charges > 0)
+        params.set(`${ligne.cle}${SUFFIXE_CHARGES}`, String(arrondi(ligne.charges)));
+      if (enPoints(ligne.impositionRevenus) !== enPoints(a.impositionParDefaut ?? 0)) {
+        params.set(
+          `${ligne.cle}${SUFFIXE_IMPOTS}`,
+          String(enPoints(ligne.impositionRevenus)),
+        );
+      }
+      continue;
+    }
+
+    if (enPoints(ligne.rendement) !== enPoints(a.rendementParDefaut)) {
       params.set(`${ligne.cle}${SUFFIXE_TAUX}`, String(enPoints(ligne.rendement)));
     }
   }
@@ -154,18 +173,36 @@ export function decoderVue(recherche: string): Vue {
 /** Reads a set of holdings back, clamping every amount and every rate. */
 export function decoderComposition(recherche: string): Ligne[] {
   const p = new URLSearchParams(recherche);
+  const taux = (cle: string, defaut: number, max: number, min = 0) =>
+    nombre(p.get(cle), defaut * 100, min * 100, max * 100, DECIMALES_TAUX) / 100;
+
   return bornerComposition(
     ACTIFS.map((a) => ({
       cle: a.cle,
       montant: nombre(p.get(a.cle), 0, BORNES_LIGNE.montant.min, BORNES_LIGNE.montant.max),
-      rendement:
-        nombre(
-          p.get(`${a.cle}${SUFFIXE_TAUX}`),
-          a.rendementParDefaut * 100,
-          BORNES_LIGNE.rendement.min * 100,
-          BORNES_LIGNE.rendement.max * 100,
-          DECIMALES_TAUX,
-        ) / 100,
+      rendement: taux(
+        `${a.cle}${SUFFIXE_TAUX}`,
+        a.rendementParDefaut,
+        BORNES_LIGNE.rendement.max,
+        BORNES_LIGNE.rendement.min,
+      ),
+      loyer: nombre(
+        p.get(`${a.cle}${SUFFIXE_LOYER}`),
+        0,
+        BORNES_LIGNE.loyer.min,
+        BORNES_LIGNE.loyer.max,
+      ),
+      charges: nombre(
+        p.get(`${a.cle}${SUFFIXE_CHARGES}`),
+        0,
+        BORNES_LIGNE.loyer.min,
+        BORNES_LIGNE.loyer.max,
+      ),
+      impositionRevenus: taux(
+        `${a.cle}${SUFFIXE_IMPOTS}`,
+        a.impositionParDefaut ?? 0,
+        BORNES_LIGNE.impositionRevenus.max,
+      ),
     })),
   );
 }

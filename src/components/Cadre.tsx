@@ -38,12 +38,7 @@ export function Entete({
           </span>
         </a>
 
-        <p className="order-3 w-full text-xs leading-relaxed text-ink-400 sm:order-none sm:w-auto sm:flex-1">
-          {t.entete.avertissementDebut}{' '}
-          <strong className="font-medium text-ink-500">
-            {t.entete.avertissementFort}
-          </strong>
-        </p>
+        <Onglets vue={vue} onVue={onVue} />
 
         <a
           href="#methode"
@@ -55,7 +50,12 @@ export function Entete({
         <ChoixLangue langue={langue} onLangue={onLangue} etiquette={t.entete.choixLangue} />
       </div>
 
-      <Onglets vue={vue} onVue={onVue} />
+      {/* The notice has to be on every view, and the tabs have taken the row
+          it used to share. A thin strip keeps it in sight without competing. */}
+      <p className="border-t border-ink-200/70 bg-ink-50/60 px-5 py-1.5 text-center text-[11px] leading-relaxed text-ink-400">
+        {t.entete.avertissementDebut}{' '}
+        <strong className="font-medium text-ink-500">{t.entete.avertissementFort}</strong>
+      </p>
     </header>
   );
 }
@@ -75,28 +75,29 @@ function Onglets({ vue, onVue }: { vue: Vue; onVue: (v: Vue) => void }) {
   ];
 
   return (
-    <nav aria-label={t.onglets.aria} className="border-t border-ink-200/70">
-      <div className="mx-auto flex max-w-6xl gap-6 px-5">
-        {onglets.map((o) => {
-          const actif = o.cle === vue;
-          return (
-            <button
-              key={o.cle}
-              type="button"
-              aria-current={actif ? 'page' : undefined}
-              onClick={() => onVue(o.cle)}
-              className={[
-                'relative -mb-px border-b-2 py-2.5 text-sm font-medium transition',
-                actif
-                  ? 'border-brand-500 text-ink-900'
-                  : 'border-transparent text-ink-500 hover:text-ink-800',
-              ].join(' ')}
-            >
-              {o.label}
-            </button>
-          );
-        })}
-      </div>
+    <nav
+      aria-label={t.onglets.aria}
+      className="flex flex-1 flex-wrap items-center gap-1"
+    >
+      {onglets.map((o) => {
+        const actif = o.cle === vue;
+        return (
+          <button
+            key={o.cle}
+            type="button"
+            aria-current={actif ? 'page' : undefined}
+            onClick={() => onVue(o.cle)}
+            className={[
+              'rounded-lg px-3 py-1.5 text-sm font-medium transition',
+              actif
+                ? 'bg-brand-50 text-brand-700'
+                : 'text-ink-500 hover:bg-ink-100 hover:text-ink-900',
+            ].join(' ')}
+          >
+            {o.label}
+          </button>
+        );
+      })}
     </nav>
   );
 }
