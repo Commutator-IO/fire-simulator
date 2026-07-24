@@ -791,9 +791,64 @@ export function coutDetention(
   };
 }
 
-/** Lines held for another country than the one in force, and their total. */
+// ---------------------------------------------------------------------------
+// A statement to open on
+// ---------------------------------------------------------------------------
+
+/**
+ * Amounts a first-time visitor lands on, per country.
+ *
+ * Not zeroes: an empty form says nothing about what the tool does, and the
+ * chart, the blended return and the holding costs all need something to chew
+ * on. These are a plausible, diversified household — a rainy-day fund, a life
+ * insurance policy, an equity plan, a let flat with its rent, a home with a
+ * mortgage on it — rounded to figures nobody will mistake for their own.
+ */
+const EXEMPLES: Partial<Record<CleActif, Partial<Ligne>>> = {
+  livretA: { montant: 25_000 },
+  liquidites: { montant: 8_000 },
+  fondsEuros: { montant: 40_000 },
+  uniteCompte: { montant: 60_000 },
+  per: { montant: 30_000 },
+  pea: { montant: 120_000 },
+  compteTitres: { montant: 90_000 },
+  scpi: { montant: 30_000 },
+  immobilierLocatif: { montant: 200_000, loyer: 9_600, charges: 2_900 },
+  residencePrincipale: { montant: 350_000 },
+  creditResidence: { montant: 150_000 },
+
+  futsuYokin: { montant: 20_000 },
+  teikiYokin: { montant: 30_000 },
+  nisa: { montant: 120_000 },
+  tokutei: { montant: 90_000 },
+  ideco: { montant: 40_000 },
+  jreit: { montant: 30_000 },
+  locatifJp: { montant: 200_000, loyer: 9_600, charges: 2_900 },
+  residenceJp: { montant: 350_000 },
+  creditResidenceJp: { montant: 150_000 },
+};
+
+export function compositionParDefaut(): Ligne[] {
+  return ACTIFS.map((a) => ({ ...ligneVide(a), ...(EXEMPLES[a.cle] ?? {}) }));
+}
+
+/** True once a composition holds anything at all. */
+export function estRenseignee(lignes: Ligne[]): boolean {
+  return lignes.some((l) => l.montant > 0);
+}
+
+/**
+ * What has been entered for another country than the one in force.
+ *
+ * Measured against the opening example rather than against zero: the example
+ * fills both catalogues, so that switching country shows a statement rather
+ * than a blank form. Reporting those amounts as "entered elsewhere" would be
+ * announcing the user's own data back to them before they had typed anything.
+ */
 export function ailleurs(lignes: Ligne[], pays: ClePays): number {
+  const exemple = compositionParDefaut();
   return bornerComposition(lignes)
     .filter((l) => actif(l.cle)?.pays !== pays)
+    .filter((l) => l.montant !== exemple.find((e) => e.cle === l.cle)?.montant)
     .reduce((somme, l) => somme + l.montant, 0);
 }

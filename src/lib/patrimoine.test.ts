@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   ACTIFS,
+  compositionParDefaut,
+  estRenseignee,
   BORNES_LIGNE,
   CATEGORIES,
   actif,
@@ -149,8 +151,12 @@ describe('the blended return', () => {
     const melange = avec({ pea: 100_000, nisa: 400_000 });
     expect(bilan(melange, 'france').brut).toBe(100_000);
     expect(bilan(melange, 'japon').brut).toBe(400_000);
+    // Mesuré contre l'exemple d'ouverture, pas contre zéro : sinon il
+    // annoncerait ses propres valeurs de départ comme une saisie.
     expect(ailleurs(melange, 'france')).toBe(400_000);
     expect(ailleurs(melange, 'japon')).toBe(100_000);
+    expect(ailleurs(compositionParDefaut(), 'france')).toBe(0);
+    expect(ailleurs(compositionParDefaut(), 'japon')).toBe(0);
   });
 
   it('reports nothing when the debts swallow the assets', () => {
@@ -397,5 +403,40 @@ describe('purity', () => {
     bilan(lignes, 'france');
     coutDetention(lignes, 'france', 0.3);
     expect(lignes).toEqual(copie);
+  });
+});
+
+describe('the statement it opens on', () => {
+  it('is filled in for both countries, not blank', () => {
+    expect(estRenseignee(compositionParDefaut())).toBe(true);
+    for (const p of PAYS) {
+      expect(bilan(compositionParDefaut(), p.cle).renseigne).toBe(true);
+    }
+  });
+
+  it('describes a household one could actually be', () => {
+    for (const p of PAYS) {
+      const b = bilan(compositionParDefaut(), p.cle);
+      // Diversified, geared, and returning something between a savings account
+      // and an all-equity portfolio.
+      expect(b.parCategorie.length).toBeGreaterThanOrEqual(4);
+      expect(b.dettes).toBeGreaterThan(0);
+      expect(b.rendementRecompose).toBeGreaterThan(0.02);
+      expect(b.rendementRecompose).toBeLessThan(0.07);
+    }
+  });
+
+  it('lets the let flat show a rent rather than a bare value', () => {
+    for (const p of PAYS) {
+      const loue = compositionParDefaut().find(
+        (l) => actif(l.cle)?.pays === p.cle && actif(l.cle)?.revenus,
+      )!;
+      expect(loue.loyer).toBeGreaterThan(0);
+      expect(locatif(loue).rendement).toBeGreaterThan(0);
+    }
+  });
+
+  it('is emptied by clearing, and stays empty', () => {
+    expect(estRenseignee(compositionVide())).toBe(false);
   });
 });

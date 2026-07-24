@@ -17,6 +17,7 @@ import {
 } from '../lib/patrimoine';
 import { useChampNumerique } from '../lib/champNumerique';
 import { Segments } from './Champs';
+import { Avertissement } from './Cadre';
 
 /**
  * The second simulator: what you own, what it earns, and what it costs to keep.
@@ -73,6 +74,7 @@ export function Patrimoine({
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-ink-500 sm:text-lg">
             {t.patrimoine.intro}
           </p>
+          <Avertissement />
         </div>
       </section>
 
@@ -149,7 +151,7 @@ export function Patrimoine({
 
           {/* ------------------------------------------------------- Bilan */}
           <div className="lg:col-span-5">
-            <div className="lg:sticky lg:top-28">
+            <div className="lg:sticky lg:top-24">
               <div className="card overflow-hidden">
                 <div className="bg-brand-700 px-6 py-7 text-white sm:px-8">
                   <p className="text-sm text-brand-100">{t.patrimoine.productif}</p>

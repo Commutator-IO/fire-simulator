@@ -7,15 +7,19 @@ premier pose.
 
 | Onglet | Ce qu'il répond |
 | --- | --- |
-| **Vivre de mon patrimoine** | Ce que votre capital peut vous verser, combien de temps il tient, et ce que la fiscalité de votre pays y change |
-| **Estimer mon patrimoine** | Ce que vous possédez et ce que cela rapporte, à partir de vos placements réels — d'où sortent les deux chiffres que le premier onglet réclame |
+| **Estimer mon patrimoine** | Ce que vous possédez, ce que cela rapporte et ce que la détention coûte, à partir de vos placements réels |
+| **Vivre de mon patrimoine** | Ce que ce capital peut vous verser, combien de temps il tient, et ce que la fiscalité de votre pays y change |
+
+Le premier ouvre l'application, parce qu'il fabrique les deux chiffres que le
+second réclame. Les deux fonctionnent séparément : un bouton passe le résultat
+de l'un à l'autre, rien ne se propage tout seul.
 
 ## Démarrer
 
 ```bash
 npm install
 npm run dev      # serveur de développement
-npm test         # 180 tests sur les moteurs, les formats et les traductions
+npm test         # 185 tests sur les moteurs, les formats et les traductions
 npm run build    # build de production
 npm run lint
 ```

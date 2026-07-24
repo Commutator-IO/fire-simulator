@@ -7,7 +7,7 @@ import { Objectif } from './components/Objectif';
 import { Comparaison } from './components/Comparaison';
 import { Sources } from './components/Sources';
 import { Patrimoine } from './components/Patrimoine';
-import { Entete, Pied } from './components/Cadre';
+import { Avertissement, Entete, Pied } from './components/Cadre';
 import { BoutonPartage } from './components/BoutonPartage';
 import { ContexteLangue, useFormats, useTextes, useTraduire } from './lib/contexte';
 import { LANGUE_PAR_DEFAUT, type Langue } from './lib/i18n';
@@ -38,7 +38,13 @@ import {
   lienPartage,
   type Vue,
 } from './lib/url';
-import { bilan, compositionVide, type CleActif, type Ligne } from './lib/patrimoine';
+import {
+  bilan,
+  compositionParDefaut,
+  compositionVide,
+  type CleActif,
+  type Ligne,
+} from './lib/patrimoine';
 
 /**
  * A rate is held as a fraction and edited in percentage points.
@@ -114,8 +120,10 @@ function Simulateur({
   const [vue, setVue] = useState<Vue>(() =>
     decoderVue(typeof window === 'undefined' ? '' : window.location.search),
   );
-  const [composition, setComposition] = useState<Ligne[]>(() =>
-    decoderComposition(typeof window === 'undefined' ? '' : window.location.search),
+  const [composition, setComposition] = useState<Ligne[]>(
+    () =>
+      decoderComposition(typeof window === 'undefined' ? '' : window.location.search) ??
+      compositionParDefaut(),
   );
   const [avanceOuvert, setAvanceOuvert] = useState(
     () =>
@@ -243,7 +251,10 @@ function Simulateur({
           composition={composition}
           pays={h.pays}
           imposition={h.imposition}
-          onPays={(cle) => appliquerRegime(cle, regimeParDefaut(cle))}
+          // Le pays de résidence est un fait sur la personne, partagé par les
+          // deux onglets ; en changer ici ne doit pas pour autant réécrire le
+          // plan de retraits, que l'utilisateur a peut-être déjà réglé.
+          onPays={(cle) => maj('pays', cle)}
           onLigne={majLigne}
           onEffacer={() => setComposition(compositionVide())}
           onAppliquer={appliquerPatrimoine}
@@ -264,6 +275,7 @@ function Simulateur({
             <p className="mt-5 max-w-2xl text-base leading-relaxed text-ink-500 sm:text-lg">
               {t.hero.intro}
             </p>
+            <Avertissement />
           </div>
         </section>
 

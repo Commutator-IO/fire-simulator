@@ -6,6 +6,7 @@ import {
   BORNES_LIGNE,
   actif,
   bornerComposition,
+  estRenseignee,
   type Ligne,
 } from './patrimoine';
 
@@ -40,15 +41,17 @@ const CLES = {
   pays: 'pays',
   langue: 'lang',
   vue: 'vue',
+  videPatrimoine: 'vide',
 } as const;
 
 /**
  * The two simulators, and which one the link opens on.
  *
- * Held in the address like everything else: a link to a net-worth statement
- * should open on the statement, not on the withdrawal plan it feeds.
+ * The statement comes first, and is therefore the default: it answers the two
+ * questions the withdrawal plan opens on, so starting there is starting at the
+ * beginning. Held in the address like everything else.
  */
-export type Vue = 'fire' | 'patrimoine';
+export type Vue = 'patrimoine' | 'fire';
 
 /**
  * Holdings travel one parameter per line — `?pea=200000&scpi=40000` — rather
@@ -132,7 +135,13 @@ export function encoderEtat(
   ajouter(CLES.mode, etat.modeRetrait, defauts.modeRetrait);
   ajouter(CLES.pays, etat.pays, defauts.pays);
   if (langue !== null) params.set(CLES.langue, langue);
-  if (vue !== undefined && vue !== 'fire') params.set(CLES.vue, vue);
+  if (vue !== undefined && vue !== 'patrimoine') params.set(CLES.vue, vue);
+
+  // Sans marqueur, une adresse sans avoir ne se distinguerait pas d'une
+  // première visite, et l'exemple reviendrait au rechargement.
+  if (composition !== undefined && !estRenseignee(composition)) {
+    params.set(CLES.videPatrimoine, '1');
+  }
 
   for (const ligne of composition ?? []) {
     const a = actif(ligne.cle);
@@ -163,16 +172,20 @@ export function encoderEtat(
   return chaine === '' ? '' : `?${chaine}`;
 }
 
-/** The view the URL asks for; the withdrawal plan unless it says otherwise. */
+/** The view the URL asks for; the statement unless it says otherwise. */
 export function decoderVue(recherche: string): Vue {
-  return new URLSearchParams(recherche).get(CLES.vue) === 'patrimoine'
-    ? 'patrimoine'
-    : 'fire';
+  return new URLSearchParams(recherche).get(CLES.vue) === 'fire' ? 'fire' : 'patrimoine';
 }
 
 /** Reads a set of holdings back, clamping every amount and every rate. */
-export function decoderComposition(recherche: string): Ligne[] {
+/**
+ * Holdings read back from the address, or null when it carries none — a first
+ * visit, on which the interface opens on its example instead.
+ */
+export function decoderComposition(recherche: string): Ligne[] | null {
   const p = new URLSearchParams(recherche);
+  const vide = p.get(CLES.videPatrimoine) === '1';
+  if (!vide && !ACTIFS.some((a) => p.has(a.cle))) return null;
   const taux = (cle: string, defaut: number, max: number, min = 0) =>
     nombre(p.get(cle), defaut * 100, min * 100, max * 100, DECIMALES_TAUX) / 100;
 

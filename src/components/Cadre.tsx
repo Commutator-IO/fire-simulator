@@ -49,14 +49,24 @@ export function Entete({
 
         <ChoixLangue langue={langue} onLangue={onLangue} etiquette={t.entete.choixLangue} />
       </div>
-
-      {/* The notice has to be on every view, and the tabs have taken the row
-          it used to share. A thin strip keeps it in sight without competing. */}
-      <p className="border-t border-ink-200/70 bg-ink-50/60 px-5 py-1.5 text-center text-[11px] leading-relaxed text-ink-400">
-        {t.entete.avertissementDebut}{' '}
-        <strong className="font-medium text-ink-500">{t.entete.avertissementFort}</strong>
-      </p>
     </header>
+  );
+}
+
+/**
+ * The "not financial advice" notice.
+ *
+ * It sits in the opening of each view rather than in the header: it has to be
+ * read once, not carried down every scroll. A sticky strip repeating a sentence
+ * nobody rereads costs vertical space on every screen of a five-screen page.
+ */
+export function Avertissement() {
+  const t = useTextes();
+  return (
+    <p className="mt-6 text-sm leading-relaxed text-ink-400">
+      {t.entete.avertissementDebut}{' '}
+      <strong className="font-medium text-ink-500">{t.entete.avertissementFort}</strong>
+    </p>
   );
 }
 
@@ -69,9 +79,11 @@ export function Entete({
  */
 function Onglets({ vue, onVue }: { vue: Vue; onVue: (v: Vue) => void }) {
   const t = useTextes();
+  // The statement first: it is where the two figures the withdrawal plan asks
+  // for actually come from.
   const onglets: { cle: Vue; label: string }[] = [
-    { cle: 'fire', label: t.onglets.fire },
     { cle: 'patrimoine', label: t.onglets.patrimoine },
+    { cle: 'fire', label: t.onglets.fire },
   ];
 
   return (

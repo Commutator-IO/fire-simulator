@@ -142,12 +142,21 @@ describe('holdings in the address', () => {
     );
   });
 
-  it('reads an empty address as an empty statement', () => {
-    expect(decoderComposition('')).toEqual(compositionVide());
+  // An address that says nothing is a first visit, not an emptied statement:
+  // the interface opens on its example rather than on a blank form.
+  it('says nothing when the address carries no holding', () => {
+    expect(decoderComposition('')).toBeNull();
+    expect(decoderComposition('?lang=fr')).toBeNull();
+  });
+
+  it('remembers a statement that was deliberately cleared', () => {
+    const requete = encoderEtat(DEFAUTS, { composition: compositionVide() });
+    expect(requete).toContain('vide=1');
+    expect(decoderComposition(requete)).toEqual(compositionVide());
   });
 
   it('clamps what the address carries', () => {
-    const lu = decoderComposition('?pea=-9000&livretA=1e12&scpi-taux=999');
+    const lu = decoderComposition('?pea=-9000&livretA=1e12&scpi-taux=999')!;
     const trouve = (cle: CleActif) => lu.find((l) => l.cle === cle)!;
     expect(trouve('pea').montant).toBe(0);
     expect(trouve('livretA').montant).toBe(100_000_000);
@@ -156,14 +165,16 @@ describe('holdings in the address', () => {
 });
 
 describe('the active tab', () => {
-  it('opens on the withdrawal plan unless told otherwise', () => {
-    expect(decoderVue('')).toBe('fire');
-    expect(decoderVue('?vue=nimporte')).toBe('fire');
-    expect(decoderVue('?vue=patrimoine')).toBe('patrimoine');
+  // The statement is where one starts, so it is what an address without a tab
+  // opens on.
+  it('opens on the statement unless told otherwise', () => {
+    expect(decoderVue('')).toBe('patrimoine');
+    expect(decoderVue('?vue=nimporte')).toBe('patrimoine');
+    expect(decoderVue('?vue=fire')).toBe('fire');
   });
 
   it('is written only when it is not the default', () => {
-    expect(encoderEtat(DEFAUTS, { vue: 'fire' })).toBe('');
-    expect(encoderEtat(DEFAUTS, { vue: 'patrimoine' })).toBe('?vue=patrimoine');
+    expect(encoderEtat(DEFAUTS, { vue: 'patrimoine' })).toBe('');
+    expect(encoderEtat(DEFAUTS, { vue: 'fire' })).toBe('?vue=fire');
   });
 });
