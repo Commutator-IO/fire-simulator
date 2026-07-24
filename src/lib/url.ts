@@ -45,13 +45,16 @@ const CLES = {
 } as const;
 
 /**
- * The two simulators, and which one the link opens on.
+ * The tabs, and which one the link opens on.
  *
  * The statement comes first, and is therefore the default: it answers the two
  * questions the withdrawal plan opens on, so starting there is starting at the
- * beginning. Held in the address like everything else.
+ * beginning. `bourse` and `locatif` are announced but not yet built. Held in
+ * the address like everything else.
  */
-export type Vue = 'patrimoine' | 'fire';
+export type Vue = 'patrimoine' | 'fire' | 'bourse' | 'locatif';
+
+const VUES: readonly Vue[] = ['patrimoine', 'fire', 'bourse', 'locatif'];
 
 /**
  * Holdings travel one parameter per line — `?pea=200000&scpi=40000` — rather
@@ -172,9 +175,10 @@ export function encoderEtat(
   return chaine === '' ? '' : `?${chaine}`;
 }
 
-/** The view the URL asks for; the statement unless it says otherwise. */
+/** The view the URL asks for; the statement unless it names a known other. */
 export function decoderVue(recherche: string): Vue {
-  return new URLSearchParams(recherche).get(CLES.vue) === 'fire' ? 'fire' : 'patrimoine';
+  const demandee = new URLSearchParams(recherche).get(CLES.vue);
+  return VUES.find((v) => v === demandee) ?? 'patrimoine';
 }
 
 /** Reads a set of holdings back, clamping every amount and every rate. */

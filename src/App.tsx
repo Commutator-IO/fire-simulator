@@ -7,6 +7,8 @@ import { Objectif } from './components/Objectif';
 import { Comparaison } from './components/Comparaison';
 import { Sources } from './components/Sources';
 import { Patrimoine } from './components/Patrimoine';
+import { Bourse } from './components/Bourse';
+import { Locatif } from './components/Locatif';
 import { Avertissement, Entete, Pied } from './components/Cadre';
 import { BoutonPartage } from './components/BoutonPartage';
 import { ContexteLangue, useFormats, useTextes, useTraduire } from './lib/contexte';
@@ -267,14 +269,14 @@ function Simulateur({
     <div className="min-h-screen">
       <Entete langue={langue} onLangue={onLangue} vue={vue} onVue={setVue} />
 
-      {vue === 'patrimoine' ? (
+      {vue === 'patrimoine' && (
         <Patrimoine
           composition={composition}
           pays={h.pays}
           imposition={h.imposition}
           // Le pays de résidence est un fait sur la personne, partagé par les
-          // deux onglets ; en changer ici ne doit pas pour autant réécrire le
-          // plan de retraits, que l'utilisateur a peut-être déjà réglé.
+          // onglets ; en changer ici ne doit pas pour autant réécrire le plan
+          // de retraits, que l'utilisateur a peut-être déjà réglé.
           onPays={(cle) => maj('pays', cle)}
           onLigne={majLigne}
           onEffacer={() => setComposition(compositionVide())}
@@ -285,7 +287,12 @@ function Simulateur({
           onAppliquer={appliquerPatrimoine}
           dejaApplique={dejaApplique}
         />
-      ) : (
+      )}
+
+      {vue === 'bourse' && <Bourse />}
+      {vue === 'locatif' && <Locatif />}
+
+      {vue === 'fire' && (
       <main>
         {/* ---------------------------------------------------------- Hero */}
         <section className="border-b border-ink-200/70 bg-white">

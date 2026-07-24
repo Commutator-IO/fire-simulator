@@ -14,6 +14,12 @@ Le premier ouvre l'application, parce qu'il fabrique les deux chiffres que le
 second réclame. Les deux fonctionnent séparément : un bouton passe le résultat
 de l'un à l'autre, rien ne se propage tout seul.
 
+Deux autres onglets sont **annoncés mais pas encore construits** — un suivi de
+**portefeuille boursier** avec calcul de plus ou moins-value, et une gestion de
+**portefeuille immobilier locatif** avec cash-flow et rendement net. Ils
+affichent, sous un bandeau « à venir », ce qu'ils calculeront et une maquette
+aux chiffres d'exemple.
+
 ## Démarrer
 
 ```bash

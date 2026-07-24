@@ -81,9 +81,11 @@ function Onglets({ vue, onVue }: { vue: Vue; onVue: (v: Vue) => void }) {
   const t = useTextes();
   // The statement first: it is where the two figures the withdrawal plan asks
   // for actually come from.
-  const onglets: { cle: Vue; label: string }[] = [
+  const onglets: { cle: Vue; label: string; aVenir?: boolean }[] = [
     { cle: 'patrimoine', label: t.onglets.patrimoine },
     { cle: 'fire', label: t.onglets.fire },
+    { cle: 'bourse', label: t.onglets.bourse, aVenir: true },
+    { cle: 'locatif', label: t.onglets.locatif, aVenir: true },
   ];
 
   return (
@@ -100,13 +102,23 @@ function Onglets({ vue, onVue }: { vue: Vue; onVue: (v: Vue) => void }) {
             aria-current={actif ? 'page' : undefined}
             onClick={() => onVue(o.cle)}
             className={[
-              'rounded-lg px-3 py-1.5 text-sm font-medium transition',
+              'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition',
               actif
                 ? 'bg-brand-50 text-brand-700'
                 : 'text-ink-500 hover:bg-ink-100 hover:text-ink-900',
             ].join(' ')}
           >
             {o.label}
+            {o.aVenir && (
+              <span
+                className={[
+                  'rounded-full px-1.5 py-0.5 text-[0.625rem] font-semibold uppercase tracking-wide',
+                  actif ? 'bg-brand-100 text-brand-700' : 'bg-ink-100 text-ink-400',
+                ].join(' ')}
+              >
+                {t.onglets.aVenir}
+              </span>
+            )}
           </button>
         );
       })}

@@ -84,7 +84,7 @@ function construire(langue: Langue): Formats {
       }).format(fini(v)),
     // French puts a space before the sign, English does not.
     tauxPct: (v) =>
-      `${troisDecimales.format(fini(v) * 100)}${langue === 'fr' ? ' %' : '%'}`,
+      `${troisDecimales.format(fini(v) * 100).replace('-', '−')}${langue === 'fr' ? ' %' : '%'}`,
     points,
     eurSigne: (v) => `${v < 0 ? '−' : '+'} ${eur(Math.abs(v))}`,
   };

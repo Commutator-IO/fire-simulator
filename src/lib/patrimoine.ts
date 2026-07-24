@@ -371,8 +371,8 @@ const FRANCE: Actif[] = [
     rendementParDefaut: 0,
     libelle: { fr: 'Autres actifs', en: 'Other assets' },
     note: {
-      fr: 'Or, cryptomonnaies, parts de société, œuvres… À vous d’en fixer le rendement attendu.',
-      en: 'Gold, crypto, shares in a business, art… the expected return is yours to set.',
+      fr: 'Or, cryptomonnaies, œuvres, objets de collection… À vous d’en fixer le rendement attendu. Les titres de votre société ont leur propre ligne, plus haut.',
+      en: 'Gold, crypto, art, collectibles… the expected return is yours to set. Shares in your own company have their own line, above.',
     },
   },
   {

@@ -39,6 +39,106 @@ const FR = {
     aria: 'Choix du simulateur',
     fire: 'Vivre de mon patrimoine',
     patrimoine: 'Estimer mon patrimoine',
+    bourse: 'Portefeuille boursier',
+    locatif: 'Immobilier locatif',
+    aVenir: 'à venir',
+  },
+
+  aVenir: {
+    badge: 'En développement',
+    prevuTitre: 'Ce que cet onglet fera',
+    apercuTitre: 'À quoi cela ressemblera',
+    apercuTag: 'Maquette — chiffres d’exemple',
+  },
+
+  bourse: {
+    titre: 'Suivre mon portefeuille boursier',
+    intro:
+      'Une ligne par position, un prix de revient, un cours : de quoi lire d’un coup d’œil ce que chaque titre a gagné ou perdu, et ce que pèse le portefeuille aujourd’hui. Le suivi n’est pas encore en place — voici ce qu’il calculera.',
+    promesses: [
+      {
+        titre: 'Plus ou moins-value',
+        corps:
+          'La différence entre le cours et votre prix de revient moyen, par ligne et pour l’ensemble. En euros et en pourcentage, latente tant que vous n’avez pas vendu.',
+      },
+      {
+        titre: 'Prix de revient moyen',
+        corps:
+          'Recalculé à chaque achat, pour que le gain affiché soit le vôtre et non celui d’un cours d’entrée oublié.',
+      },
+      {
+        titre: 'Plus-values réalisées',
+        corps:
+          'Ce qui est sorti pour de bon, séparé du latent — parce que seul le réalisé déclenche l’impôt.',
+      },
+      {
+        titre: 'Poids de chaque ligne',
+        corps:
+          'La part de chaque titre dans le portefeuille, pour voir d’un regard une position devenue trop lourde.',
+      },
+      {
+        titre: 'Alimente l’estimateur',
+        corps:
+          'La valeur du portefeuille rejoindra la ligne « compte-titres » ou « PEA » de l’onglet Estimer mon patrimoine, sans double saisie.',
+      },
+      {
+        titre: 'Dans le navigateur',
+        corps:
+          'Vos positions resteront sur votre machine, comme le reste de l’outil. Rien n’est envoyé nulle part.',
+      },
+    ],
+    colTitre: 'Titre',
+    colQuantite: 'Qté',
+    colPru: 'PRU',
+    colCours: 'Cours',
+    colValeur: 'Valeur',
+    colPl: '± value',
+    total: 'Portefeuille',
+  },
+
+  locatif: {
+    titre: 'Gérer mon portefeuille immobilier locatif',
+    intro:
+      'Un bien par ligne, ses loyers, ce qu’il coûte et ce qu’il rembourse : de quoi voir lesquels dégagent un cash-flow et lesquels le grèvent, et le rendement net de l’ensemble. La gestion n’est pas encore en place — voici ce qu’elle calculera.',
+    promesses: [
+      {
+        titre: 'Cash-flow réel',
+        corps:
+          'Loyers encaissés, moins charges, moins l’annuité de crédit : ce qui reste chaque mois une fois la banque et le fisc servis, bien par bien.',
+      },
+      {
+        titre: 'Rendement net',
+        corps:
+          'Le loyer une fois toutes les charges déduites, rapporté au prix du bien — pas le rendement brut qui vend, celui qu’on touche.',
+      },
+      {
+        titre: 'Poids du crédit',
+        corps:
+          'Capital restant dû, intérêts de l’année, part déjà remboursée : l’effet de levier ligne à ligne.',
+      },
+      {
+        titre: 'Imposition des loyers',
+        corps:
+          'Micro-foncier ou réel, prélèvements sociaux compris, pour un cash-flow après impôt et non avant.',
+      },
+      {
+        titre: 'Alimente l’estimateur',
+        corps:
+          'Valeur des biens et crédits en cours rejoindront les lignes immobilières de l’onglet Estimer mon patrimoine, sans double saisie.',
+      },
+      {
+        titre: 'Dans le navigateur',
+        corps:
+          'Vos biens resteront sur votre machine, comme le reste de l’outil. Rien n’est envoyé nulle part.',
+      },
+    ],
+    colBien: 'Bien',
+    colLoyer: 'Loyers',
+    colCharges: 'Charges',
+    colNet: 'Net',
+    colRendement: 'Rdt net',
+    colCashflow: 'Cash-flow',
+    total: 'Portefeuille',
   },
 
   patrimoine: {
@@ -98,12 +198,8 @@ const FR = {
       autre: 'Autres',
       dettes: 'Dettes',
     },
-    plafond: (montant: string) => `Plafond ${montant}`,
     depasse: (montant: string) => `Au-delà du plafond de ${montant}`,
-    bilanTitre: 'Ce que cela donne',
     vide: 'Renseignez au moins une ligne pour voir le bilan.',
-    brut: 'Total des avoirs',
-    dettes: 'Crédits en cours',
     net: 'Patrimoine net',
     netAide: 'Ce qu’il vous resterait après avoir tout vendu et tout remboursé.',
     productif: 'Patrimoine qui finance vos retraits',
@@ -113,7 +209,6 @@ const FR = {
     rendementAide:
       'La moyenne de vos rendements, pondérée par les montants. Un crédit y entre au signe inversé : son taux tire la moyenne vers le bas, exactement comme l’effet de levier le veut.',
     gains: 'Ce que cela rapporte par an',
-    repartition: 'Répartition',
     appliquer: 'Utiliser ces chiffres dans le simulateur →',
     impositionRecomposee: 'Imposition recomposée des retraits',
     impositionRecomposeeAide:
@@ -490,6 +585,106 @@ const EN: Dictionnaire = {
     aria: 'Choice of simulator',
     fire: 'Living off my capital',
     patrimoine: 'Working out my capital',
+    bourse: 'Stock portfolio',
+    locatif: 'Rental property',
+    aVenir: 'soon',
+  },
+
+  aVenir: {
+    badge: 'In development',
+    prevuTitre: 'What this tab will do',
+    apercuTitre: 'What it will look like',
+    apercuTag: 'Mock-up — example figures',
+  },
+
+  bourse: {
+    titre: 'Track my stock portfolio',
+    intro:
+      'One line per holding, an average cost, a price: enough to read at a glance what each stock has gained or lost, and what the portfolio is worth today. The tracker is not in place yet — here is what it will compute.',
+    promesses: [
+      {
+        titre: 'Profit and loss',
+        corps:
+          'The gap between the price and your average cost, per line and overall. In euros and per cent, unrealised until you sell.',
+      },
+      {
+        titre: 'Average cost',
+        corps:
+          'Recomputed on every purchase, so the gain shown is yours and not that of some forgotten entry price.',
+      },
+      {
+        titre: 'Realised gains',
+        corps:
+          'What has left for good, kept apart from the unrealised — because only realised gains trigger tax.',
+      },
+      {
+        titre: 'Weight of each line',
+        corps:
+          'Each holding’s share of the portfolio, so a position that has grown too large shows at a glance.',
+      },
+      {
+        titre: 'Feeds the estimator',
+        corps:
+          'The portfolio value will flow into the brokerage or equity-plan line of the Working out my capital tab, with no double entry.',
+      },
+      {
+        titre: 'In the browser',
+        corps:
+          'Your holdings will stay on your machine, like the rest of the tool. Nothing is sent anywhere.',
+      },
+    ],
+    colTitre: 'Stock',
+    colQuantite: 'Qty',
+    colPru: 'Avg cost',
+    colCours: 'Price',
+    colValeur: 'Value',
+    colPl: 'P/L',
+    total: 'Portfolio',
+  },
+
+  locatif: {
+    titre: 'Manage my rental-property portfolio',
+    intro:
+      'One property per line, its rent, what it costs and what it repays: enough to see which throw off cash and which drain it, and the net yield of the whole. Management is not in place yet — here is what it will compute.',
+    promesses: [
+      {
+        titre: 'Real cash flow',
+        corps:
+          'Rent collected, less running costs, less the loan repayment: what is left each month once the bank and the taxman are paid, property by property.',
+      },
+      {
+        titre: 'Net yield',
+        corps:
+          'Rent with every cost deducted, over the price of the property — not the gross yield that sells, the one you actually pocket.',
+      },
+      {
+        titre: 'Weight of the loan',
+        corps:
+          'Outstanding balance, the year’s interest, the share already repaid: leverage line by line.',
+      },
+      {
+        titre: 'Tax on rents',
+        corps:
+          'Flat-rate or actual expenses, social levies included, for a cash flow after tax rather than before.',
+      },
+      {
+        titre: 'Feeds the estimator',
+        corps:
+          'Property values and outstanding loans will flow into the property lines of the Working out my capital tab, with no double entry.',
+      },
+      {
+        titre: 'In the browser',
+        corps:
+          'Your properties will stay on your machine, like the rest of the tool. Nothing is sent anywhere.',
+      },
+    ],
+    colBien: 'Property',
+    colLoyer: 'Rent',
+    colCharges: 'Costs',
+    colNet: 'Net',
+    colRendement: 'Net yld',
+    colCashflow: 'Cash flow',
+    total: 'Portfolio',
   },
 
   patrimoine: {
@@ -549,12 +744,8 @@ const EN: Dictionnaire = {
       autre: 'Other',
       dettes: 'Debts',
     },
-    plafond: (montant: string) => `Ceiling ${montant}`,
     depasse: (montant: string) => `Above the ${montant} ceiling`,
-    bilanTitre: 'What it comes to',
     vide: 'Fill in at least one line to see the statement.',
-    brut: 'Total holdings',
-    dettes: 'Outstanding loans',
     net: 'Net worth',
     netAide: 'What you would be left with after selling everything and repaying everything.',
     productif: 'The capital that funds your withdrawals',
@@ -564,7 +755,6 @@ const EN: Dictionnaire = {
     rendementAide:
       'The average of your returns, weighted by the amounts. A loan enters it with a minus sign: its rate pulls the average down, which is exactly what leverage does.',
     gains: 'What that earns in a year',
-    repartition: 'Split',
     appliquer: 'Use these figures in the simulator →',
     impositionRecomposee: 'Blended tax on withdrawals',
     impositionRecomposeeAide:
