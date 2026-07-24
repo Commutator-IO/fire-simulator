@@ -93,17 +93,17 @@ describe('catalogue', () => {
   it('lets a shareholder loan out untaxed, and a reserve at the flat rate', () => {
     // Rembourser un compte courant d'associé n'est pas un revenu.
     expect(actif('compteCourantSasu')!.impositionRetrait).toBe(0);
-    expect(actif('reserveSasu')!.impositionRetrait).toBeCloseTo(0.3, 6);
+    expect(actif('reserveSasu')!.impositionRetrait).toBeCloseTo(0.314, 6);
     // L'IS passe sur le rendement laissé dans la société, chaque année.
     expect(actif('reserveSasu')!.prelevementsAnnuels).toBeCloseTo(0.25, 6);
   });
 
   it('taxes a distribution once, not every year', () => {
-    const d = distribution(60_000, 0.3);
-    expect(d.impot).toBeCloseTo(18_000, 6);
-    expect(d.net).toBeCloseTo(42_000, 6);
+    const d = distribution(60_000, 0.314);
+    expect(d.impot).toBeCloseTo(18_840, 6);
+    expect(d.net).toBeCloseTo(41_160, 6);
     // Un montant négatif ne crée pas un crédit d'impôt.
-    expect(distribution(-5_000, 0.3)).toEqual({ brut: 0, impot: 0, net: 0 });
+    expect(distribution(-5_000, 0.314)).toEqual({ brut: 0, impot: 0, net: 0 });
   });
 
   it('puts a property tax only where no rent absorbs it', () => {

@@ -136,9 +136,9 @@ comptes, et les trois lignes n'ont rien à voir entre elles :
 
 | Ligne | Ce qu'elle finance | Impôt à la sortie |
 | --- | --- | --- |
-| Réserve facultative | Mobilisable | 30 % de flat tax, **une fois** |
+| Réserve facultative | Mobilisable | 31,4 % de flat tax, **une fois** |
 | Compte courant d'associé | Mobilisable | Aucun — un remboursement n'est pas un revenu |
-| Titres de la société | Rien tant qu'on ne vend pas | 30 % à la cession |
+| Titres de la société | Rien tant qu'on ne vend pas | 31,4 % à la cession |
 
 La réserve est affichée brute, avec en regard ce qu'une distribution
 laisserait : la ramener nette en silence cacherait le péage au lieu de le
@@ -154,7 +154,7 @@ unique : un euro retiré est en partie du PEA à 18,6 %, en partie du compte-tit
 à 31,4 %, en partie du livret à 0 %. L'estimateur en calcule la **moyenne
 pondérée** et la transmet au simulateur de retraits, qui la présente comme un
 taux personnalisé — parce qu'aucun régime réel ne décrit ce qui est détenu. Sur
-l'exemple d'ouverture, cela donne 15,5 % — la réserve de la société à 30 % et le compte courant à 0 % tirant chacun de leur côté.
+l'exemple d'ouverture, cela donne 15,6 % — la réserve de la société à 30 % et le compte courant à 0 % tirant chacun de leur côté.
 
 **Les impôts pris en compte**, et ceux qui ne le sont pas :
 

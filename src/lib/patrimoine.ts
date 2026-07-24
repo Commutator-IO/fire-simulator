@@ -291,15 +291,18 @@ const FRANCE: Actif[] = [
     distribuable: true,
     // Le rendement placé dans la société supporte l'IS avant d'être distribué.
     prelevementsAnnuels: 0.25,
-    impositionRetrait: 0.30,
+    // 12,8 % d'impôt sur le revenu et 18,6 % de prélèvements sociaux depuis la
+    // hausse de la CSG sur les revenus du capital : 31,4 %, comme le
+    // compte-titres. Le taux rond de 30 % appartient au passé.
+    impositionRetrait: 0.314,
     rendementParDefaut: 0.025,
     libelle: {
       fr: 'Réserve facultative de la société',
       en: 'Company retained earnings',
     },
     note: {
-      fr: 'Les bénéfices déjà taxés à l’IS et laissés en réserve. À vous, mais pas encore chez vous : les sortir coûte 30 % de flat tax, une fois.',
-      en: 'Profits already taxed at corporation tax and left in reserve. Yours, but not yet in your hands: taking them out costs the 30 % flat tax, once.',
+      fr: 'Les bénéfices déjà taxés à l’IS et laissés en réserve. À vous, mais pas encore chez vous : les sortir coûte la flat tax, une fois.',
+      en: 'Profits already taxed at corporation tax and left in reserve. Yours, but not yet in your hands: taking them out costs the flat tax, once.',
     },
   },
   {
@@ -325,7 +328,8 @@ const FRANCE: Actif[] = [
     categorie: 'entreprise',
     signe: 1,
     productif: false,
-    impositionRetrait: 0.30,
+    // Plus-value de cession : même flat tax que n'importe quel titre.
+    impositionRetrait: 0.314,
     rendementParDefaut: 0,
     libelle: {
       fr: 'Titres de la société',
