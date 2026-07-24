@@ -518,12 +518,12 @@ function Simulateur({
             </div>
 
             <div className="lg:col-span-5">
-              {/* Seul le verdict et ses chiffres restent épinglés : les notes
-                  et le bouton de partage suivent la page, et le panneau tient
-                  ainsi dans un écran sans ascenseur à lui. La hauteur maximale
-                  n'est qu'un filet pour les écrans très bas ; elle ne se voit
-                  pas autrement. */}
-              <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:overscroll-contain">
+              {/* Le verdict, ses chiffres et le bouton de partage restent
+                  épinglés ; les notes suivent la page. Un bouton qui défile
+                  hors de l'écran passe pour disparu, ce qu'il faisait avant.
+                  Aucune hauteur maximale : un ascenseur dans un panneau
+                  épinglé est plus laid que le débordement qu'il corrige. */}
+              <div className="lg:sticky lg:top-24">
                 <div className="card overflow-hidden">
                   <Verdict h={h} r={r} niveau={niveau} projection={central.projection} />
 
@@ -562,13 +562,13 @@ function Simulateur({
 
                   </div>
                 </div>
+
+                <BoutonPartage lien={lien} />
               </div>
 
               <p className="mt-5 rounded-xl bg-ink-50 px-4 py-3 text-xs leading-relaxed text-ink-500">
                 {t.stats.noteImpot}
               </p>
-
-              <BoutonPartage lien={lien} />
 
               <p className="mt-4 px-2 text-xs leading-relaxed text-ink-400">
                 {t.stats.mentionLegale}

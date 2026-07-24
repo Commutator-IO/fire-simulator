@@ -63,7 +63,6 @@ const SUFFIXE_TAUX = '-taux';
 const SUFFIXE_LOYER = '-loyer';
 const SUFFIXE_CHARGES = '-charges';
 const SUFFIXE_IMPOTS = '-impots';
-const SUFFIXE_DUREE = '-duree';
 
 /**
  * Decimals kept on a rate travelling through the URL.
@@ -167,9 +166,6 @@ export function encoderEtat(
     if (enPoints(ligne.rendement) !== enPoints(a.rendementParDefaut)) {
       params.set(`${ligne.cle}${SUFFIXE_TAUX}`, String(enPoints(ligne.rendement)));
     }
-    if (a.signe === -1 && ligne.duree !== 15) {
-      params.set(`${ligne.cle}${SUFFIXE_DUREE}`, String(arrondi(ligne.duree)));
-    }
   }
 
   const chaine = params.toString();
@@ -219,12 +215,6 @@ export function decoderComposition(recherche: string): Ligne[] | null {
         `${a.cle}${SUFFIXE_IMPOTS}`,
         a.impositionParDefaut ?? 0,
         BORNES_LIGNE.impositionRevenus.max,
-      ),
-      duree: nombre(
-        p.get(`${a.cle}${SUFFIXE_DUREE}`),
-        a.signe === -1 ? 15 : 0,
-        BORNES_LIGNE.duree.min,
-        BORNES_LIGNE.duree.max,
       ),
     })),
   );

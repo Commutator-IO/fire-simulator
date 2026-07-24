@@ -57,6 +57,9 @@ const FR = {
     loyer: 'Loyers encaissés sur l’année',
     charges: 'Ce qu’ils coûtent',
     impositionLoyers: 'Imposition des loyers',
+    distributionTitre: 'Si vous vous versiez cette réserve',
+    distributionDetail: (impot: string, net: string, taux: string) =>
+      `${impot} de flat tax à ${taux}, une seule fois : il vous resterait ${net}. Payée à la distribution, pas chaque année — l’impôt sur les sociétés a déjà fait son passage sur ces bénéfices.`,
     detailLoyers: (loyer: string, charges: string, impots: string, net: string) =>
       `${loyer} de loyers, moins ${charges} de charges, moins ${impots} d’impôt : il reste ${net}.`,
     rendementLoyers: (taux: string) => `Soit ${taux} net sur la valeur du bien.`,
@@ -84,11 +87,12 @@ const FR = {
     graphiqueIntro:
       'Chaque ligne à l’échelle, sur un axe commun. Une colonne de chiffres fait comparer des nombres ; des barres font voir la forme d’un patrimoine.',
     graphiqueNote:
-      'Les barres pâles ne financent pas vos retraits : la résidence principale et le crédit qui la finance comptent dans le patrimoine, pas dans le capital mobilisable.',
+      'Les barres pâles ne financent pas vos retraits : la résidence principale, le crédit qui la finance et les titres de votre société comptent dans le patrimoine, pas dans le capital mobilisable.',
     categorie: {
       liquide: 'Épargne de précaution',
       assurance: 'Assurance-vie et retraite',
       actions: 'Actions',
+      entreprise: 'Votre société',
       immobilier: 'Immobilier',
       autre: 'Autres',
       dettes: 'Dettes',
@@ -103,7 +107,7 @@ const FR = {
     netAide: 'Ce qu’il vous resterait après avoir tout vendu et tout remboursé.',
     productif: 'Patrimoine qui finance vos retraits',
     productifAide:
-      'Le patrimoine net, moins la résidence principale et le crédit qui la finance : un logement réduit vos dépenses, il ne verse pas de revenu.',
+      'Le patrimoine net, moins la résidence principale, le crédit qui la finance et les titres de votre société : un logement réduit vos dépenses et une société non vendue ne verse rien, ni l’un ni l’autre ne produit de revenu.',
     rendement: 'Rendement recomposé',
     rendementAide:
       'La moyenne de vos rendements, pondérée par les montants. Un crédit y entre au signe inversé : son taux tire la moyenne vers le bas, exactement comme l’effet de levier le veut.',
@@ -260,23 +264,20 @@ const FR = {
     legendeEpuisement: (annee: number) => `épuisé en année ${annee}`,
   },
 
-  chronique: {
-    titre: 'Ce que votre patrimoine devient, et pourquoi',
+  proportions: {
+    titre: 'La part de la banque et celle du fisc',
     intro:
-      'Deux forces le construisent — les intérêts composés, lents puis soudains, et les loyers, réguliers dès la première année. Deux le rabotent : les intérêts du crédit et les impôts de détention. L’écart entre le sommet de l’empilement et la courbe noire est le coût de la propriété.',
-    depart: 'Patrimoine de départ',
-    gains: 'Intérêts composés',
-    loyers: 'Loyers encaissés',
+      'Deux lectures plutôt qu’une, parce qu’une dette et un impôt ne sont pas de même nature : l’une est un stock, l’autre un flux. Le bilan se pèse contre lui-même, l’année contre elle-même.',
+    bilan: 'Ce que vous possédez aujourd’hui',
+    brut: 'd’avoirs bruts',
+    net: 'À vous',
+    dettes: 'À la banque',
+    annee: 'Ce que ce patrimoine produit en un an',
+    revenusBruts: 'de revenus bruts',
+    reste: 'Ce qu’il vous reste',
     interets: 'Intérêts du crédit',
     impots: 'Impôts de détention',
-    net: 'Patrimoine net',
-    survol: (net: string, produit: string, preleve: string) =>
-      `patrimoine net de ${net} — ${produit} produits par les placements et les loyers, ${preleve} repris par la banque et le fisc.`,
-    detteRestante: (montant: string, part: string) =>
-      `Il reste ${montant} de capital à rembourser, soit ${part} du patrimoine net. Le remboursement du capital ne change rien à ce total : la trésorerie sort, la dette baisse d’autant.`,
-    aria: (annees: number) =>
-      `Décomposition du patrimoine net sur ${annees} ans`,
-    note: 'Tout est en euros courants : aucune inflation n’est appliquée. La valeur d’un bien loué reste fixe et son loyer est encaissé à mesure — un appartement ne grossit pas de son propre loyer, et confondre les deux doublerait le rendement d’un bailleur. Les prêts s’amortissent par annuités constantes, et le remboursement du capital est neutre sur le patrimoine net.',
+    note: 'Les impôts comptés ici sont ceux de la seule détention — taxe foncière et impôt sur la fortune immobilière. L’imposition des retraits n’y figure pas : elle ne se déclenche que si vous puisez dans le capital, ce qui est la question de l’autre onglet.',
   },
 
   detail: {
@@ -506,6 +507,9 @@ const EN: Dictionnaire = {
     loyer: 'Rent collected over the year',
     charges: 'What it costs',
     impositionLoyers: 'Tax on the rent',
+    distributionTitre: 'Si vous vous versiez cette réserve',
+    distributionDetail: (impot: string, net: string, taux: string) =>
+      `${impot} de flat tax à ${taux}, une seule fois : il vous resterait ${net}. Payée à la distribution, pas chaque année — l’impôt sur les sociétés a déjà fait son passage sur ces bénéfices.`,
     detailLoyers: (loyer: string, charges: string, impots: string, net: string) =>
       `${loyer} of rent, less ${charges} of costs, less ${impots} of tax: ${net} is left.`,
     rendementLoyers: (taux: string) => `That is ${taux} net on the value of the property.`,
@@ -538,6 +542,7 @@ const EN: Dictionnaire = {
       liquide: 'Rainy-day savings',
       assurance: 'Life insurance and pensions',
       actions: 'Equities',
+      entreprise: 'Your company',
       immobilier: 'Property',
       autre: 'Other',
       dettes: 'Debts',
@@ -710,22 +715,20 @@ const EN: Dictionnaire = {
     legendeEpuisement: (annee: number) => `runs out in year ${annee}`,
   },
 
-  chronique: {
-    titre: 'What your capital becomes, and why',
+  proportions: {
+    titre: 'The bank’s share and the taxman’s',
     intro:
-      'Two forces build it — compounding, slow then sudden, and rents, steady from the first year. Two eat at it: the interest on the loan and the taxes on holding. The gap between the top of the stack and the black line is the cost of ownership.',
-    depart: 'Starting net worth',
-    gains: 'Compound interest',
-    loyers: 'Rents collected',
+      'Two readings rather than one, because a debt and a tax bill are not the same kind of thing: one is a stock, the other a flow. The balance sheet is weighed against itself, the year against itself.',
+    bilan: 'What you own today',
+    brut: 'of gross assets',
+    net: 'Yours',
+    dettes: 'The bank’s',
+    annee: 'What that capital produces in a year',
+    revenusBruts: 'of gross return',
+    reste: 'What is left to you',
     interets: 'Interest on the loan',
     impots: 'Holding taxes',
-    net: 'Net worth',
-    survol: (net: string, produit: string, preleve: string) =>
-      `net worth of ${net} — ${produit} produced by the holdings and the rents, ${preleve} taken by the bank and the taxman.`,
-    detteRestante: (montant: string, part: string) =>
-      `${montant} of capital is still to repay, ${part} of net worth. Repaying it changes that total not at all: cash leaves, the debt falls by as much.`,
-    aria: (annees: number) => `Breakdown of net worth over ${annees} years`,
-    note: 'Everything is in nominal euros: no inflation is applied. A let property is held at a flat value and its rent banked as it comes — a flat does not grow by its own rent, and treating the two as one would double a landlord’s return. Loans amortise on a constant annuity, and repaying principal is neutral on net worth.',
+    note: 'The taxes counted here are those of ownership alone — property tax and the wealth tax on property. Tax on withdrawals is absent: it only falls due if you draw on the capital, which is the other tab’s question.',
   },
 
   detail: {

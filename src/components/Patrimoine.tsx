@@ -7,8 +7,10 @@ import {
   actifsDe,
   ailleurs,
   bilan,
-  chronique,
+  proportions,
+  type CoutDetention,
   coutDetention,
+  distribution,
   impositionRecomposee,
   locatif,
   rendementEffectif,
@@ -20,7 +22,7 @@ import {
 import { useChampNumerique } from '../lib/champNumerique';
 import { Segments } from './Champs';
 import { Avertissement } from './Cadre';
-import { Chronique } from './Chronique';
+import { Proportions } from './Proportions';
 
 /**
  * The second simulator: what you own, what it earns, and what it costs to keep.
@@ -172,7 +174,7 @@ export function Patrimoine({
                 par ligne vit plus bas, dans le graphique. La hauteur maximale
                 n'est qu'un filet pour les écrans très bas, où le bas du panneau
                 serait autrement inatteignable ; elle ne se voit pas autrement. */}
-            <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:overscroll-contain">
+            <div className="lg:sticky lg:top-24">
               <div className="card overflow-hidden">
                 <div className="bg-brand-700 px-6 py-7 text-white sm:px-8">
                   <p className="text-sm text-brand-100">{t.patrimoine.productif}</p>
@@ -204,15 +206,10 @@ export function Patrimoine({
                     </p>
                   ) : (
                     <>
+                      {/* Ni les avoirs bruts ni les dettes ici : la section
+                          « la part de la banque » les met en regard plus bas,
+                          et le panneau doit tenir dans l'écran sans ascenseur. */}
                       <dl className="space-y-3">
-                        <Poste label={t.patrimoine.brut} valeur={eur(b.brut)} />
-                        {b.dettes > 0 && (
-                          <Poste
-                            label={t.patrimoine.dettes}
-                            valeur={`− ${eur(b.dettes)}`}
-                            teinte="text-brique-600"
-                          />
-                        )}
                         <Poste
                           label={t.patrimoine.net}
                           valeur={eur(b.net)}
@@ -267,7 +264,7 @@ export function Patrimoine({
         <>
           <Graphique composition={composition} pays={pays} />
           <Detention cout={cout} bilan={b} imposition={imposition} />
-          <SectionChronique composition={composition} pays={pays} />
+          <SectionProportions composition={composition} pays={pays} cout={cout} />
         </>
       )}
     </main>
@@ -364,31 +361,34 @@ function Detention({
   );
 }
 
-/** The loan and the taxman over time, with its own heading. */
-function SectionChronique({
+/** Where the capital stands today, with its own heading. */
+function SectionProportions({
   composition,
   pays,
+  cout,
 }: {
   composition: Ligne[];
   pays: ClePays;
+  cout: CoutDetention;
 }) {
   const t = useTextes();
-  const annees = chronique(composition, pays);
-  const utile = annees.some((a) => a.detteRestante > 0 || a.impots > 0);
-  if (!utile) return null;
+  const vue = proportions(composition, pays, cout);
+  if (vue.brut <= 0) return null;
 
   return (
     <section className="border-t border-ink-200/70 bg-white">
       <div className="mx-auto max-w-6xl px-5 py-12 sm:py-16">
         <h2 className="text-2xl font-semibold tracking-tight text-ink-900">
-          {t.chronique.titre}
+          {t.proportions.titre}
         </h2>
-        <p className="mt-2 max-w-3xl leading-relaxed text-ink-500">{t.chronique.intro}</p>
+        <p className="mt-2 max-w-3xl leading-relaxed text-ink-500">
+          {t.proportions.intro}
+        </p>
         <div className="card mt-8 p-5 sm:p-8">
-          <Chronique annees={annees} />
+          <Proportions vue={vue} />
         </div>
         <p className="mt-4 max-w-3xl text-sm leading-relaxed text-ink-500">
-          {t.chronique.note}
+          {t.proportions.note}
         </p>
       </div>
     </section>
@@ -509,7 +509,7 @@ function LigneActif({
             {tr(actif.note)}
           </p>
           {depasse && (
-            <p className="mt-1 text-xs font-medium text-gold-600">
+            <p className="mt-1 text-xs font-medium text-brand-700">
               {t.patrimoine.depasse(eur(actif.plafond!))}
             </p>
           )}
@@ -548,6 +548,37 @@ function LigneActif({
       </div>
 
       {actif.revenus && <Loyers actif={actif} ligne={ligne} onLigne={onLigne} />}
+      {actif.distribuable && ligne.montant > 0 && (
+        <Distribution actif={actif} ligne={ligne} />
+      )}
+    </div>
+  );
+}
+
+/**
+ * What a company reserve is worth once paid out.
+ *
+ * Its own block because the toll is a one-off and everything else on this page
+ * is a yearly rate: showing 30 % beside a 2,5 % return, with nothing to tell
+ * them apart, would invite the reader to subtract one from the other.
+ */
+function Distribution({ actif, ligne }: { actif: Actif; ligne: Ligne }) {
+  const t = useTextes();
+  const { eur, tauxPct } = useFormats();
+  const d = distribution(ligne.montant, actif.impositionRetrait);
+
+  return (
+    <div className="mt-3 rounded-xl bg-prune-100/60 p-3">
+      <p className="text-xs font-medium text-prune-700">
+        {t.patrimoine.distributionTitre}
+      </p>
+      <p className="mt-1 text-xs leading-relaxed text-ink-600">
+        {t.patrimoine.distributionDetail(
+          eur(d.impot),
+          eur(d.net),
+          tauxPct(actif.impositionRetrait),
+        )}
+      </p>
     </div>
   );
 }

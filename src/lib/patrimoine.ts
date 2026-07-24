@@ -46,6 +46,7 @@ export type CategorieActif =
   | 'liquide'
   | 'assurance'
   | 'actions'
+  | 'entreprise'
   | 'immobilier'
   | 'autre'
   | 'dettes';
@@ -61,6 +62,9 @@ export type CleActif =
   | 'pea'
   | 'compteTitres'
   | 'scpi'
+  | 'reserveSasu'
+  | 'compteCourantSasu'
+  | 'titresSasu'
   | 'immobilierLocatif'
   | 'residencePrincipale'
   | 'autres'
@@ -104,6 +108,8 @@ export type Actif = {
    * asks for a rent, its running costs and the tax on the difference.
    */
   revenus?: boolean;
+  /** Held inside a company, and taxed once on the way out. */
+  distribuable?: boolean;
   /**
    * What the taxman takes when money is drawn out of this envelope. Not the
    * same thing as the yearly levies above: this one only bites on withdrawal,
@@ -274,6 +280,60 @@ const FRANCE: Actif[] = [
     note: {
       fr: 'Valeur du bien, loyers encaissés sur l’année, et ce qu’ils coûtent : taxe foncière, copropriété, assurance, gestion, travaux, vacance. L’imposition porte sur ce qui reste — barème et prélèvements sociaux pour des revenus fonciers.',
       en: 'The value of the property, the rent collected over the year, and what it costs: property tax, service charges, insurance, management, works, vacancy. The tax applies to what is left — income tax scale and social levies on property income.',
+    },
+  },
+  {
+    cle: 'reserveSasu',
+    pays: 'france',
+    categorie: 'entreprise',
+    signe: 1,
+    productif: true,
+    distribuable: true,
+    // Le rendement placé dans la société supporte l'IS avant d'être distribué.
+    prelevementsAnnuels: 0.25,
+    impositionRetrait: 0.30,
+    rendementParDefaut: 0.025,
+    libelle: {
+      fr: 'Réserve facultative de la société',
+      en: 'Company retained earnings',
+    },
+    note: {
+      fr: 'Les bénéfices déjà taxés à l’IS et laissés en réserve. À vous, mais pas encore chez vous : les sortir coûte 30 % de flat tax, une fois.',
+      en: 'Profits already taxed at corporation tax and left in reserve. Yours, but not yet in your hands: taking them out costs the 30 % flat tax, once.',
+    },
+  },
+  {
+    cle: 'compteCourantSasu',
+    pays: 'france',
+    categorie: 'entreprise',
+    signe: 1,
+    productif: true,
+    impositionRetrait: 0,
+    rendementParDefaut: 0,
+    libelle: {
+      fr: 'Compte courant d’associé',
+      en: 'Shareholder current account',
+    },
+    note: {
+      fr: 'L’argent que vous avez prêté à votre société. Son remboursement n’est pas un revenu : il sort sans impôt, ce qui en fait la ligne la moins chère à récupérer.',
+      en: 'Money you lent your own company. Repaying it is not income: it comes out untaxed, which makes it the cheapest line to draw on.',
+    },
+  },
+  {
+    cle: 'titresSasu',
+    pays: 'france',
+    categorie: 'entreprise',
+    signe: 1,
+    productif: false,
+    impositionRetrait: 0.30,
+    rendementParDefaut: 0,
+    libelle: {
+      fr: 'Titres de la société',
+      en: 'Shares in the company',
+    },
+    note: {
+      fr: 'Ce que vaudrait votre société sans sa trésorerie, si quelqu’un l’achetait. Compté dans le patrimoine, jamais dans ce qui finance vos retraits : tant que vous ne vendez pas, cette valeur ne verse rien.',
+      en: 'What your company would fetch, net of its cash, if someone bought it. Counted in net worth, never in what funds your withdrawals: until you sell, that value pays nothing out.',
     },
   },
   {
@@ -517,6 +577,7 @@ export const CATEGORIES: CategorieActif[] = [
   'liquide',
   'assurance',
   'actions',
+  'entreprise',
   'immobilier',
   'autre',
   'dettes',
@@ -527,6 +588,7 @@ export const COULEURS_CATEGORIES: Record<CategorieActif, string> = {
   liquide: 'var(--color-azur-500)',
   assurance: 'var(--color-jade-500)',
   actions: 'var(--color-brand-500)',
+  entreprise: 'var(--color-prune-500)',
   immobilier: 'var(--color-brand-800)',
   autre: 'var(--color-ink-400)',
   dettes: 'var(--color-brique-500)',
@@ -557,8 +619,6 @@ export type Ligne = {
   charges: number;
   /** Tax on the net rental income. */
   impositionRevenus: number;
-  /** Years left to run, for a debt. */
-  duree: number;
 };
 
 /** Amounts and rates share the bounds of the simulator they feed. */
@@ -567,7 +627,6 @@ export const BORNES_LIGNE = {
   rendement: { min: -0.1, max: 0.2 },
   loyer: { min: 0, max: 10_000_000 },
   impositionRevenus: { min: 0, max: 0.6 },
-  duree: { min: 0, max: 40 },
 } as const;
 
 const borne = (v: number, { min, max }: { min: number; max: number }) =>
@@ -582,7 +641,6 @@ export function ligneVide(a: Actif): Ligne {
     loyer: 0,
     charges: 0,
     impositionRevenus: a.impositionParDefaut ?? 0,
-    duree: a.signe === -1 ? 15 : 0,
   };
 }
 
@@ -610,7 +668,6 @@ export function bornerComposition(lignes: Ligne[]): Ligne[] {
         lue.impositionRevenus ?? vide.impositionRevenus,
         BORNES_LIGNE.impositionRevenus,
       ),
-      duree: Math.round(borne(lue.duree ?? vide.duree, BORNES_LIGNE.duree)),
     };
   });
 }
@@ -863,6 +920,9 @@ const EXEMPLES: Partial<Record<CleActif, Partial<Ligne>>> = {
   pea: { montant: 120_000 },
   compteTitres: { montant: 90_000 },
   scpi: { montant: 30_000 },
+  reserveSasu: { montant: 60_000 },
+  compteCourantSasu: { montant: 15_000 },
+  titresSasu: { montant: 150_000 },
   immobilierLocatif: { montant: 200_000, loyer: 9_600, charges: 2_900 },
   residencePrincipale: { montant: 350_000 },
   creditResidence: { montant: 150_000 },
@@ -880,6 +940,24 @@ const EXEMPLES: Partial<Record<CleActif, Partial<Ligne>>> = {
 
 export function compositionParDefaut(): Ligne[] {
   return ACTIFS.map((a) => ({ ...ligneVide(a), ...(EXEMPLES[a.cle] ?? {}) }));
+}
+
+/**
+ * What is left of a company reserve once it is paid out as a dividend.
+ *
+ * A one-off, not a yearly drag: the corporation tax has already been paid on
+ * those profits, and the flat tax falls once, on the way out. Which is why the
+ * reserve is shown gross and this figure sits beside it — netting it down in
+ * place would hide the toll rather than name it.
+ */
+export function distribution(montant: number, taux: number): {
+  brut: number;
+  impot: number;
+  net: number;
+} {
+  const brut = Math.max(0, montant);
+  const impot = brut * taux;
+  return { brut, impot, net: brut - impot };
 }
 
 /** True once a composition holds anything at all. */
@@ -931,141 +1009,73 @@ export function ailleurs(lignes: Ligne[], pays: ClePays): number {
 }
 
 // ---------------------------------------------------------------------------
-// Ce que le temps fait au crédit et à l'impôt
+// La part de la banque et celle du fisc
 // ---------------------------------------------------------------------------
 
-export type AnneeDetention = {
-  annee: number;
-  /** Net worth at the outset — the baseline everything else moves from. */
-  netInitial: number;
-  /** Compounded growth of everything that earns a rate, since the start. */
-  gainsCumules: number;
-  /** Net rents collected since the start. */
-  loyersCumules: number;
-  /** Interest paid since the start. */
-  interetsCumules: number;
-  /** Holding taxes paid since the start. */
-  impotsCumules: number;
-  /** Capital still owed at the end of the year. */
-  detteRestante: number;
-  /** Interest and holding taxes for that year alone. */
+export type Proportions = {
+  /** Everything owned, and how it splits between you and the bank. */
+  brut: number;
+  net: number;
+  dettes: number;
+  partDettes: number;
+
+  /** A year's worth of return, before anything is taken out of it. */
+  revenusBruts: number;
+  /** Interest on the loans, over that year. */
   interets: number;
-  taxeFonciere: number;
-  impotFortune: number;
-  impots: number;
-  /**
-   * Net worth at the end of the year, and the point of the whole exercise:
-   *
-   *     net(n) = net(0) + gains + rents − interest − holding taxes
-   *
-   * Principal repayments cancel out — cash leaves, debt shrinks by as much —
-   * so what actually moves the needle is what compounds, what the tenants pay,
-   * and what the bank and the taxman take.
-   */
-  patrimoineNet: number;
+  /** Property tax and wealth tax, over that year. */
+  impotsDetention: number;
+  /** What is left of the year's return once both have been paid. */
+  reste: number;
+  partInterets: number;
+  partImpots: number;
 };
 
-/** Yearly instalment repaying `capital` at `taux` over `duree` years. */
-function annuite(capital: number, taux: number, duree: number): number {
-  if (duree <= 0 || capital <= 0) return capital;
-  if (taux <= 0) return capital / duree;
-  return (capital * taux) / (1 - (1 + taux) ** -duree);
-}
-
 /**
- * What becomes of a portfolio, year after year, and why.
+ * Where you stand today: what share of the capital is the bank's, and what
+ * share of a year's return the bank and the taxman take between them.
  *
- * Drawn because the shape of the answer is not obvious. Compounding is slow
- * then sudden; rents are the opposite, steady from the first year; and the two
- * outflows move against each other — as the mortgage is repaid the interest
- * falls, but the wealth tax base grows by exactly the capital repaid, loans
- * being deductible from it. Paying off a house can raise the tax owed on it.
+ * Two readings rather than one, because a debt is a stock and a tax bill is a
+ * flow: comparing €150,000 owed against €2,450 of property tax on the same bar
+ * would say nothing at all. The first split weighs the balance sheet, the
+ * second weighs the year.
  *
- * A let property's value is held flat and its rent banked as it comes: a flat
- * does not grow by its own rent, and treating the two as one would double a
- * landlord's return. Everything is nominal — no inflation is applied.
+ * The tax on withdrawals is deliberately absent — it only falls due if you
+ * actually draw on the capital, which is the other simulator's question.
  */
-export function chronique(lignes: Ligne[], pays: ClePays): AnneeDetention[] {
-  const retenues = bornerComposition(lignes).filter((l) => actif(l.cle)?.pays === pays);
-  const horizon = Math.min(
-    30,
-    Math.max(10, ...retenues.filter((l) => l.montant > 0).map((l) => l.duree)),
+export function proportions(
+  lignes: Ligne[],
+  pays: ClePays,
+  cout: CoutDetention,
+): Proportions {
+  const b = bilan(lignes, pays);
+  const retenues = bornerComposition(lignes).filter(
+    (l) => actif(l.cle)?.pays === pays,
   );
 
-  const netInitial = bilan(lignes, pays).net;
+  // Seuls les avoirs productifs rapportent — un toit épargne un loyer, il n'en
+  // verse pas. Toutes les dettes coûtent en revanche, y compris celle qui
+  // finance ce toit : ses intérêts se paient chaque année, quoi qu'elle achète.
+  const revenusBruts = retenues
+    .filter((l) => actif(l.cle)?.signe === 1 && actif(l.cle)?.productif)
+    .reduce((somme, l) => somme + l.montant * rendementEffectif(l), 0);
 
-  // Une copie mutable : les valeurs évoluent d'une année sur l'autre.
-  const etat = retenues.map((l) => ({ ligne: l, valeur: l.montant }));
-  const annees: AnneeDetention[] = [];
-  let gainsCumules = 0;
-  let loyersCumules = 0;
-  let interetsCumules = 0;
-  let impotsCumules = 0;
+  const interets = retenues
+    .filter((l) => actif(l.cle)?.signe === -1)
+    .reduce((somme, l) => somme + l.montant * l.rendement, 0);
 
-  for (let annee = 1; annee <= horizon; annee++) {
-    let interets = 0;
+  const part = (v: number, total: number) => (total > 0 ? v / total : 0);
 
-    for (const e of etat) {
-      const a = actif(e.ligne.cle);
-      if (a === undefined || e.valeur <= 0) continue;
-
-      if (a.signe === -1) {
-        const versement = annuite(e.ligne.montant, e.ligne.rendement, e.ligne.duree);
-        const du = e.valeur * e.ligne.rendement;
-        interets += du;
-        const solde = e.valeur + du - versement;
-        // Une dette de quelques milliardièmes d'euro n'est pas une dette : sans
-        // ce coup de gomme, l'arrondi de la dernière annuité laisserait un
-        // cheveu de courbe et une ligne d'intérêts pour l'éternité.
-        e.valeur = solde < 0.01 ? 0 : solde;
-      } else if (a.revenus) {
-        // Le loyer est encaissé, il ne gonfle pas le bien qui le produit.
-        loyersCumules += locatif(e.ligne).net;
-      } else {
-        const gain = e.valeur * rendementEffectif(e.ligne);
-        gainsCumules += gain;
-        e.valeur += gain;
-      }
-    }
-
-    const taxeFonciere = etat.reduce((somme, e) => {
-      const a = actif(e.ligne.cle);
-      return somme + (a?.tauxTaxeFonciere ?? 0) * e.valeur;
-    }, 0);
-
-    const assiette = etat.reduce((somme, e) => {
-      const a = actif(e.ligne.cle);
-      if (!a?.immobilierTaxable) return somme;
-      const coefficient = a.cle === 'residencePrincipale' ? 1 - ABATTEMENT_RESIDENCE : 1;
-      return somme + a.signe * e.valeur * coefficient;
-    }, 0);
-
-    const impotFortune =
-      pays === 'france' ? impotFortuneImmobiliere(Math.max(0, assiette)) : 0;
-    const impots = taxeFonciere + impotFortune;
-
-    interetsCumules += interets;
-    impotsCumules += impots;
-
-    annees.push({
-      annee,
-      netInitial,
-      gainsCumules,
-      loyersCumules,
-      interetsCumules,
-      impotsCumules,
-      detteRestante: etat.reduce(
-        (somme, e) => (actif(e.ligne.cle)?.signe === -1 ? somme + e.valeur : somme),
-        0,
-      ),
-      interets,
-      taxeFonciere,
-      impotFortune,
-      impots,
-      patrimoineNet:
-        netInitial + gainsCumules + loyersCumules - interetsCumules - impotsCumules,
-    });
-  }
-
-  return annees;
+  return {
+    brut: b.brut,
+    net: b.net,
+    dettes: b.dettes,
+    partDettes: part(b.dettes, b.brut),
+    revenusBruts,
+    interets,
+    impotsDetention: cout.total,
+    reste: revenusBruts - interets - cout.total,
+    partInterets: part(interets, revenusBruts),
+    partImpots: part(cout.total, revenusBruts),
+  };
 }

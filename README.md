@@ -19,7 +19,7 @@ de l'un à l'autre, rien ne se propage tout seul.
 ```bash
 npm install
 npm run dev      # serveur de développement
-npm test         # 210 tests sur les moteurs, les formats et les traductions
+npm test         # 209 tests sur les moteurs, les formats et les traductions
 npm run build    # build de production
 npm run lint
 ```
@@ -109,18 +109,43 @@ retirer brut, imposition du retrait comprise, uniquement pour rester
 propriétaire. Un bien loué n'entre pas dans la taxe foncière du calcul — la
 sienne figure déjà dans ce que ses loyers coûtent.
 
-Un troisième graphique décompose le patrimoine **dans le temps**, autour d'une
-identité que l'écran vérifie à l'euro près :
+### La part de la banque et celle du fisc
+
+Un troisième graphique répond à la question telle qu'elle se pose vraiment :
+aujourd'hui, quelle part de tout cela n'est pas à moi ? Deux barres, et pas une
+seule, parce qu'une dette et un impôt ne sont pas de même nature — l'une est un
+stock, l'autre un flux. Poser 150 000 € dus à une banque à côté de 2 450 € de
+taxe foncière sur la même échelle ne dirait rien du tout.
 
 ```
-net(n) = net(0) + intérêts composés + loyers − intérêts du crédit − impôts de détention
+avoirs bruts   = patrimoine net + dette
+revenus bruts  = ce qui reste + intérêts du crédit + impôts de détention
 ```
 
-Deux forces construisent, deux rabotent, et le remboursement du capital n'y
-figure pas : la trésorerie sort, la dette baisse d'autant, l'effet est nul. La
-valeur d'un bien loué reste fixe et son loyer est encaissé à mesure — un
-appartement ne grossit pas de son propre loyer, et confondre les deux doublerait
-le rendement d'un bailleur.
+Le bilan se pèse contre lui-même, l'année contre elle-même. Seuls les avoirs
+productifs rapportent — un toit épargne un loyer, il n'en verse pas — mais
+toutes les dettes coûtent, y compris celle qui finance ce toit : ses intérêts se
+paient chaque année, quoi qu'elle achète. Si les deux prélèvements dépassent ce
+que le patrimoine produit, la barre se remplit d'eux plutôt que de déborder en
+silence.
+
+### Ce qu'on détient à travers sa société
+
+Un chef d'entreprise a une partie de son patrimoine ailleurs que sur ses
+comptes, et les trois lignes n'ont rien à voir entre elles :
+
+| Ligne | Ce qu'elle finance | Impôt à la sortie |
+| --- | --- | --- |
+| Réserve facultative | Mobilisable | 30 % de flat tax, **une fois** |
+| Compte courant d'associé | Mobilisable | Aucun — un remboursement n'est pas un revenu |
+| Titres de la société | Rien tant qu'on ne vend pas | 30 % à la cession |
+
+La réserve est affichée brute, avec en regard ce qu'une distribution
+laisserait : la ramener nette en silence cacherait le péage au lieu de le
+nommer. Son rendement, lui, supporte l'impôt sur les sociétés chaque année tant
+qu'il reste dans l'entreprise. Les titres comptent dans le patrimoine et jamais
+dans le capital qui finance les retraits, exactement comme la résidence
+principale — une société qu'on n'a pas vendue ne verse rien.
 
 ### Le taux de retrait d'un portefeuille composé
 
@@ -129,7 +154,7 @@ unique : un euro retiré est en partie du PEA à 18,6 %, en partie du compte-tit
 à 31,4 %, en partie du livret à 0 %. L'estimateur en calcule la **moyenne
 pondérée** et la transmet au simulateur de retraits, qui la présente comme un
 taux personnalisé — parce qu'aucun régime réel ne décrit ce qui est détenu. Sur
-l'exemple d'ouverture, cela donne 14,4 %.
+l'exemple d'ouverture, cela donne 15,5 % — la réserve de la société à 30 % et le compte courant à 0 % tirant chacun de leur côté.
 
 **Les impôts pris en compte**, et ceux qui ne le sont pas :
 

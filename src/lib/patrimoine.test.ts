@@ -10,10 +10,11 @@ import {
   ailleurs,
   bilan,
   bornerComposition,
-  chronique,
+  proportions,
   impositionRecomposee,
   compositionVide,
   coutDetention,
+  distribution,
   impotFortuneImmobiliere,
   locatif,
   rendementEffectif,
@@ -74,13 +75,35 @@ describe('catalogue', () => {
     }
   });
 
-  it('excludes each country’s home together with its loan, and nothing else', () => {
+  it('excludes what pays nothing out: a roof, its loan, an unsold company', () => {
     for (const p of PAYS) {
-      const exclus = actifsDe(p.cle)
-        .filter((a) => !a.productif)
-        .map((a) => a.categorie);
-      expect(exclus).toEqual(['immobilier', 'dettes']);
+      const exclus = actifsDe(p.cle).filter((a) => !a.productif);
+      // Chaque pays exclut au moins son logement et le crédit qui le finance.
+      expect(exclus.map((a) => a.categorie)).toContain('immobilier');
+      expect(exclus.map((a) => a.categorie)).toContain('dettes');
+      for (const a of exclus) {
+        expect(['immobilier', 'dettes', 'entreprise']).toContain(a.categorie);
+      }
     }
+    // Une société non vendue ne verse rien ; sa réserve, elle, est mobilisable.
+    expect(actif('titresSasu')!.productif).toBe(false);
+    expect(actif('reserveSasu')!.productif).toBe(true);
+  });
+
+  it('lets a shareholder loan out untaxed, and a reserve at the flat rate', () => {
+    // Rembourser un compte courant d'associé n'est pas un revenu.
+    expect(actif('compteCourantSasu')!.impositionRetrait).toBe(0);
+    expect(actif('reserveSasu')!.impositionRetrait).toBeCloseTo(0.3, 6);
+    // L'IS passe sur le rendement laissé dans la société, chaque année.
+    expect(actif('reserveSasu')!.prelevementsAnnuels).toBeCloseTo(0.25, 6);
+  });
+
+  it('taxes a distribution once, not every year', () => {
+    const d = distribution(60_000, 0.3);
+    expect(d.impot).toBeCloseTo(18_000, 6);
+    expect(d.net).toBeCloseTo(42_000, 6);
+    // Un montant négatif ne crée pas un crédit d'impôt.
+    expect(distribution(-5_000, 0.3)).toEqual({ brut: 0, impot: 0, net: 0 });
   });
 
   it('puts a property tax only where no rent absorbs it', () => {
@@ -344,14 +367,14 @@ describe('what holding it costs', () => {
 describe('bounding', () => {
   it('clamps amounts and rates, the URL not being trusted input', () => {
     const b = bornerComposition([
-      { cle: 'pea', montant: -5_000, rendement: 3, loyer: 0, charges: 0, impositionRevenus: 0, duree: 0 },
+      { cle: 'pea', montant: -5_000, rendement: 3, loyer: 0, charges: 0, impositionRevenus: 0 },
       {
         cle: 'immobilierLocatif',
         montant: 1e12,
         rendement: 0,
         loyer: -9,
         charges: 1e12,
-        impositionRevenus: 9, duree: 0,
+        impositionRevenus: 9,
       },
     ]);
     const trouve = (cle: CleActif) => b.find((l) => l.cle === cle)!;
@@ -372,8 +395,8 @@ describe('bounding', () => {
   it('drops a line that names no known asset', () => {
     const b = bornerComposition([
       // @ts-expect-error deliberately invalid key
-      { cle: 'yacht', montant: 90_000, rendement: 0.01, loyer: 0, charges: 0, impositionRevenus: 0, duree: 0 },
-      { cle: 'pea', montant: 10_000, rendement: 0.07, loyer: 0, charges: 0, impositionRevenus: 0, duree: 0 },
+      { cle: 'yacht', montant: 90_000, rendement: 0.01, loyer: 0, charges: 0, impositionRevenus: 0 },
+      { cle: 'pea', montant: 10_000, rendement: 0.07, loyer: 0, charges: 0, impositionRevenus: 0 },
     ]);
     expect(b.reduce((s, l) => s + l.montant, 0)).toBe(10_000);
   });
@@ -387,7 +410,7 @@ describe('bounding', () => {
           rendement: Number.POSITIVE_INFINITY,
           loyer: Number.NaN,
           charges: Number.NaN,
-          impositionRevenus: Number.NaN, duree: 0,
+          impositionRevenus: Number.NaN,
         },
       ],
       'france',
@@ -443,99 +466,68 @@ describe('the statement it opens on', () => {
   });
 });
 
-describe('the loan and the taxman over time', () => {
-  const emprunte = avec(
-    { pea: 200_000, residencePrincipale: 400_000, creditResidence: 150_000 },
-    { creditResidence: { rendement: 0.03, duree: 12 } },
-  );
+describe('the share held by the bank and the taxman', () => {
+  const vue = (lignes: Ligne[], pays: 'france' | 'japon' = 'france') =>
+    proportions(lignes, pays, coutDetention(lignes, pays, 0.3));
 
-  it('runs at least as long as the longest loan', () => {
-    expect(chronique(emprunte, 'france').length).toBeGreaterThanOrEqual(12);
+  it('splits the gross assets between you and the bank', () => {
+    const v = vue(avec({ residencePrincipale: 400_000, creditResidence: 150_000 }));
+    expect(v.brut).toBeCloseTo(400_000, 6);
+    expect(v.dettes).toBeCloseTo(150_000, 6);
+    expect(v.net).toBeCloseTo(250_000, 6);
+    expect(v.net + v.dettes).toBeCloseTo(v.brut, 6);
+    expect(v.partDettes).toBeCloseTo(0.375, 6);
   });
 
-  it('pays the loan off on its term, and stops charging interest after it', () => {
-    // Huit ans de prêt sur un horizon d'au moins dix : les dernières années
-    // montrent bien un crédit soldé.
-    const court = avec(
-      { pea: 200_000, residencePrincipale: 400_000, creditResidence: 150_000 },
-      { creditResidence: { rendement: 0.03, duree: 8 } },
-    );
-    const annees = chronique(court, 'france');
-    expect(annees[7].detteRestante).toBeCloseTo(0, 0);
-    expect(annees[7].interets).toBeGreaterThan(0);
-    expect(annees[8].interets).toBe(0);
-    expect(annees.at(-1)!.detteRestante).toBe(0);
+  it('splits the year between what is left, the interest and the taxes', () => {
+    const v = vue(compositionParDefaut());
+    expect(v.reste + v.interets + v.impotsDetention).toBeCloseTo(v.revenusBruts, 6);
+    expect(v.partInterets + v.partImpots).toBeLessThan(1);
   });
 
-  it('never lets the debt grow', () => {
-    const annees = chronique(emprunte, 'france');
-    for (let i = 1; i < annees.length; i++) {
-      expect(annees[i].detteRestante).toBeLessThanOrEqual(annees[i - 1].detteRestante + 1e-6);
-    }
-  });
-
-  // L'identité que le graphique dessine, et qui doit tenir à l'euro près.
-  it('closes on its own identity, year after year', () => {
-    for (const a of chronique(compositionParDefaut(), 'france')) {
-      expect(a.patrimoineNet).toBeCloseTo(
-        a.netInitial + a.gainsCumules + a.loyersCumules - a.interetsCumules - a.impotsCumules,
-        6,
-      );
-    }
-  });
-
-  it('banks the rent instead of inflating the flat that produces it', () => {
+  it('counts a rent as return, and a home as none', () => {
     const bailleur = avec(
       { immobilierLocatif: 250_000 },
       { immobilierLocatif: { loyer: 12_000, charges: 3_000, impositionRevenus: 0.3 } },
     );
-    const annees = chronique(bailleur, 'france');
-    // 6 300 € nets par an, encaissés, sans que le bien ne grossisse.
-    expect(annees[0].loyersCumules).toBeCloseTo(6_300, 6);
-    expect(annees[4].loyersCumules).toBeCloseTo(31_500, 6);
-    expect(annees[4].gainsCumules).toBe(0);
+    // 12 000 − 3 000 = 9 000, moins 30 % d'impôt : 6 300 € nets.
+    expect(vue(bailleur).revenusBruts).toBeCloseTo(6_300, 6);
+    // Une résidence principale ne produit rien : elle épargne un loyer.
+    expect(vue(avec({ residencePrincipale: 400_000 })).revenusBruts).toBe(0);
   });
 
-  it('shows compounding pulling away from a straight line', () => {
-    const annees = chronique(avec({ pea: 100_000 }, { pea: { rendement: 0.07 } }), 'france');
-    // Sept ans à 7 % font plus que sept fois 7 000 € : c'est tout l'intérêt.
-    expect(annees[6].gainsCumules).toBeGreaterThan(7 * 7_000);
-  });
-
-  it('accumulates, never subtracting from what was already paid', () => {
-    const annees = chronique(emprunte, 'france');
-    for (let i = 1; i < annees.length; i++) {
-      expect(annees[i].interetsCumules).toBeGreaterThanOrEqual(annees[i - 1].interetsCumules);
-      expect(annees[i].impotsCumules).toBeGreaterThanOrEqual(annees[i - 1].impotsCumules);
-    }
-  });
-
-  // The point of drawing it: loans are deductible from the wealth tax base, so
-  // repaying one raises the tax owed on the property it bought.
-  it('raises the wealth tax as the loan is repaid', () => {
-    // 4 M€ comptés à 70 % font 2,8 M€ d'assiette, moins 900 000 € de crédit :
-    // au-dessus du seuil dès la première année, et davantage ensuite.
-    const riche = avec(
-      { residencePrincipale: 4_000_000, creditResidence: 900_000 },
-      { creditResidence: { rendement: 0.02, duree: 10 } },
+  it('charges the loan its interest, and nothing else', () => {
+    const v = vue(
+      avec(
+        { pea: 200_000, creditResidence: 100_000 },
+        { pea: { rendement: 0.06 }, creditResidence: { rendement: 0.03 } },
+      ),
     );
-    const annees = chronique(riche, 'france');
-    expect(annees[0].impotFortune).toBeGreaterThan(0);
-    expect(annees.at(-1)!.impotFortune).toBeGreaterThan(annees[0].impotFortune);
+    expect(v.revenusBruts).toBeCloseTo(12_000, 6);
+    expect(v.interets).toBeCloseTo(3_000, 6);
+    expect(v.reste).toBeCloseTo(9_000, 6);
+  });
+
+  it('holds the withdrawal tax out of it', () => {
+    // Seule la détention est comptée : changer l'impôt sur les retraits ne
+    // touche ni la taxe foncière ni l'IFI.
+    const lignes = compositionParDefaut();
+    const bas = proportions(lignes, 'france', coutDetention(lignes, 'france', 0.1));
+    const haut = proportions(lignes, 'france', coutDetention(lignes, 'france', 0.5));
+    expect(bas.impotsDetention).toBeCloseTo(haut.impotsDetention, 6);
   });
 
   it('knows Japan taxes the roof but not the fortune', () => {
-    const annees = chronique(avec({ residenceJp: 400_000 }), 'japon');
-    expect(annees[0].taxeFonciere).toBeGreaterThan(0);
-    expect(annees.every((a) => a.impotFortune === 0)).toBe(true);
+    expect(vue(avec({ residenceJp: 400_000 }), 'japon').impotsDetention).toBeGreaterThan(0);
   });
 
-  it('produces finite figures on an empty statement', () => {
-    for (const a of chronique(compositionVide(), 'france')) {
-      for (const v of [a.detteRestante, a.interets, a.impots, a.patrimoineNet]) {
-        expect(Number.isFinite(v)).toBe(true);
-      }
+  it('produces finite figures, and no share, on an empty statement', () => {
+    const v = vue(compositionVide());
+    for (const x of [v.brut, v.net, v.dettes, v.revenusBruts, v.reste]) {
+      expect(Number.isFinite(x)).toBe(true);
     }
+    expect(v.partDettes).toBe(0);
+    expect(v.partImpots).toBe(0);
   });
 });
 

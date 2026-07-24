@@ -45,6 +45,12 @@
   --color-azur-500: #4a7fc1;
   --color-azur-600: #35619b;
 
+  /* Ce qui est détenu à travers une société : ni du marché, ni des liquidités,
+     et confondu avec ni l'un ni l'autre. */
+  --color-prune-100: #ece7f6;
+  --color-prune-500: #6c4fa8;
+  --color-prune-700: #4a3378;
+
   --color-brique-50: #fdf2f5;
   --color-brique-100: #fbdfe7;
   --color-brique-200: #f2bccc;
