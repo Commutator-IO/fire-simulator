@@ -44,7 +44,8 @@ const FR = {
   patrimoine: {
     titre: 'De quoi votre patrimoine est-il fait ?',
     intro:
-      'Le simulateur de retraits demande deux chiffres que personne n’a en tête : un patrimoine et un rendement. Personne ne détient un portefeuille unique — on a un Livret A, un PEA, une assurance-vie, un appartement avec un crédit dessus. Listez-les, et les deux chiffres en sortent.',
+      'Le simulateur de retraits demande deux chiffres que personne n’a en tête : un patrimoine et un rendement. Personne ne détient un portefeuille unique — on a un Livret A, un PEA, une assurance-vie, un appartement avec un crédit dessus, et quand on dirige une société, une réserve qui dort dedans. Listez-les, et les deux chiffres en sortent.',
+    sommaire: 'Aller à une famille d’actifs',
     colActif: 'Ligne',
     colMontant: 'Montant',
     colRendement: 'Rendement attendu',
@@ -495,6 +496,7 @@ const EN: Dictionnaire = {
     titre: 'What is your capital made of?',
     intro:
       'The withdrawal simulator asks for two figures nobody has to hand: an amount of capital and a return. Nobody holds a single blended portfolio — they hold a savings account, an equity plan, a life insurance policy, a flat with a mortgage on it. List them, and the two figures fall out.',
+    sommaire: 'Jump to a family of assets',
     colActif: 'Line',
     colMontant: 'Amount',
     colRendement: 'Expected return',

@@ -105,6 +105,28 @@ export function Patrimoine({
               )}
             </div>
 
+            {/* Une quinzaine de lignes réparties en sept familles ne se
+                parcourent pas à l'œil : sans sommaire, une catégorie entière
+                passe inaperçue — celle de la société l'a fait. */}
+            <nav
+              aria-label={t.patrimoine.sommaire}
+              className="mb-3 flex flex-wrap gap-2"
+            >
+              {CATEGORIES.filter((c) => lignesDe(c).length > 0).map((categorie) => (
+                <a
+                  key={`sommaire-${categorie}`}
+                  href={`#categorie-${categorie}`}
+                  className="flex items-center gap-1.5 rounded-full border border-ink-200 bg-white px-3 py-1.5 text-xs font-medium text-ink-600 transition hover:border-brand-400 hover:text-brand-700"
+                >
+                  <span
+                    className="h-2 w-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: COULEURS_CATEGORIES[categorie] }}
+                  />
+                  {t.patrimoine.categorie[categorie]}
+                </a>
+              ))}
+            </nav>
+
             <div className="card overflow-hidden">
               {/* Une liste, pas un tableau : ce sont une douzaine de champs à
                   remplir, et sur un écran étroit la colonne de saisie d'un
@@ -120,7 +142,7 @@ export function Patrimoine({
                 const lignes = lignesDe(categorie);
                 if (lignes.length === 0) return null;
                 return (
-                  <section key={categorie}>
+                  <section key={categorie} id={`categorie-${categorie}`} className="scroll-mt-24">
                     <h2 className="flex items-center gap-2 border-b border-ink-100 bg-ink-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-ink-500 sm:px-5">
                       <span
                         className="h-2 w-2 shrink-0 rounded-full"

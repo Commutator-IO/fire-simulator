@@ -336,8 +336,8 @@ const FRANCE: Actif[] = [
       en: 'Shares in the company',
     },
     note: {
-      fr: 'Ce que vaudrait votre société sans sa trésorerie, si quelqu’un l’achetait. Compté dans le patrimoine, jamais dans ce qui finance vos retraits : tant que vous ne vendez pas, cette valeur ne verse rien.',
-      en: 'What your company would fetch, net of its cash, if someone bought it. Counted in net worth, never in what funds your withdrawals: until you sell, that value pays nothing out.',
+      fr: 'Ce que vaudrait votre société, capital social compris, sans la trésorerie déjà listée au-dessus, si quelqu’un l’achetait. Compté dans le patrimoine, jamais dans ce qui finance vos retraits : tant que vous ne vendez pas, cette valeur ne verse rien.',
+      en: 'What your company would fetch — share capital included, net of the cash already listed above — if someone bought it. Counted in net worth, never in what funds your withdrawals: until you sell, that value pays nothing out.',
     },
   },
   {
