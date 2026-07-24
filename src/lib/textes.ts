@@ -110,8 +110,11 @@ const FR = {
     gains: 'Ce que cela rapporte par an',
     repartition: 'Répartition',
     appliquer: 'Utiliser ces chiffres dans le simulateur →',
-    applique: (patrimoine: string, rendement: string) =>
-      `Le simulateur de retraits partira de ${patrimoine} à ${rendement}.`,
+    impositionRecomposee: 'Imposition recomposée des retraits',
+    impositionRecomposeeAide:
+      'Un portefeuille composé n’a pas d’enveloppe unique, donc pas de taux unique : un euro retiré est en partie du PEA, en partie du compte-titres, en partie du livret. C’est cette moyenne pondérée que reçoit le simulateur de retraits, présentée là-bas comme un taux personnalisé — parce qu’aucun régime réel ne décrit ce que vous détenez.',
+    applique: (patrimoine: string, rendement: string, imposition: string) =>
+      `Le simulateur de retraits partira de ${patrimoine} à ${rendement}, imposés à ${imposition}.`,
     dejaApplique: 'Ces chiffres sont déjà ceux du simulateur de retraits.',
     effacer: 'Vider les montants',
     reinitialiser: 'Réinitialiser l’outil',
@@ -141,7 +144,7 @@ const FR = {
     impositionHint: 'Appliquée à la totalité des sommes retirées, de 0 à 60 %.',
     tauxPersonnaliseFort: 'Taux personnalisé.',
     tauxPersonnaliseCorps: (taux: string, pays: string) =>
-      `${taux} ne correspond à aucune enveloppe de résidence en ${pays}. Choisissez-en une ci-dessus pour revenir à un taux réel.`,
+      `${taux} ne correspond à aucune enveloppe unique en ${pays} — c’est le cas d’un portefeuille réparti sur plusieurs, et le taux que produit l’estimateur de patrimoine. Choisissez une enveloppe ci-dessus pour raisonner sur un seul régime.`,
     afficher: '+ Afficher',
     masquer: '− Masquer',
     avanceSuite: 'les hypothèses de long terme',
@@ -258,17 +261,22 @@ const FR = {
   },
 
   chronique: {
-    titre: 'Le poids du crédit et de l’impôt, année après année',
+    titre: 'Ce que votre patrimoine devient, et pourquoi',
     intro:
-      'Les deux se croisent, et le second mouvement surprend : rembourser un crédit allège la dette, mais gonfle l’assiette de l’impôt sur la fortune immobilière, dont les emprunts se déduisent. Payer sa maison peut donc augmenter l’impôt qu’on paie dessus.',
-    dette: 'Capital restant dû',
-    interets: 'Intérêts payés, cumulés',
-    impots: 'Impôts de détention, cumulés',
+      'Deux forces le construisent — les intérêts composés, lents puis soudains, et les loyers, réguliers dès la première année. Deux le rabotent : les intérêts du crédit et les impôts de détention. L’écart entre le sommet de l’empilement et la courbe noire est le coût de la propriété.',
+    depart: 'Patrimoine de départ',
+    gains: 'Intérêts composés',
+    loyers: 'Loyers encaissés',
+    interets: 'Intérêts du crédit',
+    impots: 'Impôts de détention',
+    net: 'Patrimoine net',
+    survol: (net: string, produit: string, preleve: string) =>
+      `patrimoine net de ${net} — ${produit} produits par les placements et les loyers, ${preleve} repris par la banque et le fisc.`,
+    detteRestante: (montant: string, part: string) =>
+      `Il reste ${montant} de capital à rembourser, soit ${part} du patrimoine net. Le remboursement du capital ne change rien à ce total : la trésorerie sort, la dette baisse d’autant.`,
     aria: (annees: number) =>
-      `Poids du crédit et des impôts de détention sur ${annees} ans`,
-    poids: (part: string, net: string) =>
-      `Cette année-là, la dette restante et l’impôt de l’année pèsent ${part} d’un patrimoine net de ${net}.`,
-    note: 'Tout est en euros courants : aucune inflation n’est appliquée, les courbes disent ce qui est dû, pas ce que cela coûtera à ressentir. Les actifs progressent à leur propre rendement, les prêts s’amortissent par annuités constantes.',
+      `Décomposition du patrimoine net sur ${annees} ans`,
+    note: 'Tout est en euros courants : aucune inflation n’est appliquée. La valeur d’un bien loué reste fixe et son loyer est encaissé à mesure — un appartement ne grossit pas de son propre loyer, et confondre les deux doublerait le rendement d’un bailleur. Les prêts s’amortissent par annuités constantes, et le remboursement du capital est neutre sur le patrimoine net.',
   },
 
   detail: {
@@ -551,8 +559,11 @@ const EN: Dictionnaire = {
     gains: 'What that earns in a year',
     repartition: 'Split',
     appliquer: 'Use these figures in the simulator →',
-    applique: (patrimoine: string, rendement: string) =>
-      `The withdrawal simulator will start from ${patrimoine} at ${rendement}.`,
+    impositionRecomposee: 'Blended tax on withdrawals',
+    impositionRecomposeeAide:
+      'A composed portfolio has no single envelope, so no single rate: a euro taken out is part equity plan, part brokerage, part savings account. It is that weighted average the withdrawal simulator receives, shown there as a custom rate — because no real regime describes what you hold.',
+    applique: (patrimoine: string, rendement: string, imposition: string) =>
+      `The withdrawal simulator will start from ${patrimoine} at ${rendement}, taxed at ${imposition}.`,
     dejaApplique: 'These figures are already the ones the withdrawal simulator uses.',
     effacer: 'Clear the amounts',
     reinitialiser: 'Reset the tool',
@@ -582,7 +593,7 @@ const EN: Dictionnaire = {
     impositionHint: 'Applied to the whole of every withdrawal, from 0 to 60%.',
     tauxPersonnaliseFort: 'Custom rate.',
     tauxPersonnaliseCorps: (taux: string, pays: string) =>
-      `${taux} matches no account type available to a resident of ${pays}. Pick one above to return to a real rate.`,
+      `${taux} matches no single account type in ${pays} — which is what a portfolio spread across several looks like, and what the capital estimator produces. Pick one above to reason on a single regime.`,
     afficher: '+ Show',
     masquer: '− Hide',
     avanceSuite: 'the long-term assumptions',
@@ -700,17 +711,21 @@ const EN: Dictionnaire = {
   },
 
   chronique: {
-    titre: 'What the loan and the taxman weigh, year after year',
+    titre: 'What your capital becomes, and why',
     intro:
-      'The two cross, and the second move surprises people: repaying a loan lightens the debt but swells the base of the wealth tax on property, from which loans are deductible. Paying off a house can therefore raise the tax owed on it.',
-    dette: 'Capital still owed',
-    interets: 'Interest paid, cumulative',
-    impots: 'Holding taxes, cumulative',
-    aria: (annees: number) =>
-      `Weight of the loan and holding taxes over ${annees} years`,
-    poids: (part: string, net: string) =>
-      `That year, the remaining debt and the year’s tax weigh ${part} of a net worth of ${net}.`,
-    note: 'Everything is in nominal euros: no inflation is applied, so the curves say what is owed rather than what it will feel like. Assets grow at their own rate, loans amortise on a constant annuity.',
+      'Two forces build it — compounding, slow then sudden, and rents, steady from the first year. Two eat at it: the interest on the loan and the taxes on holding. The gap between the top of the stack and the black line is the cost of ownership.',
+    depart: 'Starting net worth',
+    gains: 'Compound interest',
+    loyers: 'Rents collected',
+    interets: 'Interest on the loan',
+    impots: 'Holding taxes',
+    net: 'Net worth',
+    survol: (net: string, produit: string, preleve: string) =>
+      `net worth of ${net} — ${produit} produced by the holdings and the rents, ${preleve} taken by the bank and the taxman.`,
+    detteRestante: (montant: string, part: string) =>
+      `${montant} of capital is still to repay, ${part} of net worth. Repaying it changes that total not at all: cash leaves, the debt falls by as much.`,
+    aria: (annees: number) => `Breakdown of net worth over ${annees} years`,
+    note: 'Everything is in nominal euros: no inflation is applied. A let property is held at a flat value and its rent banked as it comes — a flat does not grow by its own rent, and treating the two as one would double a landlord’s return. Loans amortise on a constant annuity, and repaying principal is neutral on net worth.',
   },
 
   detail: {

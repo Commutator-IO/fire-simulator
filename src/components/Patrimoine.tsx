@@ -9,6 +9,7 @@ import {
   bilan,
   chronique,
   coutDetention,
+  impositionRecomposee,
   locatif,
   rendementEffectif,
   type Actif,
@@ -37,7 +38,7 @@ type Props = {
   onLigne: (cle: CleActif, ligne: Partial<Ligne>) => void;
   onEffacer: () => void;
   onReinitialiser: () => void;
-  onAppliquer: (patrimoine: number, rendement: number) => void;
+  onAppliquer: (patrimoine: number, rendement: number, imposition: number) => void;
   /** Whether the withdrawal simulator already runs on these figures. */
   dejaApplique: boolean;
 };
@@ -55,11 +56,12 @@ export function Patrimoine({
 }: Props) {
   const t = useTextes();
   const tr = useTraduire();
-  const { eur, pct, tauxPct } = useFormats();
+  const { eur, tauxPct } = useFormats();
 
   const catalogue = actifsDe(pays);
   const b = bilan(composition, pays);
   const cout = coutDetention(composition, pays, imposition);
+  const alpha = impositionRecomposee(composition, pays);
   const horsPays = ailleurs(composition, pays);
 
   const lignesDe = (categorie: CategorieActif) =>
@@ -165,9 +167,11 @@ export function Patrimoine({
 
           {/* ------------------------------------------------------- Bilan */}
           <div className="lg:col-span-5">
-            {/* Le panneau a fini par dépasser la hauteur d'un écran : collé
-                par le haut, son bas devenait inatteignable. Il défile donc
-                dans lui-même au-delà de cette limite. */}
+            {/* Assez court pour tenir dans un écran : un panneau collant qui
+                a besoin de son propre ascenseur n'est plus un résumé. Le détail
+                par ligne vit plus bas, dans le graphique. La hauteur maximale
+                n'est qu'un filet pour les écrans très bas, où le bas du panneau
+                serait autrement inatteignable ; elle ne se voit pas autrement. */}
             <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:overscroll-contain">
               <div className="card overflow-hidden">
                 <div className="bg-brand-700 px-6 py-7 text-white sm:px-8">
@@ -220,56 +224,18 @@ export function Patrimoine({
                           valeur={eur(b.gainsAnnuels)}
                           aide={t.patrimoine.rendementAide}
                         />
+                        <Poste
+                          label={t.patrimoine.impositionRecomposee}
+                          valeur={tauxPct(alpha)}
+                          aide={t.patrimoine.impositionRecomposeeAide}
+                        />
                       </dl>
-
-                      {b.parCategorie.length > 0 && (
-                        <div className="mt-6">
-                          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-ink-400">
-                            {t.patrimoine.repartition}
-                          </p>
-                          <div className="flex h-3 w-full overflow-hidden rounded-full bg-ink-100">
-                            {b.parCategorie
-                              .filter((c) => c.categorie !== 'dettes')
-                              .map((c) => (
-                                <span
-                                  key={c.categorie}
-                                  className="h-full"
-                                  style={{
-                                    width: `${c.part * 100}%`,
-                                    backgroundColor: COULEURS_CATEGORIES[c.categorie],
-                                  }}
-                                />
-                              ))}
-                          </div>
-                          <ul className="mt-3 space-y-1.5 text-xs text-ink-500">
-                            {b.parCategorie.map((c) => (
-                              <li key={c.categorie} className="flex items-center gap-2">
-                                <span
-                                  className="h-2 w-2 shrink-0 rounded-full"
-                                  style={{
-                                    backgroundColor: COULEURS_CATEGORIES[c.categorie],
-                                  }}
-                                />
-                                <span className="flex-1">
-                                  {t.patrimoine.categorie[c.categorie]}
-                                </span>
-                                <span className="tabular text-ink-700">
-                                  {eur(c.montant)}
-                                </span>
-                                <span className="tabular w-12 text-right text-ink-400">
-                                  {pct(c.part, 0)}
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
 
                       {b.productif > 0 && (
                         <>
                           <button
                             type="button"
-                            onClick={() => onAppliquer(b.productif, b.rendementRecompose)}
+                            onClick={() => onAppliquer(b.productif, b.rendementRecompose, alpha)}
                             disabled={dejaApplique}
                             className="mt-6 w-full rounded-xl bg-brand-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-default disabled:bg-ink-200 disabled:text-ink-500"
                           >
@@ -282,6 +248,7 @@ export function Patrimoine({
                               {t.patrimoine.applique(
                                 eur(b.productif),
                                 tauxPct(b.rendementRecompose),
+                                tauxPct(alpha),
                               )}
                             </p>
                           )}

@@ -3,15 +3,16 @@ import { useFormats, useTextes } from '../lib/contexte';
 import type { AnneeDetention } from '../lib/patrimoine';
 
 /**
- * What the loan and the taxman weigh, year after year.
+ * What becomes of a portfolio, year after year, and why.
  *
- * The two move in opposite directions, and the second move is the one nobody
- * expects: repaying a mortgage lowers the debt but raises the wealth tax base,
- * loans being deductible from it. Drawn together, the crossing is visible.
+ * A single line showing net worth rising would say nothing about the forces
+ * underneath it. Here the identity is drawn instead:
  *
- * Cumulative rather than yearly, because a single year's property tax is a
- * rounding error next to a mortgage — it is only over twenty years that the two
- * become comparable, and that is exactly the comparison worth making.
+ *     net(n) = net(0) + compounding + rents − interest − holding taxes
+ *
+ * so the two things that build the capital are stacked above the starting line
+ * and the two that eat it hang below the total they would otherwise have
+ * reached. The gap between the two boundaries is the whole cost of owning.
  */
 
 const L = 64;
@@ -19,7 +20,7 @@ const R = 16;
 const T = 16;
 const B = 34;
 const W = 720;
-const H = 280;
+const H = 300;
 
 function pasLisible(brut: number): number {
   if (brut <= 0) return 1;
@@ -29,6 +30,15 @@ function pasLisible(brut: number): number {
   return palier * magnitude;
 }
 
+type Couche = {
+  cle: string;
+  libelle: string;
+  couleur: string;
+  /** Height of the band, year by year. */
+  hauteurs: number[];
+  montants: number[];
+};
+
 export function Chronique({ annees }: { annees: AnneeDetention[] }) {
   const t = useTextes();
   const { eur, eurCompact, pct } = useFormats();
@@ -36,44 +46,96 @@ export function Chronique({ annees }: { annees: AnneeDetention[] }) {
   const [survol, setSurvol] = useState<number | null>(null);
 
   const horizon = annees.length;
+  const netInitial = annees[0]?.netInitial ?? 0;
 
-  const series = useMemo(
-    () => [
+  // Empilé du bas vers le haut : le capital de départ, ce qu'il a produit,
+  // puis ce que la banque et le fisc ont repris sur ce total.
+  const couches: Couche[] = useMemo(() => {
+    const constante = (v: number) => annees.map(() => v);
+    return [
       {
-        cle: 'dette',
-        libelle: t.chronique.dette,
-        couleur: 'var(--color-brique-500)',
-        valeurs: annees.map((a) => a.detteRestante),
+        cle: 'depart',
+        libelle: t.chronique.depart,
+        couleur: 'var(--color-ink-200)',
+        hauteurs: constante(Math.max(0, netInitial)),
+        montants: constante(netInitial),
+      },
+      {
+        cle: 'gains',
+        libelle: t.chronique.gains,
+        couleur: 'var(--color-brand-400)',
+        hauteurs: annees.map((a) => a.gainsCumules),
+        montants: annees.map((a) => a.gainsCumules),
+      },
+      {
+        cle: 'loyers',
+        libelle: t.chronique.loyers,
+        couleur: 'var(--color-brand-700)',
+        hauteurs: annees.map((a) => a.loyersCumules),
+        montants: annees.map((a) => a.loyersCumules),
       },
       {
         cle: 'interets',
         libelle: t.chronique.interets,
         couleur: 'var(--color-brique-200)',
-        valeurs: annees.map((a) => a.interetsCumules),
+        hauteurs: annees.map((a) => -a.interetsCumules),
+        montants: annees.map((a) => -a.interetsCumules),
       },
       {
         cle: 'impots',
         libelle: t.chronique.impots,
-        couleur: 'var(--color-ink-400)',
-        valeurs: annees.map((a) => a.impotsCumules),
+        couleur: 'var(--color-brique-500)',
+        hauteurs: annees.map((a) => -a.impotsCumules),
+        montants: annees.map((a) => -a.impotsCumules),
       },
-    ],
-    [annees, t],
-  );
+    ];
+  }, [annees, netInitial, t]);
 
-  const { x, y, cheminDe, graduationsY, graduationsX } = useMemo(() => {
-    const maxBrut = Math.max(1, ...series.flatMap((s) => s.valeurs));
+  const { x, y, aires, chemin, graduationsY, graduationsX } = useMemo(() => {
+    // Le sommet de l'empilement positif, avant que les sorties ne le rabotent.
+    const sommets = annees.map(
+      (a) => Math.max(0, netInitial) + a.gainsCumules + a.loyersCumules,
+    );
+    const maxBrut = Math.max(1, ...sommets);
     const pasY = pasLisible(maxBrut / 4);
     const maxY = Math.ceil(maxBrut / pasY) * pasY;
 
     const x = (annee: number) => L + (annee / Math.max(1, horizon)) * (W - L - R);
     const y = (v: number) => T + (1 - v / maxY) * (H - T - B);
 
-    // L'année 0 est le point de départ : la dette entière, rien encore payé.
-    const cheminDe = (valeurs: number[], depart: number) =>
-      [depart, ...valeurs]
+    /** Ribbon between two boundaries, drawn out along one and back along the other. */
+    const ruban = (bas: number[], haut: number[]) => {
+      const aller = haut
         .map((v, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(v).toFixed(1)}`)
         .join(' ');
+      const retour = bas
+        .map((v, i) => ({ v, i }))
+        .reverse()
+        .map(({ v, i }) => `L${x(i).toFixed(1)},${y(v).toFixed(1)}`)
+        .join(' ');
+      return `${aller} ${retour} Z`;
+    };
+
+    // L'année 0 est le point de départ : rien n'a encore été gagné ni payé.
+    const avecDepart = (valeurs: number[], depart: number) => [depart, ...valeurs];
+
+    const aires: { cle: string; couleur: string; d: string }[] = [];
+    let plancher = avecDepart(
+      annees.map(() => 0),
+      0,
+    );
+    for (const couche of couches) {
+      const plafond = plancher.map(
+        (v, i) => v + avecDepart(couche.hauteurs, couche.cle === 'depart' ? netInitial : 0)[i],
+      );
+      aires.push({ cle: couche.cle, couleur: couche.couleur, d: ruban(plancher, plafond) });
+      plancher = plafond;
+    }
+
+    // `plancher` porte maintenant le patrimoine net : c'est la courbe à tracer.
+    const chemin = plancher
+      .map((v, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(v).toFixed(1)}`)
+      .join(' ');
 
     const graduationsY: number[] = [];
     for (let v = 0; v <= maxY + 1; v += pasY) graduationsY.push(v);
@@ -82,11 +144,8 @@ export function Chronique({ annees }: { annees: AnneeDetention[] }) {
     const graduationsX: number[] = [];
     for (let v = 0; v <= horizon; v += pasX) graduationsX.push(Math.round(v));
 
-    return { x, y, cheminDe, graduationsY, graduationsX };
-  }, [series, horizon]);
-
-  const depart = (cle: string) =>
-    cle === 'dette' ? (annees[0]?.detteRestante ?? 0) + (annees[0]?.interets ?? 0) : 0;
+    return { x, y, aires, chemin, graduationsY, graduationsX };
+  }, [annees, couches, netInitial, horizon]);
 
   const anneeSurvolee = survol ?? horizon;
   const courante = annees[anneeSurvolee - 1] ?? annees.at(-1)!;
@@ -96,7 +155,10 @@ export function Chronique({ annees }: { annees: AnneeDetention[] }) {
     if (!svg) return horizon;
     const rect = svg.getBoundingClientRect();
     const ratio = (clientX - rect.left) / rect.width;
-    return Math.min(horizon, Math.max(1, Math.round(((ratio * W - L) / (W - L - R)) * horizon)));
+    return Math.min(
+      horizon,
+      Math.max(1, Math.round(((ratio * W - L) / (W - L - R)) * horizon)),
+    );
   };
 
   return (
@@ -147,67 +209,74 @@ export function Chronique({ annees }: { annees: AnneeDetention[] }) {
           </text>
         ))}
 
-        {series.map((s) => (
-          <path
-            key={s.cle}
-            d={cheminDe(s.valeurs, depart(s.cle))}
-            fill="none"
-            stroke={s.couleur}
-            strokeWidth="2.5"
-            strokeLinejoin="round"
-            strokeLinecap="round"
-          />
+        {aires.map((a) => (
+          <path key={a.cle} d={a.d} fill={a.couleur} opacity="0.9" />
         ))}
+
+        <path
+          d={chemin}
+          fill="none"
+          stroke="var(--color-ink-900)"
+          strokeWidth="2.5"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
 
         <line
           x1={x(anneeSurvolee)}
           x2={x(anneeSurvolee)}
           y1={T}
           y2={H - B}
-          stroke="var(--color-ink-300)"
+          stroke="var(--color-ink-400)"
           strokeWidth="1"
         />
-        {series.map((s) => (
-          <circle
-            key={`point-${s.cle}`}
-            cx={x(anneeSurvolee)}
-            cy={y(s.valeurs[anneeSurvolee - 1] ?? 0)}
-            r="5"
-            fill={s.couleur}
-            stroke="#fff"
-            strokeWidth="2"
-          />
-        ))}
+        <circle
+          cx={x(anneeSurvolee)}
+          cy={y(courante.patrimoineNet)}
+          r="6"
+          fill="var(--color-ink-900)"
+          stroke="#fff"
+          strokeWidth="2.5"
+        />
       </svg>
 
       <figcaption className="mt-3 space-y-2 text-xs text-ink-500">
         <p className="font-medium text-ink-700">
           {t.projection.survolAnnee(anneeSurvolee)} —{' '}
-          {series
-            .map((s) => `${s.libelle} ${eur(s.valeurs[anneeSurvolee - 1] ?? 0)}`)
-            .join(' · ')}
+          {t.chronique.survol(
+            eur(courante.patrimoineNet),
+            eur(courante.gainsCumules + courante.loyersCumules),
+            eur(courante.interetsCumules + courante.impotsCumules),
+          )}
         </p>
         <p className="flex flex-wrap items-center gap-x-5 gap-y-1">
-          {series.map((s) => (
-            <span key={`legende-${s.cle}`} className="flex items-center gap-1.5">
+          <span className="flex items-center gap-1.5">
+            <span className="h-0.5 w-4 shrink-0 rounded-full bg-ink-900" />
+            {t.chronique.net}
+          </span>
+          {couches.map((c) => (
+            <span key={`legende-${c.cle}`} className="flex items-center gap-1.5">
               <span
-                className="h-0.5 w-4 shrink-0 rounded-full"
-                style={{ backgroundColor: s.couleur }}
+                className="h-2.5 w-2.5 shrink-0 rounded-sm"
+                style={{ backgroundColor: c.couleur }}
               />
-              {s.libelle}
+              {c.libelle}
+              <span className="tabular text-ink-400">
+                {eur(c.montants[anneeSurvolee - 1] ?? 0)}
+              </span>
             </span>
           ))}
         </p>
-        {courante !== undefined && (
+        {courante.detteRestante > 0 && (
           <p>
-            {t.chronique.poids(
+            {t.chronique.detteRestante(
+              eur(courante.detteRestante),
               pct(
                 courante.patrimoineNet > 0
-                  ? (courante.detteRestante + courante.impots) / courante.patrimoineNet
+                  ? courante.detteRestante / courante.patrimoineNet
                   : 0,
-                1,
+                0,
               ),
-              eur(courante.patrimoineNet),
             )}
           </p>
         )}

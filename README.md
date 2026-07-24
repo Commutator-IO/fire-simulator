@@ -19,7 +19,7 @@ de l'un à l'autre, rien ne se propage tout seul.
 ```bash
 npm install
 npm run dev      # serveur de développement
-npm test         # 202 tests sur les moteurs, les formats et les traductions
+npm test         # 210 tests sur les moteurs, les formats et les traductions
 npm run build    # build de production
 npm run lint
 ```
@@ -109,10 +109,27 @@ retirer brut, imposition du retrait comprise, uniquement pour rester
 propriétaire. Un bien loué n'entre pas dans la taxe foncière du calcul — la
 sienne figure déjà dans ce que ses loyers coûtent.
 
-Un troisième graphique suit ces poids **dans le temps**, et montre un mouvement
-contre-intuitif : rembourser un crédit allège la dette mais gonfle l'assiette de
-l'IFI, dont les emprunts se déduisent. Payer sa maison peut augmenter l'impôt
-qu'on paie dessus.
+Un troisième graphique décompose le patrimoine **dans le temps**, autour d'une
+identité que l'écran vérifie à l'euro près :
+
+```
+net(n) = net(0) + intérêts composés + loyers − intérêts du crédit − impôts de détention
+```
+
+Deux forces construisent, deux rabotent, et le remboursement du capital n'y
+figure pas : la trésorerie sort, la dette baisse d'autant, l'effet est nul. La
+valeur d'un bien loué reste fixe et son loyer est encaissé à mesure — un
+appartement ne grossit pas de son propre loyer, et confondre les deux doublerait
+le rendement d'un bailleur.
+
+### Le taux de retrait d'un portefeuille composé
+
+Un portefeuille réparti sur plusieurs enveloppes n'a pas de taux d'imposition
+unique : un euro retiré est en partie du PEA à 18,6 %, en partie du compte-titres
+à 31,4 %, en partie du livret à 0 %. L'estimateur en calcule la **moyenne
+pondérée** et la transmet au simulateur de retraits, qui la présente comme un
+taux personnalisé — parce qu'aucun régime réel ne décrit ce qui est détenu. Sur
+l'exemple d'ouverture, cela donne 14,4 %.
 
 **Les impôts pris en compte**, et ceux qui ne le sont pas :
 

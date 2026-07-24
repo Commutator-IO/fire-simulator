@@ -41,6 +41,7 @@ import {
 } from './lib/url';
 import {
   bilan,
+  impositionRecomposee,
   compositionParDefaut,
   compositionVide,
   type CleActif,
@@ -239,10 +240,20 @@ function Simulateur({
   const bilanCourant = bilan(composition, h.pays);
   const dejaApplique =
     Math.round(bilanCourant.productif) === Math.round(h.patrimoine) &&
-    Math.abs(bilanCourant.rendementRecompose - h.rendement) < 5e-6;
+    Math.abs(bilanCourant.rendementRecompose - h.rendement) < 5e-6 &&
+    Math.abs(impositionRecomposee(composition, h.pays) - h.imposition) < 5e-6;
 
-  const appliquerPatrimoine = (patrimoine: number, rendement: number) => {
-    setH((etat) => ({ ...etat, patrimoine: Math.round(patrimoine), rendement }));
+  const appliquerPatrimoine = (
+    patrimoine: number,
+    rendement: number,
+    imposition: number,
+  ) => {
+    setH((etat) => ({
+      ...etat,
+      patrimoine: Math.round(patrimoine),
+      rendement,
+      imposition,
+    }));
     setVue('fire');
     window.scrollTo({ top: 0 });
   };
@@ -507,9 +518,11 @@ function Simulateur({
             </div>
 
             <div className="lg:col-span-5">
-              {/* Le panneau dépasse la hauteur d'un écran dès que le train de
-                  vie est renseigné : collé par le haut, son bas restait hors
-                  d'atteinte. Il défile donc dans lui-même au-delà. */}
+              {/* Seul le verdict et ses chiffres restent épinglés : les notes
+                  et le bouton de partage suivent la page, et le panneau tient
+                  ainsi dans un écran sans ascenseur à lui. La hauteur maximale
+                  n'est qu'un filet pour les écrans très bas ; elle ne se voit
+                  pas autrement. */}
               <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:overscroll-contain">
                 <div className="card overflow-hidden">
                   <Verdict h={h} r={r} niveau={niveau} projection={central.projection} />
@@ -547,18 +560,19 @@ function Simulateur({
                       />
                     </dl>
 
-                    <p className="mt-5 rounded-xl bg-ink-50 px-4 py-3 text-xs leading-relaxed text-ink-500">
-                      {t.stats.noteImpot}
-                    </p>
                   </div>
                 </div>
-
-                <BoutonPartage lien={lien} />
-
-                <p className="mt-4 px-2 text-xs leading-relaxed text-ink-400">
-                  {t.stats.mentionLegale}
-                </p>
               </div>
+
+              <p className="mt-5 rounded-xl bg-ink-50 px-4 py-3 text-xs leading-relaxed text-ink-500">
+                {t.stats.noteImpot}
+              </p>
+
+              <BoutonPartage lien={lien} />
+
+              <p className="mt-4 px-2 text-xs leading-relaxed text-ink-400">
+                {t.stats.mentionLegale}
+              </p>
             </div>
           </div>
         </section>

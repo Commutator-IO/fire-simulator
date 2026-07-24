@@ -11,6 +11,7 @@ import {
   bilan,
   bornerComposition,
   chronique,
+  impositionRecomposee,
   compositionVide,
   coutDetention,
   impotFortuneImmobiliere,
@@ -473,6 +474,34 @@ describe('the loan and the taxman over time', () => {
     }
   });
 
+  // L'identité que le graphique dessine, et qui doit tenir à l'euro près.
+  it('closes on its own identity, year after year', () => {
+    for (const a of chronique(compositionParDefaut(), 'france')) {
+      expect(a.patrimoineNet).toBeCloseTo(
+        a.netInitial + a.gainsCumules + a.loyersCumules - a.interetsCumules - a.impotsCumules,
+        6,
+      );
+    }
+  });
+
+  it('banks the rent instead of inflating the flat that produces it', () => {
+    const bailleur = avec(
+      { immobilierLocatif: 250_000 },
+      { immobilierLocatif: { loyer: 12_000, charges: 3_000, impositionRevenus: 0.3 } },
+    );
+    const annees = chronique(bailleur, 'france');
+    // 6 300 € nets par an, encaissés, sans que le bien ne grossisse.
+    expect(annees[0].loyersCumules).toBeCloseTo(6_300, 6);
+    expect(annees[4].loyersCumules).toBeCloseTo(31_500, 6);
+    expect(annees[4].gainsCumules).toBe(0);
+  });
+
+  it('shows compounding pulling away from a straight line', () => {
+    const annees = chronique(avec({ pea: 100_000 }, { pea: { rendement: 0.07 } }), 'france');
+    // Sept ans à 7 % font plus que sept fois 7 000 € : c'est tout l'intérêt.
+    expect(annees[6].gainsCumules).toBeGreaterThan(7 * 7_000);
+  });
+
   it('accumulates, never subtracting from what was already paid', () => {
     const annees = chronique(emprunte, 'france');
     for (let i = 1; i < annees.length; i++) {
@@ -507,5 +536,37 @@ describe('the loan and the taxman over time', () => {
         expect(Number.isFinite(v)).toBe(true);
       }
     }
+  });
+});
+
+describe('the blended tax on withdrawals', () => {
+  it('weighs each envelope by what it holds', () => {
+    // Moitié PEA à 18,6 %, moitié compte-titres à 31,4 %.
+    const b = impositionRecomposee(avec({ pea: 100_000, compteTitres: 100_000 }), 'france');
+    expect(b).toBeCloseTo((0.186 + 0.314) / 2, 10);
+  });
+
+  it('matches no single regime, which is the point', () => {
+    const compose = impositionRecomposee(compositionParDefaut(), 'france');
+    for (const regime of [0.314, 0.186, 0.247]) {
+      expect(Math.abs(compose - regime)).toBeGreaterThan(5e-6);
+    }
+  });
+
+  it('is nil for a portfolio of tax-free accounts', () => {
+    expect(impositionRecomposee(avec({ livretA: 30_000, lep: 10_000 }), 'france')).toBe(0);
+    expect(impositionRecomposee(avec({ nisa: 200_000 }), 'japon')).toBe(0);
+  });
+
+  it('leaves out a let property, already stated net of its own tax', () => {
+    const avecBien = impositionRecomposee(
+      avec({ pea: 100_000, immobilierLocatif: 100_000 }),
+      'france',
+    );
+    expect(avecBien).toBeCloseTo(0.186 / 2, 10);
+  });
+
+  it('reports nothing rather than dividing by zero', () => {
+    expect(impositionRecomposee(compositionVide(), 'france')).toBe(0);
   });
 });

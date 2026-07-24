@@ -104,6 +104,12 @@ export type Actif = {
    * asks for a rent, its running costs and the tax on the difference.
    */
   revenus?: boolean;
+  /**
+   * What the taxman takes when money is drawn out of this envelope. Not the
+   * same thing as the yearly levies above: this one only bites on withdrawal,
+   * and it is what the withdrawal simulator calls α.
+   */
+  impositionRetrait: number;
   /** A starting hypothesis, editable line by line. */
   rendementParDefaut: number;
   /** Tax on the net rental income, for lines that declare `revenus`. */
@@ -128,6 +134,7 @@ const FRANCE: Actif[] = [
     signe: 1,
     productif: true,
     // Taux fixé par arrêté, 1,7 % au 1ᵉʳ août 2026.
+    impositionRetrait: 0,
     rendementParDefaut: 0.017,
     plafond: 22_950 + 12_000,
     libelle: { fr: 'Livret A et LDDS', en: 'Livret A and LDDS' },
@@ -142,6 +149,7 @@ const FRANCE: Actif[] = [
     categorie: 'liquide',
     signe: 1,
     productif: true,
+    impositionRetrait: 0,
     rendementParDefaut: 0.025,
     plafond: 10_000,
     libelle: { fr: 'Livret d’épargne populaire', en: 'Livret d’épargne populaire' },
@@ -156,6 +164,7 @@ const FRANCE: Actif[] = [
     categorie: 'liquide',
     signe: 1,
     productif: true,
+    impositionRetrait: 0,
     rendementParDefaut: 0,
     libelle: { fr: 'Comptes courants et liquidités', en: 'Current accounts and cash' },
     note: {
@@ -169,6 +178,7 @@ const FRANCE: Actif[] = [
     categorie: 'assurance',
     signe: 1,
     productif: true,
+    impositionRetrait: 0.075,
     rendementParDefaut: 0.025,
     prelevementsAnnuels: 0.186,
     libelle: { fr: 'Assurance-vie — fonds euros', en: 'Life insurance — euro fund' },
@@ -183,6 +193,7 @@ const FRANCE: Actif[] = [
     categorie: 'assurance',
     signe: 1,
     productif: true,
+    impositionRetrait: 0.247,
     rendementParDefaut: 0.06,
     libelle: { fr: 'Assurance-vie — unités de compte', en: 'Life insurance — unit-linked' },
     note: {
@@ -196,6 +207,7 @@ const FRANCE: Actif[] = [
     categorie: 'assurance',
     signe: 1,
     productif: true,
+    impositionRetrait: 0.3,
     rendementParDefaut: 0.04,
     libelle: { fr: 'Plan d’épargne retraite', en: 'Retirement savings plan (PER)' },
     note: {
@@ -209,6 +221,7 @@ const FRANCE: Actif[] = [
     categorie: 'actions',
     signe: 1,
     productif: true,
+    impositionRetrait: 0.186,
     rendementParDefaut: 0.07,
     plafond: 150_000,
     libelle: { fr: 'PEA', en: 'PEA equity savings plan' },
@@ -223,6 +236,7 @@ const FRANCE: Actif[] = [
     categorie: 'actions',
     signe: 1,
     productif: true,
+    impositionRetrait: 0.314,
     rendementParDefaut: 0.07,
     libelle: { fr: 'Compte-titres', en: 'Taxable brokerage account' },
     note: {
@@ -237,6 +251,7 @@ const FRANCE: Actif[] = [
     signe: 1,
     productif: true,
     immobilierTaxable: true,
+    impositionRetrait: 0.314,
     rendementParDefaut: 0.045,
     libelle: { fr: 'SCPI', en: 'Property investment trusts (SCPI)' },
     note: {
@@ -252,6 +267,7 @@ const FRANCE: Actif[] = [
     productif: true,
     immobilierTaxable: true,
     revenus: true,
+    impositionRetrait: 0,
     rendementParDefaut: 0,
     impositionParDefaut: 0.3,
     libelle: { fr: 'Immobilier locatif', en: 'Rental property' },
@@ -267,6 +283,7 @@ const FRANCE: Actif[] = [
     signe: 1,
     productif: false,
     immobilierTaxable: true,
+    impositionRetrait: 0,
     rendementParDefaut: 0,
     tauxTaxeFonciere: 0.007,
     libelle: { fr: 'Résidence principale', en: 'Main residence' },
@@ -281,6 +298,7 @@ const FRANCE: Actif[] = [
     categorie: 'autre',
     signe: 1,
     productif: true,
+    impositionRetrait: 0.314,
     rendementParDefaut: 0,
     libelle: { fr: 'Autres actifs', en: 'Other assets' },
     note: {
@@ -295,6 +313,7 @@ const FRANCE: Actif[] = [
     signe: -1,
     productif: false,
     immobilierTaxable: true,
+    impositionRetrait: 0,
     rendementParDefaut: 0.03,
     libelle: {
       fr: 'Crédit de la résidence principale',
@@ -312,6 +331,7 @@ const FRANCE: Actif[] = [
     signe: -1,
     productif: true,
     immobilierTaxable: true,
+    impositionRetrait: 0,
     rendementParDefaut: 0.03,
     libelle: { fr: 'Autres crédits', en: 'Other loans' },
     note: {
@@ -330,6 +350,7 @@ const JAPON: Actif[] = [
     productif: true,
     // Les grandes banques rémunèrent le dépôt à vue autour de 0,2 % depuis la
     // sortie des taux négatifs.
+    impositionRetrait: 0.20315,
     rendementParDefaut: 0.002,
     libelle: { fr: 'Dépôt à vue (futsū yokin)', en: 'Ordinary deposit (futsū yokin)' },
     note: {
@@ -343,6 +364,7 @@ const JAPON: Actif[] = [
     categorie: 'liquide',
     signe: 1,
     productif: true,
+    impositionRetrait: 0.20315,
     rendementParDefaut: 0.008,
     libelle: { fr: 'Dépôt à terme (teiki yokin)', en: 'Time deposit (teiki yokin)' },
     note: {
@@ -356,6 +378,7 @@ const JAPON: Actif[] = [
     categorie: 'actions',
     signe: 1,
     productif: true,
+    impositionRetrait: 0,
     rendementParDefaut: 0.07,
     plafond: 18_000_000,
     libelle: { fr: 'NISA', en: 'NISA' },
@@ -370,6 +393,7 @@ const JAPON: Actif[] = [
     categorie: 'actions',
     signe: 1,
     productif: true,
+    impositionRetrait: 0.20315,
     rendementParDefaut: 0.07,
     libelle: {
       fr: 'Compte-titres imposable (tokutei kōza)',
@@ -386,6 +410,7 @@ const JAPON: Actif[] = [
     categorie: 'assurance',
     signe: 1,
     productif: true,
+    impositionRetrait: 0.20315,
     rendementParDefaut: 0.04,
     libelle: { fr: 'iDeCo et retraite d’entreprise', en: 'iDeCo and corporate pension' },
     note: {
@@ -399,6 +424,7 @@ const JAPON: Actif[] = [
     categorie: 'immobilier',
     signe: 1,
     productif: true,
+    impositionRetrait: 0.20315,
     rendementParDefaut: 0.045,
     libelle: { fr: 'J-REIT', en: 'J-REIT' },
     note: {
@@ -413,6 +439,7 @@ const JAPON: Actif[] = [
     signe: 1,
     productif: true,
     revenus: true,
+    impositionRetrait: 0,
     rendementParDefaut: 0,
     impositionParDefaut: 0.25,
     libelle: { fr: 'Immobilier locatif', en: 'Rental property' },
@@ -427,6 +454,7 @@ const JAPON: Actif[] = [
     categorie: 'immobilier',
     signe: 1,
     productif: false,
+    impositionRetrait: 0,
     rendementParDefaut: 0,
     // 固定資産税 1,4 % et 都市計画税 jusqu'à 0,3 %, sur la valeur cadastrale.
     tauxTaxeFonciere: 0.012,
@@ -442,6 +470,7 @@ const JAPON: Actif[] = [
     categorie: 'dettes',
     signe: -1,
     productif: false,
+    impositionRetrait: 0,
     rendementParDefaut: 0.01,
     libelle: {
       fr: 'Crédit de la résidence principale',
@@ -458,6 +487,7 @@ const JAPON: Actif[] = [
     categorie: 'autre',
     signe: 1,
     productif: true,
+    impositionRetrait: 0.20315,
     rendementParDefaut: 0,
     libelle: { fr: 'Autres actifs', en: 'Other assets' },
     note: {
@@ -471,6 +501,7 @@ const JAPON: Actif[] = [
     categorie: 'dettes',
     signe: -1,
     productif: true,
+    impositionRetrait: 0,
     rendementParDefaut: 0.01,
     libelle: { fr: 'Crédits en cours', en: 'Outstanding loans' },
     note: {
@@ -857,6 +888,33 @@ export function estRenseignee(lignes: Ligne[]): boolean {
 }
 
 /**
+ * The tax rate a withdrawal from this portfolio actually suffers.
+ *
+ * A composed portfolio has no single envelope, so it has no single rate: a euro
+ * taken out is part equity plan, part brokerage account, part savings account,
+ * and the blend is what matters. Hence a custom rate handed to the withdrawal
+ * simulator rather than one regime's — none of them describes what is held.
+ *
+ * A let property counts at zero: its return was already stated net of the tax
+ * on its rents, and taxing it a second time would contradict that in the same
+ * breath.
+ */
+export function impositionRecomposee(lignes: Ligne[], pays: ClePays): number {
+  const retenues = bornerComposition(lignes).filter((l) => {
+    const a = actif(l.cle);
+    return a?.pays === pays && a.productif && a.signe === 1;
+  });
+  const assiette = retenues.reduce((somme, l) => somme + l.montant, 0);
+  if (assiette <= 0) return 0;
+  return (
+    retenues.reduce(
+      (somme, l) => somme + l.montant * (actif(l.cle)?.impositionRetrait ?? 0),
+      0,
+    ) / assiette
+  );
+}
+
+/**
  * What has been entered for another country than the one in force.
  *
  * Measured against the opening example rather than against zero: the example
@@ -878,17 +936,32 @@ export function ailleurs(lignes: Ligne[], pays: ClePays): number {
 
 export type AnneeDetention = {
   annee: number;
+  /** Net worth at the outset — the baseline everything else moves from. */
+  netInitial: number;
+  /** Compounded growth of everything that earns a rate, since the start. */
+  gainsCumules: number;
+  /** Net rents collected since the start. */
+  loyersCumules: number;
+  /** Interest paid since the start. */
+  interetsCumules: number;
+  /** Holding taxes paid since the start. */
+  impotsCumules: number;
   /** Capital still owed at the end of the year. */
   detteRestante: number;
-  /** Interest paid over the year, and since the start. */
+  /** Interest and holding taxes for that year alone. */
   interets: number;
-  interetsCumules: number;
-  /** Holding taxes owed for the year, and since the start. */
   taxeFonciere: number;
   impotFortune: number;
   impots: number;
-  impotsCumules: number;
-  /** Net worth at the end of the year, assets grown and debts amortised. */
+  /**
+   * Net worth at the end of the year, and the point of the whole exercise:
+   *
+   *     net(n) = net(0) + gains + rents − interest − holding taxes
+   *
+   * Principal repayments cancel out — cash leaves, debt shrinks by as much —
+   * so what actually moves the needle is what compounds, what the tenants pay,
+   * and what the bank and the taxman take.
+   */
   patrimoineNet: number;
 };
 
@@ -900,16 +973,17 @@ function annuite(capital: number, taux: number, duree: number): number {
 }
 
 /**
- * How the loan and the taxman weigh on a portfolio, year after year.
+ * What becomes of a portfolio, year after year, and why.
  *
- * Worth drawing because the two move in opposite directions, and the second
- * move surprises people: as the mortgage is repaid the debt weighs less, but
- * the wealth tax base — net property, loans deducted — grows by exactly the
- * capital repaid. Paying off a house can therefore raise the tax owed on it.
+ * Drawn because the shape of the answer is not obvious. Compounding is slow
+ * then sudden; rents are the opposite, steady from the first year; and the two
+ * outflows move against each other — as the mortgage is repaid the interest
+ * falls, but the wealth tax base grows by exactly the capital repaid, loans
+ * being deductible from it. Paying off a house can raise the tax owed on it.
  *
- * Assets grow at their own rate, a let property at its rent-derived one, and
- * loans amortise on a standard annuity. Everything is nominal: no inflation is
- * applied, so the curves say what is owed rather than what it will feel like.
+ * A let property's value is held flat and its rent banked as it comes: a flat
+ * does not grow by its own rent, and treating the two as one would double a
+ * landlord's return. Everything is nominal — no inflation is applied.
  */
 export function chronique(lignes: Ligne[], pays: ClePays): AnneeDetention[] {
   const retenues = bornerComposition(lignes).filter((l) => actif(l.cle)?.pays === pays);
@@ -918,9 +992,13 @@ export function chronique(lignes: Ligne[], pays: ClePays): AnneeDetention[] {
     Math.max(10, ...retenues.filter((l) => l.montant > 0).map((l) => l.duree)),
   );
 
+  const netInitial = bilan(lignes, pays).net;
+
   // Une copie mutable : les valeurs évoluent d'une année sur l'autre.
   const etat = retenues.map((l) => ({ ligne: l, valeur: l.montant }));
   const annees: AnneeDetention[] = [];
+  let gainsCumules = 0;
+  let loyersCumules = 0;
   let interetsCumules = 0;
   let impotsCumules = 0;
 
@@ -940,16 +1018,15 @@ export function chronique(lignes: Ligne[], pays: ClePays): AnneeDetention[] {
         // ce coup de gomme, l'arrondi de la dernière annuité laisserait un
         // cheveu de courbe et une ligne d'intérêts pour l'éternité.
         e.valeur = solde < 0.01 ? 0 : solde;
+      } else if (a.revenus) {
+        // Le loyer est encaissé, il ne gonfle pas le bien qui le produit.
+        loyersCumules += locatif(e.ligne).net;
       } else {
-        e.valeur *= 1 + rendementEffectif(e.ligne);
+        const gain = e.valeur * rendementEffectif(e.ligne);
+        gainsCumules += gain;
+        e.valeur += gain;
       }
     }
-
-    const valeurDe = (predicat: (a: Actif) => boolean) =>
-      etat.reduce((somme, e) => {
-        const a = actif(e.ligne.cle);
-        return a !== undefined && predicat(a) ? somme + e.valeur : somme;
-      }, 0);
 
     const taxeFonciere = etat.reduce((somme, e) => {
       const a = actif(e.ligne.cle);
@@ -972,14 +1049,21 @@ export function chronique(lignes: Ligne[], pays: ClePays): AnneeDetention[] {
 
     annees.push({
       annee,
-      detteRestante: valeurDe((a) => a.signe === -1),
-      interets,
+      netInitial,
+      gainsCumules,
+      loyersCumules,
       interetsCumules,
+      impotsCumules,
+      detteRestante: etat.reduce(
+        (somme, e) => (actif(e.ligne.cle)?.signe === -1 ? somme + e.valeur : somme),
+        0,
+      ),
+      interets,
       taxeFonciere,
       impotFortune,
       impots,
-      impotsCumules,
-      patrimoineNet: valeurDe((a) => a.signe === 1) - valeurDe((a) => a.signe === -1),
+      patrimoineNet:
+        netInitial + gainsCumules + loyersCumules - interetsCumules - impotsCumules,
     });
   }
 
