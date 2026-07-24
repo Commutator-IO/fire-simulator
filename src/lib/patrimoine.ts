@@ -289,20 +289,25 @@ const FRANCE: Actif[] = [
     signe: 1,
     productif: true,
     distribuable: true,
-    // Le rendement placé dans la société supporte l'IS avant d'être distribué.
+    // Ce que la société tire de sa trésorerie placée supporte l'IS chaque
+    // année, avant même la flat tax de sortie. Sans effet tant que le rendement
+    // reste à zéro — une réserve dort le plus souvent sans rien rapporter.
     prelevementsAnnuels: 0.25,
     // 12,8 % d'impôt sur le revenu et 18,6 % de prélèvements sociaux depuis la
     // hausse de la CSG sur les revenus du capital : 31,4 %, comme le
     // compte-titres. Le taux rond de 30 % appartient au passé.
     impositionRetrait: 0.314,
-    rendementParDefaut: 0.025,
+    // Zéro par défaut : une réserve est de la trésorerie qui dort, pas un
+    // placement. Qui place la sienne saisit le taux, et l'IS le rabote d'un
+    // quart.
+    rendementParDefaut: 0,
     libelle: {
       fr: 'Réserve facultative de la société',
       en: 'Company retained earnings',
     },
     note: {
-      fr: 'Les bénéfices déjà taxés à l’IS et laissés en réserve. À vous, mais pas encore chez vous : les sortir coûte la flat tax, une fois.',
-      en: 'Profits already taxed at corporation tax and left in reserve. Yours, but not yet in your hands: taking them out costs the flat tax, once.',
+      fr: 'Les bénéfices déjà taxés à l’IS et laissés en réserve. À vous, mais pas encore chez vous : les sortir coûte la flat tax, une fois. Rendement à zéro tant qu’elle dort ; si la société la place, indiquez son taux — l’IS en reprend un quart chaque année.',
+      en: 'Profits already taxed at corporation tax and left in reserve. Yours, but not yet in your hands: taking them out costs the flat tax, once. Zero return while it sits idle; if the company invests it, enter the rate — corporation tax takes a quarter each year.',
     },
   },
   {
