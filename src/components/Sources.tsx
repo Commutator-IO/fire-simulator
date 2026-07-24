@@ -45,6 +45,11 @@ const LIENS: { cle: keyof Dictionnaire['sources']['liste']; url: string; hote: s
   },
   { cle: 'nisa', url: 'https://www.fsa.go.jp/policy/nisa2/', hote: 'fsa.go.jp' },
   {
+    cle: 'epargneReglementee',
+    url: 'https://presse.economie.gouv.fr/epargne-reglementee-le-livret-a-passe-a-17-et-le-lep-se-maintient-a-25-a-compter-du-1er-aout-2026/',
+    hote: 'economie.gouv.fr',
+  },
+  {
     cle: 'bce',
     url: 'https://www.ecb.europa.eu/mopo/strategy/strategy-review/html/price-stability-objective.fr.html',
     hote: 'ecb.europa.eu',

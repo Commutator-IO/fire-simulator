@@ -1,6 +1,7 @@
 import { DEPOT, LIEN_ISSUES } from '../lib/depot';
 import { useTextes } from '../lib/contexte';
 import { CODES_LANGUES, LANGUES, NOMS_LANGUES, type Langue } from '../lib/i18n';
+import type { Vue } from '../lib/url';
 
 /**
  * Header and footer of the tool.
@@ -13,9 +14,13 @@ import { CODES_LANGUES, LANGUES, NOMS_LANGUES, type Langue } from '../lib/i18n';
 export function Entete({
   langue,
   onLangue,
+  vue,
+  onVue,
 }: {
   langue: Langue;
   onLangue: (l: Langue) => void;
+  vue: Vue;
+  onVue: (v: Vue) => void;
 }) {
   const t = useTextes();
 
@@ -49,7 +54,50 @@ export function Entete({
 
         <ChoixLangue langue={langue} onLangue={onLangue} etiquette={t.entete.choixLangue} />
       </div>
+
+      <Onglets vue={vue} onVue={onVue} />
     </header>
+  );
+}
+
+/**
+ * The two simulators.
+ *
+ * Tabs rather than two pages: the second exists to answer the first one's
+ * opening questions, and one hands its figures to the other. Keeping them in
+ * the same page makes that handover a click instead of a reload.
+ */
+function Onglets({ vue, onVue }: { vue: Vue; onVue: (v: Vue) => void }) {
+  const t = useTextes();
+  const onglets: { cle: Vue; label: string }[] = [
+    { cle: 'fire', label: t.onglets.fire },
+    { cle: 'patrimoine', label: t.onglets.patrimoine },
+  ];
+
+  return (
+    <nav aria-label={t.onglets.aria} className="border-t border-ink-200/70">
+      <div className="mx-auto flex max-w-6xl gap-6 px-5">
+        {onglets.map((o) => {
+          const actif = o.cle === vue;
+          return (
+            <button
+              key={o.cle}
+              type="button"
+              aria-current={actif ? 'page' : undefined}
+              onClick={() => onVue(o.cle)}
+              className={[
+                'relative -mb-px border-b-2 py-2.5 text-sm font-medium transition',
+                actif
+                  ? 'border-brand-500 text-ink-900'
+                  : 'border-transparent text-ink-500 hover:text-ink-800',
+              ].join(' ')}
+            >
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+    </nav>
   );
 }
 

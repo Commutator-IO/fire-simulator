@@ -6,6 +6,7 @@ import { Detail } from './components/Detail';
 import { Objectif } from './components/Objectif';
 import { Comparaison } from './components/Comparaison';
 import { Sources } from './components/Sources';
+import { Patrimoine } from './components/Patrimoine';
 import { Entete, Pied } from './components/Cadre';
 import { BoutonPartage } from './components/BoutonPartage';
 import { ContexteLangue, useFormats, useTextes, useTraduire } from './lib/contexte';
@@ -28,7 +29,16 @@ import {
   type ClePays,
   type Regime,
 } from './lib/pays';
-import { decoderEtat, decoderLangue, encoderEtat, lienPartage } from './lib/url';
+import {
+  decoderComposition,
+  decoderEtat,
+  decoderLangue,
+  decoderVue,
+  encoderEtat,
+  lienPartage,
+  type Vue,
+} from './lib/url';
+import { bilan, compositionVide, type CleActif, type Ligne } from './lib/patrimoine';
 
 /**
  * A rate is held as a fraction and edited in percentage points.
@@ -101,6 +111,12 @@ function Simulateur({
   );
   const [mode, setMode] = useState<ModeAffichage>('courant');
   const [comparaison, setComparaison] = useState<'rendement' | 'pays'>('rendement');
+  const [vue, setVue] = useState<Vue>(() =>
+    decoderVue(typeof window === 'undefined' ? '' : window.location.search),
+  );
+  const [composition, setComposition] = useState<Ligne[]>(() =>
+    decoderComposition(typeof window === 'undefined' ? '' : window.location.search),
+  );
   const [avanceOuvert, setAvanceOuvert] = useState(
     () =>
       h.inflation !== DEFAUTS.inflation ||
@@ -178,7 +194,7 @@ function Simulateur({
   // single drag.
   useEffect(() => {
     const minuteur = setTimeout(() => {
-      const requete = encoderEtat(h, langueUrl);
+      const requete = encoderEtat(h, { langue: langueUrl, composition, vue });
       window.history.replaceState(
         null,
         '',
@@ -186,19 +202,51 @@ function Simulateur({
       );
     }, 250);
     return () => clearTimeout(minuteur);
-  }, [h, langueUrl]);
+  }, [h, langueUrl, composition, vue]);
 
   const capitalFinal =
     mode === 'courant'
       ? central.projection.capitalFinal
       : central.projection.capitalFinalReel;
 
-  const lien = lienPartage(h, langueUrl);
+  const lien = lienPartage(h, { langue: langueUrl, composition, vue });
+
+  /**
+   * Handing the statement over to the withdrawal plan.
+   *
+   * A one-way copy rather than a permanent link: once the figures are in, the
+   * sliders of the other tab have to stay free. The button says so by going
+   * quiet when the two already agree.
+   */
+  const bilanCourant = bilan(composition);
+  const dejaApplique =
+    Math.round(bilanCourant.productif) === Math.round(h.patrimoine) &&
+    Math.abs(bilanCourant.rendementRecompose - h.rendement) < 5e-6;
+
+  const appliquerPatrimoine = (patrimoine: number, rendement: number) => {
+    setH((etat) => ({ ...etat, patrimoine: Math.round(patrimoine), rendement }));
+    setVue('fire');
+    window.scrollTo({ top: 0 });
+  };
+
+  const majLigne = (cle: CleActif, maj: Partial<Ligne>) =>
+    setComposition((lignes) =>
+      lignes.map((l) => (l.cle === cle ? { ...l, ...maj } : l)),
+    );
 
   return (
     <div className="min-h-screen">
-      <Entete langue={langue} onLangue={onLangue} />
+      <Entete langue={langue} onLangue={onLangue} vue={vue} onVue={setVue} />
 
+      {vue === 'patrimoine' ? (
+        <Patrimoine
+          composition={composition}
+          onLigne={majLigne}
+          onEffacer={() => setComposition(compositionVide())}
+          onAppliquer={appliquerPatrimoine}
+          dejaApplique={dejaApplique}
+        />
+      ) : (
       <main>
         {/* ---------------------------------------------------------- Hero */}
         <section className="border-b border-ink-200/70 bg-white">
@@ -253,7 +301,7 @@ function Simulateur({
                     pas={0.1}
                     onChange={(v) => maj('rendement', v / 100)}
                     rendu={(v) => tauxPct(v / 100)}
-                    saisie={{ suffixe: '%', decimales: 1 }}
+                    saisie={{ suffixe: '%', decimales: 2 }}
                     reperes={[0, 5, 8].map((v) => ({
                       valeur: v,
                       label: tauxPct(v / 100),
@@ -580,11 +628,13 @@ function Simulateur({
 
         <Sources lienSimulation={lien} />
       </main>
+      )}
 
       <Pied />
 
       {/* On mobile the verdict sits far above the sliders, so the answer is
           kept visible at all times. */}
+      {vue === 'fire' && (
       <div className="sticky bottom-0 z-20 border-t border-ink-200 bg-white/95 backdrop-blur lg:hidden">
         <div className="flex items-center justify-between gap-4 px-5 py-3">
           <div>
@@ -615,6 +665,7 @@ function Simulateur({
           </span>
         </div>
       </div>
+      )}
     </div>
   );
 }

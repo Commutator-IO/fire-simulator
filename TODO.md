@@ -121,7 +121,8 @@ quelqu'un qui envisage de partir.
 
 ## 5. La phase d'accumulation
 
-Le simulateur part du patrimoine déjà là. La question précédente — « combien
+Le simulateur part du patrimoine déjà là — que l'onglet « Estimer mon
+patrimoine » sait maintenant chiffrer, mais seulement à l'instant présent. La question précédente — « combien
 épargner par mois, et pendant combien de temps, pour y arriver ? » — est la plus
 demandée par ceux qui n'y sont pas encore, c'est-à-dire presque tout le monde.
 
@@ -177,7 +178,7 @@ plus correspondu à aucun régime français après le passage de la flat tax à
 ## 8. Tests d'interface
 
 Le moteur, l'échelle, les formats, le dictionnaire et l'adresse sont couverts
-([133 tests](src/lib)). Les composants ne le sont pas du tout : aucun test ne
+([165 tests](src/lib)). Les composants ne le sont pas du tout : aucun test ne
 vérifie qu'un clic sur « Japon » recharge bien les hypothèses du pays, ni que le
 verdict bascule au bon moment.
 

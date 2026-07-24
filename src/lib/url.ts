@@ -1,6 +1,13 @@
 import { BORNES, DEFAUTS, type Hypotheses, type ModeRetrait } from './fire';
 import { estClePays } from './pays';
 import { estLangue, type Langue } from './i18n';
+import {
+  ACTIFS,
+  BORNES_LIGNE,
+  actif,
+  bornerComposition,
+  type Ligne,
+} from './patrimoine';
 
 /**
  * Serialisation of a simulation into the URL.
@@ -32,7 +39,24 @@ const CLES = {
   mode: 'mode',
   pays: 'pays',
   langue: 'lang',
+  vue: 'vue',
 } as const;
+
+/**
+ * The two simulators, and which one the link opens on.
+ *
+ * Held in the address like everything else: a link to a net-worth statement
+ * should open on the statement, not on the withdrawal plan it feeds.
+ */
+export type Vue = 'fire' | 'patrimoine';
+
+/**
+ * Holdings travel one parameter per line — `?pea=200000&scpi=40000` — rather
+ * than packed into a single string. Colons and commas come back percent-encoded
+ * and would turn a readable address into a smear; and a rate is written only
+ * when it differs from the product's own, so a plain statement stays short.
+ */
+const SUFFIXE_TAUX = '-taux';
 
 /**
  * Decimals kept on a rate travelling through the URL.
@@ -71,14 +95,21 @@ const enPoints = (v: number) => arrondi(v * 100, DECIMALES_TAUX);
  * Builds the query string representing the state, including only what differs
  * from the defaults. Returns an empty string when everything is default.
  */
-export function encoderEtat(
-  etat: Hypotheses,
+/** Everything that travels alongside the withdrawal plan. */
+export type Contexte = {
   /**
    * Written only when the visitor picked a language themselves, like every
    * other parameter left at its default: a link shared by someone who never
    * touched the switcher stays short and opens on the default language.
    */
-  langue: Langue | null = null,
+  langue?: Langue | null;
+  composition?: Ligne[];
+  vue?: Vue;
+};
+
+export function encoderEtat(
+  etat: Hypotheses,
+  { langue = null, composition, vue }: Contexte = {},
   defauts: Hypotheses = DEFAUTS,
 ): string {
   const params = new URLSearchParams();
@@ -98,9 +129,45 @@ export function encoderEtat(
   ajouter(CLES.mode, etat.modeRetrait, defauts.modeRetrait);
   ajouter(CLES.pays, etat.pays, defauts.pays);
   if (langue !== null) params.set(CLES.langue, langue);
+  if (vue !== undefined && vue !== 'fire') params.set(CLES.vue, vue);
+
+  for (const ligne of composition ?? []) {
+    if (ligne.montant <= 0) continue;
+    params.set(ligne.cle, String(arrondi(ligne.montant)));
+    const defaut = actif(ligne.cle).rendementParDefaut;
+    if (enPoints(ligne.rendement) !== enPoints(defaut)) {
+      params.set(`${ligne.cle}${SUFFIXE_TAUX}`, String(enPoints(ligne.rendement)));
+    }
+  }
 
   const chaine = params.toString();
   return chaine === '' ? '' : `?${chaine}`;
+}
+
+/** The view the URL asks for; the withdrawal plan unless it says otherwise. */
+export function decoderVue(recherche: string): Vue {
+  return new URLSearchParams(recherche).get(CLES.vue) === 'patrimoine'
+    ? 'patrimoine'
+    : 'fire';
+}
+
+/** Reads a set of holdings back, clamping every amount and every rate. */
+export function decoderComposition(recherche: string): Ligne[] {
+  const p = new URLSearchParams(recherche);
+  return bornerComposition(
+    ACTIFS.map((a) => ({
+      cle: a.cle,
+      montant: nombre(p.get(a.cle), 0, BORNES_LIGNE.montant.min, BORNES_LIGNE.montant.max),
+      rendement:
+        nombre(
+          p.get(`${a.cle}${SUFFIXE_TAUX}`),
+          a.rendementParDefaut * 100,
+          BORNES_LIGNE.rendement.min * 100,
+          BORNES_LIGNE.rendement.max * 100,
+          DECIMALES_TAUX,
+        ) / 100,
+    })),
+  );
 }
 
 /** The language asked for by the URL, or null when it says nothing. */
@@ -173,8 +240,8 @@ export function decoderEtat(recherche: string, defauts: Hypotheses = DEFAUTS): H
 }
 
 /** Absolute URL to share, keeping the current path. */
-export function lienPartage(etat: Hypotheses, langue: Langue | null = null): string {
+export function lienPartage(etat: Hypotheses, contexte: Contexte = {}): string {
   if (typeof window === 'undefined') return '';
   const { origin, pathname } = window.location;
-  return `${origin}${pathname}${encoderEtat(etat, langue)}`;
+  return `${origin}${pathname}${encoderEtat(etat, contexte)}`;
 }

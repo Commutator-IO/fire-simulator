@@ -2,16 +2,20 @@
 
 « Est-ce que j'ai assez pour vivre de mon patrimoine sans toucher au capital ? »
 
-Le simulateur répond en une page : vous saisissez ce que vous avez, ce que cela
-rapporte, ce que vous en retirez et ce que l'impôt prélève, il vous donne le
-verdict, le revenu net mensuel et la projection du capital sur quarante ans.
+Deux simulateurs, dans deux onglets, dont le second répond aux questions que le
+premier pose.
+
+| Onglet | Ce qu'il répond |
+| --- | --- |
+| **Vivre de mon patrimoine** | Ce que votre capital peut vous verser, combien de temps il tient, et ce que la fiscalité de votre pays y change |
+| **Estimer mon patrimoine** | Ce que vous possédez et ce que cela rapporte, à partir de vos placements réels — d'où sortent les deux chiffres que le premier onglet réclame |
 
 ## Démarrer
 
 ```bash
 npm install
 npm run dev      # serveur de développement
-npm test         # 133 tests sur le moteur, les formats et les traductions
+npm test         # 165 tests sur les moteurs, les formats et les traductions
 npm run build    # build de production
 npm run lint
 ```
@@ -47,6 +51,39 @@ variation du capital       ΔX   = X × (Y − Z)
 retrait. En pouvoir d'achat, la condition devient `Z ≤ Y − i`, et c'est souvent
 là que le « oui » se transforme en « non » : 4 % de retrait pour 5 % de rendement
 et 2 % d'inflation préserve le capital en euros mais l'érode en pouvoir d'achat.
+
+### Le patrimoine, recomposé à partir de ce qu'on possède
+
+Le premier onglet s'ouvre sur deux chiffres que personne n'a en tête : un
+patrimoine et un rendement. Le second les fabrique à partir de quatorze lignes
+classiques — Livret A, LEP, liquidités, fonds euros, unités de compte, PER, PEA,
+compte-titres, SCPI, immobilier locatif, résidence principale, autres actifs, et
+deux lignes de crédits.
+
+**Le rendement recomposé** est la moyenne des rendements, pondérée par les
+montants :
+
+```
+Y = Σ (signe × montant × rendement) ÷ Σ (signe × montant)
+```
+
+Deux distinctions portent tout le modèle.
+
+**Une dette est un actif au signe inversé**, et son taux un rendement négatif.
+Ce n'est pas une astuce : c'est ce qu'est l'effet de levier, et l'écrire ainsi
+fait sortir le rendement juste sans cas particulier. 500 000 € à 5 % contre
+200 000 € à 3 % laissent 300 000 € qui rapportent 22 000 €, soit 7,33 % — ce que
+la moyenne pondérée donne exactement.
+
+**Posséder son logement n'est pas un revenu.** La résidence principale et le
+crédit qui la finance sortent donc du patrimoine qui alimente les retraits, mais
+restent dans le patrimoine net : c'est une richesse réelle, elle ne paie
+simplement pas les courses. Les exclure séparément fausserait le total, d'où
+deux lignes de crédit distinctes.
+
+Seuls les taux réglementés — Livret A et LDDS à 1,7 %, LEP à 2,5 % au 1ᵉʳ août
+2026 — sont des valeurs officielles. Tous les autres rendements proposés sont
+des hypothèses de départ, modifiables ligne par ligne.
 
 ### Trois réponses, pas deux
 
@@ -194,6 +231,7 @@ même simulation, et rien n'est enregistré nulle part.
 ```
 src/
   lib/fire.ts       moteur de calcul — verdict, projection, scénarios
+  lib/patrimoine.ts catalogue des placements et rendement recomposé
   lib/pays.ts       régimes fiscaux par pays de résidence
   lib/url.ts        sérialisation de l'état dans la barre d'adresse
   lib/echelle.ts    échelle logarithmique du curseur de patrimoine
@@ -202,7 +240,7 @@ src/
   lib/format.ts     formats de nombres liés à la langue
   lib/contexte.ts   accès aux textes et aux formats depuis les composants
   components/       champs, verdict, projection SVG, détail, comparaison,
-                    objectif, sources
+                    objectif, sources, patrimoine
 ```
 
 L'entrée française du dictionnaire **définit le type** : une clé manquante ou une

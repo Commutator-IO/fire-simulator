@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { decoderEtat, encoderEtat } from './url';
+import { decoderComposition, decoderEtat, decoderVue, encoderEtat } from './url';
+import { actif, compositionVide, type CleActif } from './patrimoine';
 import { BORNES, DEFAUTS, type Hypotheses } from './fire';
 
 const etat = (sur: Partial<Hypotheses> = {}): Hypotheses => ({ ...DEFAUTS, ...sur });
@@ -97,5 +98,72 @@ describe('decoding', () => {
 
   it('accepts a query that already carries its question mark', () => {
     expect(decoderEtat('?patrimoine=800000').patrimoine).toBe(800_000);
+  });
+});
+
+describe('holdings in the address', () => {
+  const avec = (montants: Partial<Record<CleActif, number>>, taux: Partial<Record<CleActif, number>> = {}) =>
+    compositionVide().map((l) => ({
+      ...l,
+      montant: montants[l.cle] ?? 0,
+      rendement: taux[l.cle] ?? l.rendement,
+    }));
+
+  it('writes one parameter per line, and skips the empty ones', () => {
+    const requete = encoderEtat(DEFAUTS, {
+      composition: avec({ pea: 120_000, scpi: 40_000 }),
+    });
+    expect(requete).toContain('pea=120000');
+    expect(requete).toContain('scpi=40000');
+    expect(requete).not.toContain('livretA');
+  });
+
+  // A statement left at the catalogue's own rates is the common case, and it
+  // should not double the length of the address.
+  it('writes a rate only when it differs from the product’s own', () => {
+    const defaut = actif('pea').rendementParDefaut;
+    expect(encoderEtat(DEFAUTS, { composition: avec({ pea: 1_000 }) })).not.toContain(
+      'pea-taux',
+    );
+    expect(
+      encoderEtat(DEFAUTS, {
+        composition: avec({ pea: 1_000 }, { pea: defaut + 0.01 }),
+      }),
+    ).toContain('pea-taux=8');
+  });
+
+  it('makes the round trip without loss', () => {
+    const depart = avec(
+      { livretA: 25_000, pea: 120_000, residencePrincipale: 350_000, creditResidence: 180_000 },
+      { pea: 0.085, creditResidence: 0.021 },
+    );
+    expect(decoderComposition(encoderEtat(DEFAUTS, { composition: depart }))).toEqual(
+      depart,
+    );
+  });
+
+  it('reads an empty address as an empty statement', () => {
+    expect(decoderComposition('')).toEqual(compositionVide());
+  });
+
+  it('clamps what the address carries', () => {
+    const lu = decoderComposition('?pea=-9000&livretA=1e12&scpi-taux=999');
+    const trouve = (cle: CleActif) => lu.find((l) => l.cle === cle)!;
+    expect(trouve('pea').montant).toBe(0);
+    expect(trouve('livretA').montant).toBe(100_000_000);
+    expect(trouve('scpi').rendement).toBeCloseTo(0.2, 10);
+  });
+});
+
+describe('the active tab', () => {
+  it('opens on the withdrawal plan unless told otherwise', () => {
+    expect(decoderVue('')).toBe('fire');
+    expect(decoderVue('?vue=nimporte')).toBe('fire');
+    expect(decoderVue('?vue=patrimoine')).toBe('patrimoine');
+  });
+
+  it('is written only when it is not the default', () => {
+    expect(encoderEtat(DEFAUTS, { vue: 'fire' })).toBe('');
+    expect(encoderEtat(DEFAUTS, { vue: 'patrimoine' })).toBe('?vue=patrimoine');
   });
 });

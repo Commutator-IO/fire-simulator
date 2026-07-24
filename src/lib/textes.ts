@@ -35,6 +35,54 @@ const FR = {
       'Quatre paramètres suffisent : ce que vous avez, ce que cela rapporte, ce que vous en retirez chaque année et ce que l’impôt prélève. Le verdict se met à jour à chaque déplacement de curseur.',
   },
 
+  onglets: {
+    aria: 'Choix du simulateur',
+    fire: 'Vivre de mon patrimoine',
+    patrimoine: 'Estimer mon patrimoine',
+  },
+
+  patrimoine: {
+    titre: 'De quoi votre patrimoine est-il fait ?',
+    intro:
+      'Le simulateur de retraits demande deux chiffres que personne n’a en tête : un patrimoine et un rendement. Personne ne détient un portefeuille unique — on a un Livret A, un PEA, une assurance-vie, un appartement avec un crédit dessus. Listez-les, et les deux chiffres en sortent.',
+    colActif: 'Ligne',
+    colMontant: 'Montant',
+    colRendement: 'Rendement attendu',
+    colRendementCourt: 'Rendement',
+    categorie: {
+      liquide: 'Épargne de précaution',
+      assurance: 'Assurance-vie et retraite',
+      actions: 'Actions',
+      immobilier: 'Immobilier',
+      autre: 'Autres',
+      dettes: 'Dettes',
+    },
+    plafond: (montant: string) => `Plafond ${montant}`,
+    depasse: (montant: string) => `Au-delà du plafond de ${montant}`,
+    bilanTitre: 'Ce que cela donne',
+    vide: 'Renseignez au moins une ligne pour voir le bilan.',
+    brut: 'Total des avoirs',
+    dettes: 'Crédits en cours',
+    net: 'Patrimoine net',
+    netAide: 'Ce qu’il vous resterait après avoir tout vendu et tout remboursé.',
+    productif: 'Patrimoine qui finance vos retraits',
+    productifAide:
+      'Le patrimoine net, moins la résidence principale et le crédit qui la finance : un logement réduit vos dépenses, il ne verse pas de revenu.',
+    rendement: 'Rendement recomposé',
+    rendementAide:
+      'La moyenne de vos rendements, pondérée par les montants. Un crédit y entre au signe inversé : son taux tire la moyenne vers le bas, exactement comme l’effet de levier le veut.',
+    gains: 'Ce que cela rapporte par an',
+    repartition: 'Répartition',
+    appliquer: 'Utiliser ces chiffres dans le simulateur →',
+    applique: (patrimoine: string, rendement: string) =>
+      `Le simulateur de retraits partira de ${patrimoine} à ${rendement}.`,
+    dejaApplique: 'Ces chiffres sont déjà ceux du simulateur de retraits.',
+    effacer: 'Tout remettre à zéro',
+    note: 'Les taux réglementés — Livret A, LDDS, LEP — sont ceux en vigueur. Tous les autres sont des hypothèses de départ, à ajuster ligne par ligne : ce sont vos placements, pas les nôtres.',
+    negatif:
+      'Vos dettes dépassent vos avoirs. Le rendement n’a plus de sens tant que c’est le cas : il n’y a pas de capital à faire travailler, seulement un crédit à rembourser.',
+  },
+
   saisie: {
     titre: 'Vos hypothèses',
     patrimoineLabel: 'Patrimoine net accumulé',
@@ -317,6 +365,11 @@ const FR = {
         detail:
           'Enveloppe totalement exonérée, sans limite de durée depuis la réforme de 2024, dans la limite de 18 millions de yens de versements sur la vie entière, dont 12 millions pour la poche « croissance ». Site officiel de l’Agence des services financiers.',
       },
+      epargneReglementee: {
+        titre: 'France — taux de l’épargne réglementée',
+        detail:
+          'Livret A et LDDS à 1,7 %, LEP à 2,5 % à compter du 1ᵉʳ août 2026. Ces taux sont fixés par arrêté et servent de valeur de départ aux lignes correspondantes du simulateur de patrimoine ; tous les autres rendements proposés sont des hypothèses.',
+      },
       bce: {
         titre: 'Cible d’inflation de 2 % — BCE',
         detail:
@@ -368,6 +421,54 @@ const EN: Dictionnaire = {
     titre: 'Do I have enough to live off my capital, without touching it?',
     intro:
       'Four parameters are enough: what you have, what it earns, what you take out each year and what the tax takes. The verdict updates on every move of a slider.',
+  },
+
+  onglets: {
+    aria: 'Choice of simulator',
+    fire: 'Living off my capital',
+    patrimoine: 'Working out my capital',
+  },
+
+  patrimoine: {
+    titre: 'What is your capital made of?',
+    intro:
+      'The withdrawal simulator asks for two figures nobody has to hand: an amount of capital and a return. Nobody holds a single blended portfolio — they hold a savings account, an equity plan, a life insurance policy, a flat with a mortgage on it. List them, and the two figures fall out.',
+    colActif: 'Line',
+    colMontant: 'Amount',
+    colRendement: 'Expected return',
+    colRendementCourt: 'Return',
+    categorie: {
+      liquide: 'Rainy-day savings',
+      assurance: 'Life insurance and pensions',
+      actions: 'Equities',
+      immobilier: 'Property',
+      autre: 'Other',
+      dettes: 'Debts',
+    },
+    plafond: (montant: string) => `Ceiling ${montant}`,
+    depasse: (montant: string) => `Above the ${montant} ceiling`,
+    bilanTitre: 'What it comes to',
+    vide: 'Fill in at least one line to see the statement.',
+    brut: 'Total holdings',
+    dettes: 'Outstanding loans',
+    net: 'Net worth',
+    netAide: 'What you would be left with after selling everything and repaying everything.',
+    productif: 'The capital that funds your withdrawals',
+    productifAide:
+      'Net worth, less the main residence and the loan that paid for it: a home lowers your spending, it does not hand you an income.',
+    rendement: 'Blended return',
+    rendementAide:
+      'The average of your returns, weighted by the amounts. A loan enters it with a minus sign: its rate pulls the average down, which is exactly what leverage does.',
+    gains: 'What that earns in a year',
+    repartition: 'Split',
+    appliquer: 'Use these figures in the simulator →',
+    applique: (patrimoine: string, rendement: string) =>
+      `The withdrawal simulator will start from ${patrimoine} at ${rendement}.`,
+    dejaApplique: 'These figures are already the ones the withdrawal simulator uses.',
+    effacer: 'Clear everything',
+    note: 'The regulated rates — Livret A, LDDS, LEP — are the ones in force. Every other one is a starting hypothesis, to be adjusted line by line: they are your holdings, not ours.',
+    negatif:
+      'Your debts exceed your holdings. A return means nothing while that is the case: there is no capital at work, only a loan to repay.',
   },
 
   saisie: {
@@ -651,6 +752,11 @@ const EN: Dictionnaire = {
         titre: 'Japan — NISA',
         detail:
           'A fully exempt account, with no time limit since the 2024 reform, up to ¥18 million of lifetime contributions, of which ¥12 million for the growth quota. Official site of the Financial Services Agency.',
+      },
+      epargneReglementee: {
+        titre: 'France — regulated savings rates',
+        detail:
+          'Livret A and LDDS at 1.7%, LEP at 2.5% from 1 August 2026. These rates are set by decree and are the starting values of the matching lines in the net-worth simulator; every other return offered there is a hypothesis.',
       },
       bce: {
         titre: '2% inflation target — ECB',
