@@ -1,64 +1,45 @@
-import { bornerComposition, estRenseignee, type Ligne } from './patrimoine';
-
 /**
- * Keeping a statement between visits.
+ * Keeping a whole session between visits.
  *
  * The address remains the source of truth — it is what gets shared, and it wins
  * whenever it carries something. This is only for coming back without a link:
- * a statement takes a few minutes to fill in, and losing it to a closed tab is
- * a poor reward for the effort.
+ * a plan takes a few minutes to fill in — a patrimoine spread over a dozen
+ * lines, a withdrawal rate, a horizon, a country — and losing all of it to a
+ * closed tab is a poor reward for the effort.
  *
- * Nothing leaves the browser. The store is versioned so that a release which
- * changes the shape of a line discards what it can no longer read, rather than
- * feeding the interface a half-understood object — and the interface offers a
- * reset for the day something goes wrong anyway.
+ * What is stored is the very query string the tool already produces, in its
+ * full readable form: the existing encoder writes it and the existing decoders
+ * read it back, each clamping its own values, so nothing here needs its own
+ * schema or version guard. A holding whose key a later release no longer knows
+ * is simply ignored on read, the same as an unknown URL parameter — line by
+ * line, rather than dropping the whole store.
+ *
+ * Nothing leaves the browser.
  */
 
-const CLE = 'fire-simulator.patrimoine';
+const CLE = 'fire-simulator.etat';
 
-/**
- * Bump this whenever the shape of a line changes. Anything stored under an
- * older number is dropped on sight.
- */
-const VERSION = 1;
-
-type Enregistrement = { version: number; lignes: Ligne[] };
-
-export function charger(): Ligne[] | null {
+/** The query string last saved, or empty — off-browser, or on a first visit. */
+export function litEtat(): string {
   try {
-    const brut = localStorage.getItem(CLE);
-    if (brut === null) return null;
-
-    const lu = JSON.parse(brut) as Partial<Enregistrement>;
-    if (lu.version !== VERSION || !Array.isArray(lu.lignes)) {
-      oublier();
-      return null;
-    }
-    return bornerComposition(lu.lignes);
+    return localStorage.getItem(CLE) ?? '';
   } catch {
-    // Private browsing, a full quota, a corrupted entry: none of it is worth
-    // taking the page down for.
-    return null;
+    // Private browsing, a disabled store: fall back to the defaults.
+    return '';
   }
 }
 
-export function enregistrer(lignes: Ligne[]): void {
+/** Saves the current encoding, or clears the slot when there is nothing to keep. */
+export function ecritEtat(requete: string): void {
   try {
-    if (!estRenseignee(lignes)) {
-      oublier();
-      return;
-    }
-    const enregistrement: Enregistrement = { version: VERSION, lignes };
-    localStorage.setItem(CLE, JSON.stringify(enregistrement));
+    if (requete) localStorage.setItem(CLE, requete);
+    else localStorage.removeItem(CLE);
   } catch {
     // Saving is a convenience; failing at it must stay invisible.
   }
 }
 
+/** Drops the saved session, for the day something goes wrong — or a fresh start. */
 export function oublier(): void {
-  try {
-    localStorage.removeItem(CLE);
-  } catch {
-    // Nothing to do, and nothing worth saying.
-  }
+  ecritEtat('');
 }

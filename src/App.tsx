@@ -32,7 +32,8 @@ import {
   type ClePays,
   type Regime,
 } from './lib/pays';
-import { charger, enregistrer, oublier } from './lib/stockage';
+import { ecritEtat, litEtat, oublier } from './lib/stockage';
+import { minifier, rechercheCourante } from './lib/compact';
 import {
   decoderComposition,
   decoderEtat,
@@ -75,8 +76,8 @@ const enPoints = (v: number) => Math.round(v * 100_000) / 1_000;
  * opens on the default, like any other unset parameter.
  */
 export default function App() {
-  const [langueUrl, setLangueUrl] = useState(() =>
-    decoderLangue(typeof window === 'undefined' ? '' : window.location.search),
+  const [langueUrl, setLangueUrl] = useState(
+    () => decoderLangue(rechercheCourante()) ?? decoderLangue(litEtat()),
   );
   const [langue, setLangue] = useState<Langue>(() => langueUrl ?? LANGUE_PAR_DEFAUT);
 
@@ -115,22 +116,29 @@ function Simulateur({
   const tr = useTraduire();
   const { eur, eurCompact, eurSigne, pct, points, tauxPct } = useFormats();
 
-  // Initial state comes from the URL: a shared link must reopen exactly the
-  // same simulation.
+  // L'état de départ se lit à deux sources : l'adresse — c'est elle qu'on
+  // partage — par-dessus ce que le navigateur a retenu de la dernière visite.
+  // L'URL ne remplace que les clés qu'elle porte : un lien partiel (un simple
+  // `?vue=synthese`) garde tout le reste des réglages mémorisés au lieu de les
+  // rendre à leurs valeurs par défaut.
+  const urlCourante = useMemo(() => rechercheCourante(), []);
+  const sauvegarde = useMemo(() => litEtat(), []);
+
   const [h, setH] = useState<Hypotheses>(() =>
-    decoderEtat(typeof window === 'undefined' ? '' : window.location.search),
+    decoderEtat(urlCourante, decoderEtat(sauvegarde)),
   );
   const [mode, setMode] = useState<ModeAffichage>('courant');
   const [comparaison, setComparaison] = useState<'rendement' | 'pays'>('rendement');
   const [vue, setVue] = useState<Vue>(() =>
-    decoderVue(typeof window === 'undefined' ? '' : window.location.search),
+    new URLSearchParams(urlCourante).has('vue')
+      ? decoderVue(urlCourante)
+      : decoderVue(sauvegarde),
   );
-  // L'adresse d'abord — c'est elle qu'on partage —, puis ce que le navigateur
-  // a retenu de la dernière visite, puis l'exemple.
+  // L'adresse d'abord, puis la mémoire, puis l'exemple.
   const [composition, setComposition] = useState<Ligne[]>(
     () =>
-      decoderComposition(typeof window === 'undefined' ? '' : window.location.search) ??
-      charger() ??
+      decoderComposition(urlCourante) ??
+      decoderComposition(sauvegarde) ??
       compositionParDefaut(),
   );
   const [avanceOuvert, setAvanceOuvert] = useState(
@@ -209,22 +217,21 @@ function Simulateur({
   // notch. The delay avoids calling replaceState dozens of times during a
   // single drag.
   useEffect(() => {
+    const requete = encoderEtat(h, { langue: langueUrl, composition, vue });
+    // La mémoire est écrite tout de suite : une sauvegarde différée serait
+    // perdue si l'on quitte la page dans l'intervalle. Seule la réécriture de
+    // l'adresse est différée — pour ne pas appeler replaceState à chaque cran de
+    // curseur — et minifiée, pour ne pas allonger la barre d'adresse.
+    ecritEtat(requete);
     const minuteur = setTimeout(() => {
-      const requete = encoderEtat(h, { langue: langueUrl, composition, vue });
       window.history.replaceState(
         null,
         '',
-        `${window.location.pathname}${requete}${window.location.hash}`,
+        `${window.location.pathname}${minifier(requete)}${window.location.hash}`,
       );
     }, 250);
     return () => clearTimeout(minuteur);
   }, [h, langueUrl, composition, vue]);
-
-  // Rien ne quitte le navigateur : c'est un filet pour revenir sans lien, pas
-  // un compte utilisateur.
-  useEffect(() => {
-    enregistrer(composition);
-  }, [composition]);
 
   const capitalFinal =
     mode === 'courant'

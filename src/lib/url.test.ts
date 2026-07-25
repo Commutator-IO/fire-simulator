@@ -174,6 +174,24 @@ describe('the active tab', () => {
     expect(decoderVue('?vue=synthese')).toBe('synthese');
   });
 
+  // La mémorisation repose là-dessus : l'URL est décodée par-dessus l'état
+  // sauvegardé, pas par-dessus les défauts, donc un lien partiel ne remplace
+  // que les clés qu'il porte et laisse survivre tout le reste.
+  it('decodes over a saved state, overriding only the keys it carries', () => {
+    const sauve = etat({ patrimoine: 800_000, retrait: 0.05, horizon: 50 });
+    const fusion = decoderEtat('?vue=synthese', sauve);
+    expect(fusion.patrimoine).toBe(800_000);
+    expect(fusion.retrait).toBe(0.05);
+    expect(fusion.horizon).toBe(50);
+  });
+
+  it('lets a link override a single saved field', () => {
+    const sauve = etat({ patrimoine: 800_000, retrait: 0.05 });
+    const fusion = decoderEtat('?retrait=3', sauve);
+    expect(fusion.patrimoine).toBe(800_000);
+    expect(fusion.retrait).toBeCloseTo(0.03, 6);
+  });
+
   it('is written only when it is not the default', () => {
     expect(encoderEtat(DEFAUTS, { vue: 'patrimoine' })).toBe('');
     expect(encoderEtat(DEFAUTS, { vue: 'fire' })).toBe('?vue=fire');

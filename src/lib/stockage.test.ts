@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { charger, enregistrer, oublier } from './stockage';
-import { compositionParDefaut, compositionVide, estRenseignee } from './patrimoine';
+import { ecritEtat, litEtat, oublier } from './stockage';
 
 /** A local storage that lives for the length of a test. */
 function memoire() {
@@ -23,63 +22,27 @@ beforeEach(() => {
   vi.stubGlobal('localStorage', stock);
 });
 
-describe('keeping a statement between visits', () => {
-  it('gives back what it was handed', () => {
-    const composition = compositionParDefaut();
-    enregistrer(composition);
-    expect(charger()).toEqual(composition);
+describe('keeping a session between visits', () => {
+  it('gives back the query string it was handed', () => {
+    ecritEtat('?patrimoine=800000&pea=200000&retrait=3.5');
+    expect(litEtat()).toBe('?patrimoine=800000&pea=200000&retrait=3.5');
   });
 
   it('says nothing when nothing was ever saved', () => {
-    expect(charger()).toBeNull();
+    expect(litEtat()).toBe('');
   });
 
-  it('stores nothing for an empty statement, and forgets what it held', () => {
-    enregistrer(compositionParDefaut());
-    enregistrer(compositionVide());
+  it('clears the slot when handed an empty string', () => {
+    ecritEtat('?patrimoine=800000');
+    ecritEtat('');
     expect(stock.taille).toBe(0);
-    expect(charger()).toBeNull();
+    expect(litEtat()).toBe('');
   });
 
   it('is forgotten on request', () => {
-    enregistrer(compositionParDefaut());
+    ecritEtat('?patrimoine=800000');
     oublier();
-    expect(charger()).toBeNull();
-  });
-
-  // The reason the record carries a version: a release that changes the shape
-  // of a line must drop what it can no longer read rather than half-read it.
-  it('drops a record written by another version', () => {
-    stock.setItem(
-      'fire-simulator.patrimoine',
-      JSON.stringify({ version: 0, lignes: compositionParDefaut() }),
-    );
-    expect(charger()).toBeNull();
-    expect(stock.taille).toBe(0);
-  });
-
-  it('drops a record that is not a statement at all', () => {
-    stock.setItem('fire-simulator.patrimoine', '{"version":1,"lignes":"oui"}');
-    expect(charger()).toBeNull();
-  });
-
-  it('survives a corrupted entry rather than taking the page down', () => {
-    stock.setItem('fire-simulator.patrimoine', 'ceci n’est pas du JSON');
-    expect(() => charger()).not.toThrow();
-    expect(charger()).toBeNull();
-  });
-
-  it('clamps what it reads back, a stored value being no more trusted than a URL', () => {
-    stock.setItem(
-      'fire-simulator.patrimoine',
-      JSON.stringify({
-        version: 1,
-        lignes: [{ cle: 'pea', montant: -400, rendement: 9, loyer: 0, charges: 0, impositionRevenus: 0, duree: 0 }],
-      }),
-    );
-    const lu = charger()!;
-    expect(lu.find((l) => l.cle === 'pea')!.montant).toBe(0);
-    expect(lu.find((l) => l.cle === 'pea')!.rendement).toBe(0.2);
+    expect(litEtat()).toBe('');
   });
 
   it('stays silent when the browser refuses to store', () => {
@@ -94,13 +57,8 @@ describe('keeping a statement between visits', () => {
         throw new Error('non');
       },
     });
-    expect(() => enregistrer(compositionParDefaut())).not.toThrow();
-    expect(charger()).toBeNull();
+    expect(() => ecritEtat('?patrimoine=1')).not.toThrow();
+    expect(litEtat()).toBe('');
     expect(() => oublier()).not.toThrow();
-  });
-
-  it('leaves the example recognisable once round-tripped', () => {
-    enregistrer(compositionParDefaut());
-    expect(estRenseignee(charger()!)).toBe(true);
   });
 });

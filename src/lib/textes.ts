@@ -16,9 +16,9 @@ import type { Langue } from './i18n';
 
 const FR = {
   meta: {
-    titre: 'Vivre de son patrimoine — simulateur FIRE',
+    titre: 'FIRE simulator — estimer son patrimoine, en vivre sans y toucher, et sa synthèse',
     description:
-      'Simulateur FIRE : à partir de quel patrimoine peut-on vivre de ses revenus sans toucher au capital ? Retrait, impôts, inflation et projection année par année.',
+      'Boîte à outils patrimoniale : estimer son patrimoine à partir de ses placements réels, calculer combien de temps on peut en vivre sans toucher au capital — retrait, impôts, inflation, projection année par année — et en imprimer la synthèse. France et Japon, barèmes à jour.',
   },
 
   entete: {
@@ -650,9 +650,9 @@ export type Dictionnaire = typeof FR;
 
 const EN: Dictionnaire = {
   meta: {
-    titre: 'Living off your capital — FIRE simulator',
+    titre: 'FIRE simulator — work out your capital, live off it, and print the summary',
     description:
-      'FIRE simulator: how much capital does it take to live off its income without touching the principal? Withdrawal, tax, inflation and a year-by-year projection.',
+      'A wealth toolkit: work out your capital from your actual holdings, see how long you can live off it without touching the principal — withdrawal, tax, inflation, a year-by-year projection — and print the summary. France and Japan, up-to-date brackets.',
   },
 
   entete: {

@@ -1,3 +1,4 @@
+import { minifier } from './compact';
 import { BORNES, DEFAUTS, type Hypotheses, type ModeRetrait } from './fire';
 import { estClePays } from './pays';
 import { estLangue, type Langue } from './i18n';
@@ -294,9 +295,9 @@ export function decoderEtat(recherche: string, defauts: Hypotheses = DEFAUTS): H
   };
 }
 
-/** Absolute URL to share, keeping the current path. */
+/** Absolute URL to share, keeping the current path — with its keys minified. */
 export function lienPartage(etat: Hypotheses, contexte: Contexte = {}): string {
   if (typeof window === 'undefined') return '';
   const { origin, pathname } = window.location;
-  return `${origin}${pathname}${encoderEtat(etat, contexte)}`;
+  return `${origin}${pathname}${minifier(encoderEtat(etat, contexte))}`;
 }
