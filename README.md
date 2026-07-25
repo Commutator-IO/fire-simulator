@@ -3,16 +3,19 @@
 « Est-ce que j'ai assez pour vivre de mon patrimoine sans toucher au capital ? »
 
 Deux simulateurs, dans deux onglets, dont le second répond aux questions que le
-premier pose.
+premier pose — et un troisième qui les réunit.
 
 | Onglet | Ce qu'il répond |
 | --- | --- |
 | **Estimer mon patrimoine** | Ce que vous possédez, ce que cela rapporte et ce que la détention coûte, à partir de vos placements réels |
 | **Vivre de mon patrimoine** | Ce que ce capital peut vous verser, combien de temps il tient, et ce que la fiscalité de votre pays y change |
+| **Synthèse** | Les deux précédents réunis en un document de quatre volets, à faire défiler ou imprimer en PDF |
 
 Le premier ouvre l'application, parce qu'il fabrique les deux chiffres que le
 second réclame. Les deux fonctionnent séparément : un bouton passe le résultat
-de l'un à l'autre, rien ne se propage tout seul.
+de l'un à l'autre, rien ne se propage tout seul. La synthèse ne calcule rien de
+neuf : elle présente ce que les deux onglets montrent déjà, sur un même fil, du
+patrimoine jusqu'à la tenue du capital.
 
 Deux autres onglets sont **annoncés mais pas encore construits** — un suivi de
 **portefeuille boursier** avec calcul de plus ou moins-value, et une gestion de

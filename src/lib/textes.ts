@@ -39,6 +39,7 @@ const FR = {
     aria: 'Choix du simulateur',
     fire: 'Vivre de mon patrimoine',
     patrimoine: 'Estimer mon patrimoine',
+    synthese: 'Synthèse',
     bourse: 'Portefeuille boursier',
     locatif: 'Immobilier locatif',
     aVenir: 'à venir',
@@ -223,6 +224,93 @@ const FR = {
     note: 'Les taux réglementés — Livret A, LDDS, LEP — sont ceux en vigueur. Tous les autres sont des hypothèses de départ, à ajuster ligne par ligne : ce sont vos placements, pas les nôtres.',
     negatif:
       'Vos dettes dépassent vos avoirs. Le rendement n’a plus de sens tant que c’est le cas : il n’y a pas de capital à faire travailler, seulement un crédit à rembourser.',
+  },
+
+  synthese: {
+    marque: 'FIRE simulator',
+    barreTitre: 'Synthèse de mon plan',
+    barreSoustitre: 'Quatre volets à faire défiler, prêts à imprimer ou exporter en PDF.',
+    imprimer: 'Imprimer / exporter en PDF',
+    voletsAria: 'Volets de la synthèse',
+    volet: (n: number) => `Volet ${n}`,
+    precedent: 'Précédent',
+    suivant: 'Suivant',
+
+    // Volet 1 — couverture
+    couvertureEyebrow: (pays: string) => `Vivre de son patrimoine · ${pays}`,
+    couvertureTitre: 'Synthèse de mon plan',
+    couvertureIntro:
+      'Ce document suit un même raisonnement de bout en bout : de ce que vous possédez jusqu’au revenu que ce capital peut verser, et combien de temps il tient. Il réunit en quatre volets ce que les onglets calculent séparément.',
+    couvertureListe: [
+      'Le patrimoine qui finance les retraits, et le rendement qu’on en attend.',
+      'Le revenu net que ce capital verse une fois l’impôt payé.',
+      'La tenue du capital, année après année, sur tout l’horizon.',
+      'Où va chaque euro retiré : ce qui reste en poche, ce qui part en impôts.',
+    ],
+    couvertureNote:
+      'Les chiffres se recoupent d’un volet à l’autre : le patrimoine fonde le retrait, dont découle le revenu, qui décide de la tenue du capital. Outil pédagogique — ceci n’est pas un conseil financier.',
+    labelPatrimoine: 'Patrimoine',
+    labelRendement: 'Rendement retenu',
+    labelRetrait: 'Taux de retrait',
+    labelRevenuMois: 'Revenu net / mois',
+
+    // Volet 2 — le patrimoine
+    patrimoineTitre: 'D’où viennent ces chiffres',
+    patrimoineIntro: (productif: string, rendement: string) =>
+      `Le patrimoine se compose de placements aux rendements et fiscalités différents. Le simulateur en retient la partie qui finance les retraits — ${productif} — à un rendement recomposé de ${rendement}.`,
+    labelBrut: 'Patrimoine brut',
+    labelDettes: 'Dettes',
+    labelNet: 'Patrimoine net',
+    labelProductif: 'Finance les retraits',
+    labelImpositionRecomposee: 'Imposition recomposée des retraits',
+    patrimoineVide:
+      'L’onglet « Estimer mon patrimoine » n’a pas été renseigné : ce volet reste vide. Le plan ci-après part directement des chiffres saisis dans l’onglet « Vivre de mon patrimoine ».',
+    patrimoineEcart: (patrimoine: string, rendement: string, imposition: string) =>
+      `Le plan ci-après ne part pas de cette estimation mais de valeurs réglées à la main : ${patrimoine} à ${rendement}, imposés à ${imposition}.`,
+
+    // Volet 3 — le revenu
+    revenuTitre: 'Le revenu que ce capital verse',
+    revenuIntro: (retrait: string, patrimoine: string) =>
+      `Retirer ${retrait} de ${patrimoine} chaque année, l’impôt une fois payé, laisse :`,
+    labelRetraitBrut: 'Retrait brut annuel',
+    labelImpots: 'Impôts et prélèvements',
+    labelRevenuAn: 'Revenu net annuel',
+    revenuMarge: (marge: string, variation: string) =>
+      `Marge de ${marge} entre rendement et retrait, soit ${variation} de variation du capital sur la première année.`,
+
+    // Volet 4 — la projection
+    projectionTitre: (annees: number) => `Ce que le plan devient sur ${annees} ans`,
+    labelAnneesTenues: 'Années tenues',
+    labelDureeVoulue: 'Durée voulue',
+    labelCapitalCourant: 'Capital au terme (euros courants)',
+    labelCapitalReel: 'Capital au terme (pouvoir d’achat)',
+    ans: 'ans',
+    projectionSans:
+      'Aucun patrimoine n’est encore renseigné : il n’y a rien à projeter tant que le capital de départ est nul.',
+    projectionPreserve: (capital: string) =>
+      `Sur tout l’horizon, le capital n’est jamais épuisé : il en reste ${capital} au terme.`,
+    projectionSuffisant: (tenues: number, voulue: number, epuisement: number) =>
+      `Le capital tient ${tenues} ans — les ${voulue} demandées sont couvertes — puis s’épuise l’année ${epuisement}.`,
+    projectionInsuffisant: (tenues: number, voulue: number, epuisement: number) =>
+      `Le capital s’épuise l’année ${epuisement}, après ${tenues} ans : c’est avant les ${voulue} années demandées.`,
+
+    // Volet 5 — répartition
+    repartitionTitre: 'Où va chaque euro retiré',
+    repartitionIntro: (brut: string) =>
+      `Décomposition du retrait brut annuel, ${brut}, entre ce qui reste en poche et ce qui part au fisc.`,
+    partNet: 'Revenu net en poche',
+    partImpots: 'Impôts et prélèvements',
+    repartitionNote: (net: string, part: string) =>
+      `Sur chaque retrait, vous conservez ${net} nets, soit ${part}. Le reste part en impôts et prélèvements sociaux.`,
+    reelFort: 'En pouvoir d’achat :',
+    reelCorps: (points: string) =>
+      `le retrait indexé sur l’inflation entame lentement le capital réel, de l’ordre de ${points} par an.`,
+    trainCouvertFort: 'Train de vie couvert :',
+    trainManqueFort: 'Train de vie non couvert :',
+    trainCorps: (ecart: string, cible: string, couvert: boolean) =>
+      couvert
+        ? `le revenu dépasse de ${ecart} par mois les ${cible} visés.`
+        : `il manque ${ecart} par mois pour atteindre les ${cible} visés.`,
   },
 
   saisie: {
@@ -585,6 +673,7 @@ const EN: Dictionnaire = {
     aria: 'Choice of simulator',
     fire: 'Living off my capital',
     patrimoine: 'Working out my capital',
+    synthese: 'Summary',
     bourse: 'Stock portfolio',
     locatif: 'Rental property',
     aVenir: 'soon',
@@ -769,6 +858,88 @@ const EN: Dictionnaire = {
     note: 'The regulated rates — Livret A, LDDS, LEP — are the ones in force. Every other one is a starting hypothesis, to be adjusted line by line: they are your holdings, not ours.',
     negatif:
       'Your debts exceed your holdings. A return means nothing while that is the case: there is no capital at work, only a loan to repay.',
+  },
+
+  synthese: {
+    marque: 'FIRE simulator',
+    barreTitre: 'Summary of my plan',
+    barreSoustitre: 'Four panels to scroll through, ready to print or export as PDF.',
+    imprimer: 'Print / export as PDF',
+    voletsAria: 'Summary panels',
+    volet: (n: number) => `Panel ${n}`,
+    precedent: 'Previous',
+    suivant: 'Next',
+
+    couvertureEyebrow: (pays: string) => `Living off your capital · ${pays}`,
+    couvertureTitre: 'Summary of my plan',
+    couvertureIntro:
+      'This document follows one line of reasoning from end to end: from what you own to the income that capital can pay, and how long it lasts. It gathers into four panels what the tabs work out separately.',
+    couvertureListe: [
+      'The capital that funds withdrawals, and the return expected from it.',
+      'The net income that capital pays once tax is settled.',
+      'How the capital holds up, year after year, across the horizon.',
+      'Where each euro withdrawn goes: what stays in hand, what leaves in tax.',
+    ],
+    couvertureNote:
+      'The figures tie together from one panel to the next: the capital sets the withdrawal, which sets the income, which decides how the capital holds. A teaching tool — this is not financial advice.',
+    labelPatrimoine: 'Capital',
+    labelRendement: 'Return used',
+    labelRetrait: 'Withdrawal rate',
+    labelRevenuMois: 'Net income / month',
+
+    patrimoineTitre: 'Where these figures come from',
+    patrimoineIntro: (productif: string, rendement: string) =>
+      `Your capital is a mix of holdings with different returns and taxation. The simulator keeps the part that funds withdrawals — ${productif} — at a blended return of ${rendement}.`,
+    labelBrut: 'Gross assets',
+    labelDettes: 'Debts',
+    labelNet: 'Net worth',
+    labelProductif: 'Funds withdrawals',
+    labelImpositionRecomposee: 'Blended tax on withdrawals',
+    patrimoineVide:
+      'The “Working out my capital” tab has not been filled in, so this panel stays empty. The plan below starts straight from the figures entered on the “Living off my capital” tab.',
+    patrimoineEcart: (patrimoine: string, rendement: string, imposition: string) =>
+      `The plan below does not start from this estimate but from values set by hand: ${patrimoine} at ${rendement}, taxed at ${imposition}.`,
+
+    revenuTitre: 'The income this capital pays',
+    revenuIntro: (retrait: string, patrimoine: string) =>
+      `Withdrawing ${retrait} of ${patrimoine} each year, once tax is paid, leaves:`,
+    labelRetraitBrut: 'Gross yearly withdrawal',
+    labelImpots: 'Tax and levies',
+    labelRevenuAn: 'Net yearly income',
+    revenuMarge: (marge: string, variation: string) =>
+      `A ${marge} margin between return and withdrawal, i.e. ${variation} of capital drift over the first year.`,
+
+    projectionTitre: (annees: number) => `What the plan becomes over ${annees} years`,
+    labelAnneesTenues: 'Years served',
+    labelDureeVoulue: 'Years asked for',
+    labelCapitalCourant: 'Final capital (nominal)',
+    labelCapitalReel: 'Final capital (purchasing power)',
+    ans: 'years',
+    projectionSans:
+      'No capital has been entered yet: there is nothing to project while the starting capital is nil.',
+    projectionPreserve: (capital: string) =>
+      `Across the whole horizon the capital is never exhausted: ${capital} is left at the end.`,
+    projectionSuffisant: (tenues: number, voulue: number, epuisement: number) =>
+      `The capital lasts ${tenues} years — the ${voulue} asked for are covered — then runs out in year ${epuisement}.`,
+    projectionInsuffisant: (tenues: number, voulue: number, epuisement: number) =>
+      `The capital runs out in year ${epuisement}, after ${tenues} years: before the ${voulue} asked for.`,
+
+    repartitionTitre: 'Where each euro withdrawn goes',
+    repartitionIntro: (brut: string) =>
+      `Breakdown of the gross yearly withdrawal, ${brut}, between what stays in hand and what leaves in tax.`,
+    partNet: 'Net income in hand',
+    partImpots: 'Tax and levies',
+    repartitionNote: (net: string, part: string) =>
+      `On each withdrawal you keep ${net} net, i.e. ${part}. The rest leaves in tax and social levies.`,
+    reelFort: 'In purchasing power:',
+    reelCorps: (points: string) =>
+      `an inflation-indexed withdrawal slowly eats into the real capital, by around ${points} a year.`,
+    trainCouvertFort: 'Lifestyle covered:',
+    trainManqueFort: 'Lifestyle not covered:',
+    trainCorps: (ecart: string, cible: string, couvert: boolean) =>
+      couvert
+        ? `income exceeds the ${cible} target by ${ecart} a month.`
+        : `it falls ${ecart} a month short of the ${cible} target.`,
   },
 
   saisie: {

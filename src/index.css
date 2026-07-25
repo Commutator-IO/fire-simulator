@@ -111,6 +111,35 @@
   }
 }
 
+/* --- Impression de la synthèse ------------------------------------------ */
+
+/* La synthèse est le seul écran pensé pour le papier : un volet par page, et
+   les aplats de couleur du verdict conservés — un fond blanc à la place ne
+   dirait plus la même chose. */
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .slide {
+    break-inside: avoid;
+    break-after: page;
+  }
+
+  .slide:last-child {
+    break-after: auto;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
 /* --- Slider ------------------------------------------------------------- */
 
 input[type='range'].brand-range {

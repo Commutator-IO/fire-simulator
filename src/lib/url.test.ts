@@ -171,10 +171,12 @@ describe('the active tab', () => {
     expect(decoderVue('')).toBe('patrimoine');
     expect(decoderVue('?vue=nimporte')).toBe('patrimoine');
     expect(decoderVue('?vue=fire')).toBe('fire');
+    expect(decoderVue('?vue=synthese')).toBe('synthese');
   });
 
   it('is written only when it is not the default', () => {
     expect(encoderEtat(DEFAUTS, { vue: 'patrimoine' })).toBe('');
     expect(encoderEtat(DEFAUTS, { vue: 'fire' })).toBe('?vue=fire');
+    expect(encoderEtat(DEFAUTS, { vue: 'synthese' })).toBe('?vue=synthese');
   });
 });

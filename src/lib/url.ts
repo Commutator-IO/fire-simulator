@@ -49,12 +49,13 @@ const CLES = {
  *
  * The statement comes first, and is therefore the default: it answers the two
  * questions the withdrawal plan opens on, so starting there is starting at the
- * beginning. `bourse` and `locatif` are announced but not yet built. Held in
- * the address like everything else.
+ * beginning. `synthese` gathers the two working tabs into a printable deck;
+ * `bourse` and `locatif` are announced but not yet built. Held in the address
+ * like everything else.
  */
-export type Vue = 'patrimoine' | 'fire' | 'bourse' | 'locatif';
+export type Vue = 'patrimoine' | 'fire' | 'synthese' | 'bourse' | 'locatif';
 
-const VUES: readonly Vue[] = ['patrimoine', 'fire', 'bourse', 'locatif'];
+const VUES: readonly Vue[] = ['patrimoine', 'fire', 'synthese', 'bourse', 'locatif'];
 
 /**
  * Holdings travel one parameter per line — `?pea=200000&scpi=40000` — rather

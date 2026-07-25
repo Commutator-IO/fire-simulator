@@ -9,6 +9,7 @@ import { Sources } from './components/Sources';
 import { Patrimoine } from './components/Patrimoine';
 import { Bourse } from './components/Bourse';
 import { Locatif } from './components/Locatif';
+import { Synthese } from './components/Synthese';
 import { Avertissement, Entete, Pied } from './components/Cadre';
 import { BoutonPartage } from './components/BoutonPartage';
 import { ContexteLangue, useFormats, useTextes, useTraduire } from './lib/contexte';
@@ -240,10 +241,11 @@ function Simulateur({
    * quiet when the two already agree.
    */
   const bilanCourant = bilan(composition, h.pays);
+  const impotRecompose = impositionRecomposee(composition, h.pays);
   const dejaApplique =
     Math.round(bilanCourant.productif) === Math.round(h.patrimoine) &&
     Math.abs(bilanCourant.rendementRecompose - h.rendement) < 5e-6 &&
-    Math.abs(impositionRecomposee(composition, h.pays) - h.imposition) < 5e-6;
+    Math.abs(impotRecompose - h.imposition) < 5e-6;
 
   const appliquerPatrimoine = (
     patrimoine: number,
@@ -286,6 +288,19 @@ function Simulateur({
           }}
           onAppliquer={appliquerPatrimoine}
           dejaApplique={dejaApplique}
+        />
+      )}
+
+      {vue === 'synthese' && (
+        <Synthese
+          h={h}
+          r={r}
+          projection={central.projection}
+          niveau={niveau}
+          bilan={bilanCourant}
+          impositionRecomposee={impotRecompose}
+          dejaApplique={dejaApplique}
+          lien={lien}
         />
       )}
 

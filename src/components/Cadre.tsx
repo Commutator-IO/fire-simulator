@@ -25,7 +25,7 @@ export function Entete({
   const t = useTextes();
 
   return (
-    <header className="sticky top-0 z-30 border-b border-ink-200/70 bg-white/85 backdrop-blur">
+    <header className="sticky top-0 z-30 border-b border-ink-200/70 bg-white/85 backdrop-blur print:hidden">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-5 py-3.5">
         {/* Relative, like the built assets: the site lives just as happily at
             the root of a domain as under /<repo>/ on GitHub Pages. */}
@@ -84,6 +84,7 @@ function Onglets({ vue, onVue }: { vue: Vue; onVue: (v: Vue) => void }) {
   const onglets: { cle: Vue; label: string; aVenir?: boolean }[] = [
     { cle: 'patrimoine', label: t.onglets.patrimoine },
     { cle: 'fire', label: t.onglets.fire },
+    { cle: 'synthese', label: t.onglets.synthese },
     { cle: 'bourse', label: t.onglets.bourse, aVenir: true },
     { cle: 'locatif', label: t.onglets.locatif, aVenir: true },
   ];
@@ -174,7 +175,7 @@ export function Pied() {
   const t = useTextes();
 
   return (
-    <footer className="border-t border-ink-200/70 bg-white">
+    <footer className="border-t border-ink-200/70 bg-white print:hidden">
       <div className="mx-auto max-w-6xl px-5 py-10 text-sm text-ink-400">
         <div className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-3">
           <p>{t.pied.resume}</p>
