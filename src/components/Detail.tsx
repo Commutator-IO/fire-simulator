@@ -70,6 +70,9 @@ export function Detail({
   const t = useTextes();
   const { eur, eurSigne, pct, tauxPct } = useFormats();
   const [tableauOuvert, setTableauOuvert] = useState(false);
+  // The pension column only earns its place once a pension is actually drawn;
+  // otherwise it would be a column of zeros for everyone.
+  const aRente = projection.annees.some((a) => a.rente > 0);
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
@@ -149,6 +152,11 @@ export function Detail({
                   <th scope="col" className="px-4 py-3 text-right font-medium">
                     {t.detail.colRevenuNet}
                   </th>
+                  {aRente && (
+                    <th scope="col" className="px-4 py-3 text-right font-medium">
+                      {t.detail.colRente}
+                    </th>
+                  )}
                   <th scope="col" className="px-4 py-3 text-right font-medium">
                     {t.detail.colCapitalFin}
                   </th>
@@ -179,6 +187,11 @@ export function Detail({
                     <td className="px-4 py-2 text-right font-medium text-ink-900">
                       {eur(a.retraitNet)}
                     </td>
+                    {aRente && (
+                      <td className="px-4 py-2 text-right text-brand-700">
+                        {a.rente > 0 ? eur(a.rente) : '—'}
+                      </td>
+                    )}
                     <td className="px-4 py-2 text-right">{eur(a.capitalFin)}</td>
                     <td className="px-4 py-2 text-right text-ink-400">
                       {eur(a.capitalFinReel)}

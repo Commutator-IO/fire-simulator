@@ -44,6 +44,31 @@ export type Pays = {
    */
   defauts: { rendement: number; retrait: number; inflation: number };
   /**
+   * General, country-level assumptions used to estimate a future pension when
+   * the visitor gives their age. Deliberately coarse — the point is to show the
+   * order of magnitude of a partial pension's effect on the capital, not to
+   * replace a pension statement. See `estimationRente` in `fire.ts`.
+   */
+  retraite: {
+    /** Earliest age the pension can be drawn; the pension starts here. */
+    ageLegal: number;
+    /**
+     * Age of the automatic full rate: from here the pension carries no décote
+     * even with missing quarters. Equal to `ageLegal` where there is no décote.
+     */
+    ageTauxPlein: number;
+    /** Years of contributions for a full-rate, unreduced pension. */
+    anneesCarriereRequise: number;
+    /** Full-career pension as a fraction of the average salary (all schemes). */
+    tauxRemplacement: number;
+    /** Décote per quarter short, applied when claiming before the full-rate age. */
+    decoteParTrimestre: number;
+    /** Full-career gross pension used when no salary is given (country average). */
+    renteReferenceBrute: number;
+    /** Effective tax and social levies on the pension, as a fraction. */
+    tauxImpositionRente: number;
+  };
+  /**
    * Colour of this country's curve when several are drawn together. Held here
    * rather than in the chart so a country always looks the same wherever it
    * appears, and so adding one means picking its colour once.
@@ -53,6 +78,14 @@ export type Pays = {
   noteInflation: Traduit;
   regimes: Regime[];
 };
+
+/**
+ * Age at which a full career is assumed to start, shared by both countries.
+ *
+ * With the retirement age, it sets how much of a full career an early retiree
+ * has completed — and therefore how partial their pension is.
+ */
+export const AGE_DEBUT_CARRIERE = 23;
 
 const FRANCE: Regime[] = [
   {
@@ -152,6 +185,15 @@ export const PAYS: Pays[] = [
     cle: 'france',
     libelle: { fr: 'France', en: 'France' },
     defauts: { rendement: 0.05, retrait: 0.035, inflation: 0.02 },
+    retraite: {
+      ageLegal: 64,
+      ageTauxPlein: 67,
+      anneesCarriereRequise: 43,
+      tauxRemplacement: 0.5,
+      decoteParTrimestre: 0.0125,
+      renteReferenceBrute: 18_000,
+      tauxImpositionRente: 0.1,
+    },
     couleur: 'var(--color-brand-600)',
     justification: {
       fr: 'Un retrait de 4 % a échoué dans 71,3 % des périodes de trente ans en France, sur les données historiques réunies par Wade Pfau : 3,5 % est un point de départ plus sobre. Le rendement de 5 % suppose un portefeuille diversifié, et l’inflation reprend la cible de la BCE.',
@@ -167,6 +209,15 @@ export const PAYS: Pays[] = [
     cle: 'japon',
     libelle: { fr: 'Japon', en: 'Japan' },
     defauts: { rendement: 0.05, retrait: 0.03, inflation: 0.02 },
+    retraite: {
+      ageLegal: 65,
+      ageTauxPlein: 65,
+      anneesCarriereRequise: 40,
+      tauxRemplacement: 0.5,
+      decoteParTrimestre: 0,
+      renteReferenceBrute: 11_000,
+      tauxImpositionRente: 0.1,
+    },
     couleur: 'var(--color-azur-600)',
     justification: {
       fr: 'Le Japon est le contre-exemple de la règle des 4 % : sur un portefeuille purement domestique, le retrait historiquement soutenable tombe à 0,25 %, et ne remonte qu’à 2,2 % avec une diversification mondiale. Partir de 3 % reste optimiste. Le rendement de 5 % suppose un portefeuille diversifié, et l’inflation reprend la cible de la Banque du Japon.',

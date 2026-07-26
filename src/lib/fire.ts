@@ -1,4 +1,5 @@
 import {
+  AGE_DEBUT_CARRIERE,
   PAYS,
   PAYS_PAR_DEFAUT,
   estClePays,
@@ -64,6 +65,25 @@ export type Hypotheses = {
    * comparison across countries has a "you are here".
    */
   pays: ClePays;
+  /**
+   * Age at (early) retirement, i.e. now. 0 means "not filled in": no pension is
+   * modelled and the plan runs on capital alone, as before.
+   *
+   * When set, a partial pension is estimated from it — see `estimationRente` —
+   * and starts at the country's legal age, covering part of the spending from
+   * then on. This is what tells apart "I retire at the legal age" from "I retire
+   * ten years early and live off capital until the pension kicks in".
+   */
+  age: number;
+  /**
+   * Average gross annual salary over the career, in today's euros. 0 means "not
+   * filled in": the pension then falls back to the country's average full
+   * pension instead of a salary-based estimate.
+   *
+   * With it, the pension is a replacement rate of this salary, cut down for the
+   * quarters missing when work stops early — the whole point of the question.
+   */
+  salaireMoyen: number;
 };
 
 /**
@@ -98,6 +118,12 @@ export type Resultat = {
   ecartDepenses: number | null;
   /** Capital needed to fund D under the same Z and α, or null if unreachable. */
   patrimoineRequis: number | null;
+  /**
+   * Net pension income counted in the first year — non-zero only once the legal
+   * age is already reached (an immediate pension). During the gap years of an
+   * early retirement it is 0, the first year running on capital alone.
+   */
+  renteAnnuelle: number;
 };
 
 export type AnneeProjection = {
@@ -108,10 +134,12 @@ export type AnneeProjection = {
   retraitBrut: number;
   impots: number;
   retraitNet: number;
+  /** Net pension income this year, uprated for inflation; 0 before it starts. */
+  rente: number;
   capitalFin: number;
   /** Capital restated in year-0 euros, i.e. in purchasing power. */
   capitalFinReel: number;
-  /** Net income restated in year-0 euros. */
+  /** Total net income (withdrawal net + pension) restated in year-0 euros. */
   retraitNetReel: number;
 };
 
@@ -149,6 +177,8 @@ export const BORNES = {
   inflation: { min: -0.02, max: 0.1 },
   horizon: { min: 5, max: 60 },
   dureeExigee: { min: 5, max: 60 },
+  age: { min: 0, max: 75 },
+  salaireMoyen: { min: 0, max: 1_000_000 },
 } as const;
 
 /**
@@ -171,6 +201,9 @@ export const DEFAUTS: Hypotheses = {
   dureeExigee: 30,
   modeRetrait: 'indexe',
   pays: PAYS_PAR_DEFAUT,
+  // 0: no pension modelled, so the plan opens on capital alone.
+  age: 0,
+  salaireMoyen: 0,
 };
 
 /** Gap applied to the return in the pessimistic and optimistic scenarios. */
@@ -195,6 +228,117 @@ export function borner(h: Hypotheses): Hypotheses {
     dureeExigee: Math.min(horizon, Math.round(borne(h.dureeExigee, BORNES.dureeExigee))),
     modeRetrait: h.modeRetrait === 'proportionnel' ? 'proportionnel' : 'indexe',
     pays: estClePays(h.pays) ? h.pays : PAYS_PAR_DEFAUT,
+    age: Math.round(borne(h.age, BORNES.age)),
+    salaireMoyen: borne(h.salaireMoyen, BORNES.salaireMoyen),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// A future pension
+// ---------------------------------------------------------------------------
+
+export type EstimationRente = {
+  /** Legal retirement age of the country; the pension starts here. */
+  ageLegal: number;
+  /** Age of the automatic full rate — no décote from here even if quarters short. */
+  ageTauxPlein: number;
+  /** Years from now until the pension starts. 0 once the legal age is reached. */
+  delai: number;
+  /** Years of contributions credited by stopping work at this age. */
+  anneesCotisees: number;
+  /** Share of the required career actually worked, 0 to 1 (the proration). */
+  proratisation: number;
+  /** Reduction for claiming before the full-rate age with missing quarters. */
+  decote: number;
+  /** Full-rate pension before proration and décote (from salary, or the average). */
+  pleineBrute: number;
+  /** Gross pension actually drawn, per year, in today's euros. */
+  brutAnnuel: number;
+  /** Net pension, per year, in today's euros. */
+  netAnnuel: number;
+};
+
+/**
+ * A deliberately coarse estimate of the pension a plan will later draw.
+ *
+ * The point is not to replace a pension statement but to show the order of
+ * magnitude of its effect on the capital — above all, whether stopping work
+ * early, with too few contribution quarters, is what makes the capital run out.
+ *
+ * From the age work stops and the average salary, two French mechanics are
+ * modelled, both country-parameterised (see `pays.ts`):
+ *  - proration — the pension is scaled by the share of a full career actually
+ *    worked, so fewer years mean a smaller pension;
+ *  - décote — claiming at the legal age with missing quarters cuts it further,
+ *    a penalty per missing quarter that vanishes at the full-rate age (67 in
+ *    France), which is why waiting can be worth more than the extra years.
+ *
+ * The salary drives the full-rate pension through a blended replacement rate; on
+ * a blank salary it falls back to the country's average full pension. Linear
+ * proration and a flat pension tax keep it an estimate — and it says so.
+ *
+ * At age 0 — "not filled in" — there is no pension, and the plan runs on capital
+ * alone exactly as before.
+ */
+export function estimationRente(hypotheses: Hypotheses): EstimationRente {
+  const h = borner(hypotheses);
+  const {
+    ageLegal,
+    ageTauxPlein,
+    anneesCarriereRequise,
+    tauxRemplacement,
+    decoteParTrimestre,
+    renteReferenceBrute,
+    tauxImpositionRente,
+  } = pays(h.pays).retraite;
+
+  const vide: EstimationRente = {
+    ageLegal,
+    ageTauxPlein,
+    delai: 0,
+    anneesCotisees: 0,
+    proratisation: 0,
+    decote: 0,
+    pleineBrute: 0,
+    brutAnnuel: 0,
+    netAnnuel: 0,
+  };
+  if (h.age <= 0) return vide;
+
+  // Years contributed, from an assumed career start to the age work stops,
+  // capped at what a full pension requires.
+  const anneesCotisees = Math.min(
+    anneesCarriereRequise,
+    Math.max(0, h.age - AGE_DEBUT_CARRIERE),
+  );
+  const proratisation =
+    anneesCarriereRequise > 0 ? anneesCotisees / anneesCarriereRequise : 0;
+
+  // Décote in quarters: the shortfall, but never more than the quarters between
+  // the legal age and the full-rate age (past which there is no décote at all),
+  // and capped at the statutory twenty.
+  const trimestresManquants = (anneesCarriereRequise - anneesCotisees) * 4;
+  const trimestresJusquauTauxPlein = Math.max(0, ageTauxPlein - ageLegal) * 4;
+  const decoteTrimestres = Math.min(
+    20,
+    Math.max(0, Math.min(trimestresManquants, trimestresJusquauTauxPlein)),
+  );
+  const decote = decoteTrimestres * decoteParTrimestre;
+
+  const pleineBrute =
+    h.salaireMoyen > 0 ? tauxRemplacement * h.salaireMoyen : renteReferenceBrute;
+  const brutAnnuel = pleineBrute * proratisation * (1 - decote);
+
+  return {
+    ageLegal,
+    ageTauxPlein,
+    delai: Math.max(0, ageLegal - h.age),
+    anneesCotisees,
+    proratisation,
+    decote,
+    pleineBrute,
+    brutAnnuel,
+    netAnnuel: brutAnnuel * (1 - tauxImpositionRente),
   };
 }
 
@@ -244,9 +388,17 @@ export function patrimoineRequis(
 export function simuler(hypotheses: Hypotheses): Resultat {
   const h = borner(hypotheses);
 
-  const retraitBrut = h.patrimoine * h.retrait;
+  // A pension already being drawn (legal age reached) covers part of the first
+  // year, so less is taken from the portfolio for the same net income. During
+  // the gap years of an early retirement the pension has not started, and this
+  // is 0 — the first year runs on capital alone.
+  const rente = estimationRente(h);
+  const renteAnnuelle = rente.delai === 0 ? rente.netAnnuel : 0;
+  const retraitSouhaite = h.patrimoine * h.retrait;
+  const retraitBrut = Math.max(0, retraitSouhaite - renteAnnuelle / (1 - h.imposition));
   const impots = retraitBrut * h.imposition;
-  const revenuNetAnnuel = retraitBrut - impots;
+  // Total net income: what the portfolio pays after tax, plus the pension.
+  const revenuNetAnnuel = retraitBrut - impots + renteAnnuelle;
   const marge = h.rendement - h.retrait;
 
   return {
@@ -264,6 +416,7 @@ export function simuler(hypotheses: Hypotheses): Resultat {
     preserveEnReel: h.retrait === 0 || h.retrait <= h.rendement - h.inflation,
     ecartDepenses: h.depensesCibles > 0 ? revenuNetAnnuel - h.depensesCibles : null,
     patrimoineRequis: patrimoineRequis(h.depensesCibles, h.retrait, h.imposition),
+    renteAnnuelle,
   };
 }
 
@@ -283,10 +436,18 @@ export function simuler(hypotheses: Hypotheses): Resultat {
  *  - the withdrawal is capped by what is left. The capital stops at zero
  *    instead of going negative, and the year the cap first bites is reported as
  *    the depletion year.
+ *
+ * A pension, once it starts (see `estimationRente`), enters the two modes
+ * differently. In indexed mode the net income target is fixed, so the pension
+ * replaces part of the withdrawal and spares the capital — which is the whole
+ * point of the early-retirement question. In proportional mode the draw stays a
+ * share of the capital and the pension is simply added income, the capital
+ * curve unchanged, consistent with that mode's contract.
  */
 export function projeter(hypotheses: Hypotheses, rendement?: number): Projection {
   const h = borner(hypotheses);
   const y = rendement === undefined ? h.rendement : borne(rendement, BORNES.rendement);
+  const rente = estimationRente(h);
 
   const annees: AnneeProjection[] = [];
   let capital = h.patrimoine;
@@ -301,16 +462,28 @@ export function projeter(hypotheses: Hypotheses, rendement?: number): Projection
     const gains = capitalDebut * y;
     const disponible = Math.max(0, capitalDebut + gains);
 
+    // Net pension for the year: today's euros, uprated for inflation, and only
+    // once the legal age is reached.
+    const renteAnnee =
+      annee > rente.delai ? rente.netAnnuel * (1 + h.inflation) ** (annee - 1) : 0;
+
+    // What the portfolio is asked to withdraw. In indexed mode the pension
+    // covers part of the fixed net target, grossed back up by the tax it
+    // escapes; in proportional mode the draw ignores the pension.
     const souhaite =
       h.modeRetrait === 'indexe'
-        ? retraitInitial * (1 + h.inflation) ** (annee - 1)
+        ? Math.max(
+            0,
+            retraitInitial * (1 + h.inflation) ** (annee - 1) -
+              renteAnnee / (1 - h.imposition),
+          )
         : disponible * h.retrait;
 
     const retraitBrut = Math.min(souhaite, disponible);
     const impots = retraitBrut * h.imposition;
     const capitalFin = disponible - retraitBrut;
 
-    // The plan breaks the first year the full amount cannot be taken. Testing
+    // The plan breaks the first year the desired draw cannot be taken. Testing
     // the shortfall rather than "capital = 0" also catches the year the last
     // euros are scraped together.
     if (anneeEpuisement === null && retraitBrut < souhaite - 0.005) {
@@ -318,16 +491,18 @@ export function projeter(hypotheses: Hypotheses, rendement?: number): Projection
     }
 
     const deflateur = (1 + h.inflation) ** annee;
+    const retraitNet = retraitBrut - impots;
     annees.push({
       annee,
       capitalDebut,
       rendement: gains,
       retraitBrut,
       impots,
-      retraitNet: retraitBrut - impots,
+      retraitNet,
+      rente: renteAnnee,
       capitalFin,
       capitalFinReel: capitalFin / deflateur,
-      retraitNetReel: (retraitBrut - impots) / deflateur,
+      retraitNetReel: (retraitNet + renteAnnee) / deflateur,
     });
 
     capital = capitalFin;

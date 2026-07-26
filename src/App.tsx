@@ -18,6 +18,7 @@ import { TEXTES } from './lib/textes';
 import {
   BORNES,
   DEFAUTS,
+  estimationRente,
   niveauDe,
   scenarios,
   scenariosPays,
@@ -177,6 +178,7 @@ function Simulateur({
     }));
 
   const r = useMemo(() => simuler(h), [h]);
+  const rente = useMemo(() => estimationRente(h), [h]);
   const jeux = useMemo(() => scenarios(h), [h]);
   const central = jeux.find((s) => s.cle === 'central') ?? jeux[0];
   const jeuxPays = useMemo(() => scenariosPays(h), [h]);
@@ -522,6 +524,37 @@ function Simulateur({
                         .map((v) => ({ valeur: v, label: String(v) }))}
                       hint={t.saisie.dureeHint}
                     />
+                    <div className="grid gap-7 border-t border-ink-200 pt-7 sm:col-span-2 sm:grid-cols-2">
+                      <Montant
+                        label={t.saisie.ageLabel}
+                        valeur={h.age}
+                        onChange={(v) => maj('age', v)}
+                        suffixe={t.saisie.horizonUnite}
+                        max={BORNES.age.max}
+                        placeholder="—"
+                        hint={t.saisie.ageHint}
+                      />
+                      <Montant
+                        label={t.saisie.salaireLabel}
+                        valeur={h.salaireMoyen}
+                        onChange={(v) => maj('salaireMoyen', v)}
+                        max={BORNES.salaireMoyen.max}
+                        placeholder="—"
+                        hint={t.saisie.salaireHint}
+                      />
+                      {h.age > 0 && rente.netAnnuel > 0 && (
+                        <p className="rounded-xl bg-brand-50 px-4 py-3 text-xs leading-relaxed text-brand-800 sm:col-span-2">
+                          {t.saisie.renteResume(
+                            eur(rente.netAnnuel / 12),
+                            rente.ageLegal,
+                            rente.delai,
+                            pct(rente.proratisation, 0),
+                            rente.decote > 0 ? pct(rente.decote, 0) : null,
+                            rente.ageTauxPlein,
+                          )}
+                        </p>
+                      )}
+                    </div>
                     <div className="sm:col-span-2">
                       <Segments
                         label={t.saisie.modeLabel}
@@ -650,6 +683,9 @@ function Simulateur({
                 patrimoineInitial={h.patrimoine}
                 mode={mode}
                 dureeExigee={h.dureeExigee}
+                // Only on the user's own plan: each country carries its own
+                // pension, so a single marker would be ambiguous across them.
+                anneeRente={comparaison === 'rendement' ? rente.delai : 0}
               />
             </div>
 

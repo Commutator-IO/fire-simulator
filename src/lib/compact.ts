@@ -36,6 +36,8 @@ const SCALAIRES: Record<string, string> = {
   duree: 'u',
   mode: 'm',
   pays: 'c',
+  age: 'a',
+  salaire: 's',
   vue: 'v',
   lang: 'l',
   vide: 'x',

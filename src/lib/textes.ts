@@ -347,6 +347,29 @@ const FR = {
     dureeLabel: 'Le capital doit tenir au moins',
     dureeHint:
       'C’est ce qui départage les trois réponses : capital jamais épuisé, épuisé après cette durée, ou avant. Préserver le capital pour toujours et le consommer sur une vie sont deux plans également valables. Plafonné par l’horizon de projection.',
+    ageLabel: 'Âge où vous arrêtez de travailler',
+    ageHint:
+      'Facultatif. Avec le salaire ci-dessous, il estime la pension versée à l’âge légal — réduite si vous arrêtez tôt, faute de trimestres cotisés. Laissez vide pour ignorer les pensions.',
+    salaireLabel: 'Salaire annuel brut moyen',
+    salaireHint:
+      'Moyenne sur la carrière. Une pension à taux plein vaut environ la moitié de ce salaire ; à défaut, une pension moyenne nationale est utilisée.',
+    renteResume: (
+      mensuel: string,
+      ageLegal: number,
+      delai: number,
+      proratisation: string,
+      decote: string | null,
+      ageTauxPlein: number,
+    ) => {
+      const debut =
+        delai > 0
+          ? `à partir de ${ageLegal} ans, dans ${delai} an${delai > 1 ? 's' : ''} — d’ici là, le plan vit du seul capital`
+          : 'dès à présent';
+      const cause = decote
+        ? `, décote de ${decote} pour trimestres manquants comprise (évitable en partant à ${ageTauxPlein} ans)`
+        : '';
+      return `Rente estimée : environ ${mensuel} nets par mois ${debut}. Elle vaut ${proratisation} d’une carrière complète${cause}. Hypothèse générale, indépendante de vos droits réels.`;
+    },
     modeLabel: 'Façon de retirer',
     modeIndexe: 'Montant fixe indexé',
     modeProportionnel: '% du capital',
@@ -432,6 +455,7 @@ const FR = {
     seriePays: (libelle: string, retrait: string, mensuel: string) =>
       `${libelle} — retrait ${retrait}, ${mensuel} net par mois`,
     repereDuree: (annees: number) => `${annees} ans exigés`,
+    repereRente: (annees: number) => `rente dans ${annees} an${annees > 1 ? 's' : ''}`,
     eurosCourants: 'Euros courants',
     pouvoirAchat: 'Pouvoir d’achat',
     noteCourant:
@@ -489,6 +513,7 @@ const FR = {
     colRetraitBrut: 'Retrait brut',
     colImpots: 'Impôts',
     colRevenuNet: 'Revenu net',
+    colRente: 'Rente',
     colCapitalFin: 'Capital à la fin',
     colReel: 'En euros d’aujourd’hui',
   },
@@ -973,6 +998,29 @@ const EN: Dictionnaire = {
     horizonUnite: 'years',
     horizonHint:
       'Early retirement is counted in decades: forty years is nothing out of the ordinary.',
+    ageLabel: 'Age you stop working',
+    ageHint:
+      'Optional. With the salary below, it estimates the pension paid at the legal age — smaller if you stop early, for want of contribution quarters. Leave empty to ignore pensions.',
+    salaireLabel: 'Average gross annual salary',
+    salaireHint:
+      'Averaged over the career. A full-rate pension is worth about half of it; failing a figure, a national average pension is used.',
+    renteResume: (
+      mensuel: string,
+      ageLegal: number,
+      delai: number,
+      proratisation: string,
+      decote: string | null,
+      ageTauxPlein: number,
+    ) => {
+      const debut =
+        delai > 0
+          ? `from age ${ageLegal}, in ${delai} year${delai > 1 ? 's' : ''} — until then the plan runs on capital alone`
+          : 'from now';
+      const cause = decote
+        ? `, including a ${decote} décote for missing quarters (avoidable by leaving at ${ageTauxPlein})`
+        : '';
+      return `Estimated pension: about ${mensuel} net per month ${debut}. It is worth ${proratisation} of a full career${cause}. A general assumption, independent of your actual entitlements.`;
+    },
     dureeLabel: 'The capital has to last at least',
     dureeHint:
       'This is what separates the three answers: capital never exhausted, exhausted after this many years, or before. Preserving capital for ever and spending it over a lifetime are both legitimate plans. Capped by the projection horizon.',
@@ -1062,6 +1110,7 @@ const EN: Dictionnaire = {
     seriePays: (libelle: string, retrait: string, mensuel: string) =>
       `${libelle} — ${retrait} withdrawal, ${mensuel} net a month`,
     repereDuree: (annees: number) => `${annees} years required`,
+    repereRente: (annees: number) => `pension in ${annees} year${annees > 1 ? 's' : ''}`,
     eurosCourants: 'Nominal euros',
     pouvoirAchat: 'Purchasing power',
     noteCourant:
@@ -1119,6 +1168,7 @@ const EN: Dictionnaire = {
     colRetraitBrut: 'Gross withdrawal',
     colImpots: 'Tax',
     colRevenuNet: 'Net income',
+    colRente: 'Pension',
     colCapitalFin: 'Capital at end',
     colReel: 'In today’s money',
   },

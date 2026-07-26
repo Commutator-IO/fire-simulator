@@ -40,6 +40,8 @@ const CLES = {
   duree: 'duree',
   mode: 'mode',
   pays: 'pays',
+  age: 'age',
+  salaire: 'salaire',
   langue: 'lang',
   vue: 'vue',
   videPatrimoine: 'vide',
@@ -139,6 +141,8 @@ export function encoderEtat(
   ajouter(CLES.duree, arrondi(etat.dureeExigee), arrondi(defauts.dureeExigee));
   ajouter(CLES.mode, etat.modeRetrait, defauts.modeRetrait);
   ajouter(CLES.pays, etat.pays, defauts.pays);
+  ajouter(CLES.age, arrondi(etat.age), arrondi(defauts.age));
+  ajouter(CLES.salaire, arrondi(etat.salaireMoyen), arrondi(defauts.salaireMoyen));
   if (langue !== null) params.set(CLES.langue, langue);
   if (vue !== undefined && vue !== 'patrimoine') params.set(CLES.vue, vue);
 
@@ -292,6 +296,13 @@ export function decoderEtat(recherche: string, defauts: Hypotheses = DEFAUTS): H
       ? mode
       : defauts.modeRetrait) as ModeRetrait,
     pays: estClePays(paysLu) ? paysLu : defauts.pays,
+    age: nombre(p.get(CLES.age), defauts.age, BORNES.age.min, BORNES.age.max),
+    salaireMoyen: nombre(
+      p.get(CLES.salaire),
+      defauts.salaireMoyen,
+      BORNES.salaireMoyen.min,
+      BORNES.salaireMoyen.max,
+    ),
   };
 }
 
