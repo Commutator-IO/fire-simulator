@@ -554,6 +554,15 @@ function LigneActif({
             >
               {tauxPct(locatif(ligne).rendement)}
             </span>
+          ) : !actif.productif ? (
+            // Un rendement sur un bien exclu des retraits n'alimente aucun
+            // calcul : un champ « 0 % » y passerait pour une erreur. On dit
+            // plutôt, comme le graphique, qu'il n'entre pas dans les retraits.
+            <span className="flex w-24 shrink-0 items-center justify-end">
+              <span className="rounded-full bg-ink-100 px-2 py-0.5 text-center text-[11px] font-medium leading-tight text-ink-400">
+                {t.patrimoine.horsRetraits}
+              </span>
+            </span>
           ) : (
             <Cellule
               label={`${tr(actif.libelle)} — ${t.patrimoine.colRendement}`}
@@ -563,6 +572,7 @@ function LigneActif({
               decimales={2}
               suffixe="%"
               largeur="w-24 shrink-0"
+              videSiZero={false}
               onChange={(taux) => onLigne(actif.cle, { rendement: taux / 100 })}
             />
           )}
@@ -718,6 +728,7 @@ function Cellule({
   suffixe,
   largeur,
   decimales = 0,
+  videSiZero = true,
   onChange,
 }: {
   label: string;
@@ -727,11 +738,14 @@ function Cellule({
   suffixe: string;
   largeur: string;
   decimales?: number;
+  /** A blank field reads as "not filled in"; a rate deliberately at zero must
+      show its 0 instead, or a positive amount beside it looks like an error. */
+  videSiZero?: boolean;
   onChange: (v: number) => void;
 }) {
   const champ = useChampNumerique(
     valeur,
-    { min, max, decimales, videSiZero: true },
+    { min, max, decimales, videSiZero },
     onChange,
   );
 
