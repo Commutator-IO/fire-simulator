@@ -69,6 +69,18 @@ export type Pays = {
     tauxImpositionRente: number;
   };
   /**
+   * How a country levies a health contribution on capital income while one lives
+   * off capital without a pension (in France, the cotisation subsidiaire maladie).
+   * The rate itself is a user input — not everyone is liable — but the abattement
+   * and the cap are country facts. Absent where there is no such levy.
+   */
+  csm?: {
+    /** Capital income below this is exempt (in France, ~50 % of the PASS). */
+    abattement: number;
+    /** The taxable base is capped at this (in France, 8 × PASS). */
+    plafond: number;
+  };
+  /**
    * Colour of this country's curve when several are drawn together. Held here
    * rather than in the chart so a country always looks the same wherever it
    * appears, and so adding one means picking its colour once.
@@ -186,6 +198,9 @@ export const PAYS: Pays[] = [
       renteReferenceBrute: 18_000,
       tauxImpositionRente: 0.1,
     },
+    // Cotisation subsidiaire maladie: ~50 % of the PASS exempt, base capped at
+    // 8 × PASS (PASS ≈ 47 100 € in 2025).
+    csm: { abattement: 23_550, plafond: 376_800 },
     couleur: 'var(--color-brand-600)',
     justification: {
       fr: 'Un retrait de 4 % a échoué dans 71,3 % des périodes de trente ans en France, sur les données historiques réunies par Wade Pfau : 3,5 % est un point de départ plus sobre. Le rendement de 5 % suppose un portefeuille diversifié, et l’inflation reprend la cible de la BCE.',

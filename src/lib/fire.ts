@@ -88,6 +88,14 @@ export type Hypotheses = {
    * proration and the décote — the whole point of the question.
    */
   salaireMoyen: number;
+  /**
+   * Annual health contribution on capital income, as a fraction, levied while
+   * living off capital before the pension (in France, the cotisation subsidiaire
+   * maladie — 6.5 %). A user input rather than an assumption: liability depends
+   * on the person. 0 means none. Stops once the pension is drawn (a pensioner is
+   * exempt); the country's abattement and cap shape the base — see `pays.ts`.
+   */
+  cotisationCapital: number;
 };
 
 /**
@@ -140,6 +148,8 @@ export type AnneeProjection = {
   retraitNet: number;
   /** Net pension income this year, uprated for inflation; 0 before it starts. */
   rente: number;
+  /** Health contribution on capital income this year; 0 once the pension is drawn. */
+  csm: number;
   capitalFin: number;
   /** Capital restated in year-0 euros, i.e. in purchasing power. */
   capitalFinReel: number;
@@ -184,6 +194,7 @@ export const BORNES = {
   anneesCotisees: { min: 0, max: 50 },
   anneesAvantRetraite: { min: 0, max: 50 },
   salaireMoyen: { min: 0, max: 1_000_000 },
+  cotisationCapital: { min: 0, max: 0.15 },
 } as const;
 
 /**
@@ -210,6 +221,7 @@ export const DEFAUTS: Hypotheses = {
   anneesCotisees: 0,
   anneesAvantRetraite: 0,
   salaireMoyen: 0,
+  cotisationCapital: 0,
 };
 
 /** Gap applied to the return in the pessimistic and optimistic scenarios. */
@@ -239,7 +251,30 @@ export function borner(h: Hypotheses): Hypotheses {
       borne(h.anneesAvantRetraite, BORNES.anneesAvantRetraite),
     ),
     salaireMoyen: borne(h.salaireMoyen, BORNES.salaireMoyen),
+    cotisationCapital: borne(h.cotisationCapital, BORNES.cotisationCapital),
   };
+}
+
+/**
+ * The health contribution due on a year's capital income, before any pension.
+ *
+ * A user-set rate (0 when not liable) times the capital income above the
+ * country's abattement, capped — France's cotisation subsidiaire maladie is the
+ * case it is built for, but the shape is general: with no country abattement the
+ * rate simply applies to the whole return. A pensioner is exempt, so the caller
+ * only applies it in the years before the pension starts.
+ */
+export function cotisationCapitalAnnuelle(
+  revenusCapital: number,
+  taux: number,
+  clePays: ClePays,
+): number {
+  if (taux <= 0) return 0;
+  const c = pays(clePays).csm;
+  const abattement = c?.abattement ?? 0;
+  const plafond = c?.plafond ?? Number.POSITIVE_INFINITY;
+  const assiette = Math.min(Math.max(0, revenusCapital), plafond) - abattement;
+  return Math.max(0, assiette) * taux;
 }
 
 // ---------------------------------------------------------------------------
@@ -488,7 +523,6 @@ export function projeter(hypotheses: Hypotheses, rendement?: number): Projection
 
     const retraitBrut = Math.min(souhaite, disponible);
     const impots = retraitBrut * h.imposition;
-    const capitalFin = disponible - retraitBrut;
 
     // The plan breaks the first year the desired draw cannot be taken. Testing
     // the shortfall rather than "capital = 0" also catches the year the last
@@ -496,6 +530,15 @@ export function projeter(hypotheses: Hypotheses, rendement?: number): Projection
     if (anneeEpuisement === null && retraitBrut < souhaite - 0.005) {
       anneeEpuisement = annee;
     }
+
+    // Health contribution on the capital income, only while not yet a pensioner
+    // (a pensioner is exempt). An extra outflow that erodes the capital without
+    // touching the spending target.
+    const csm =
+      renteAnnee === 0
+        ? cotisationCapitalAnnuelle(gains, h.cotisationCapital, h.pays)
+        : 0;
+    const capitalFin = Math.max(0, disponible - retraitBrut - csm);
 
     const deflateur = (1 + h.inflation) ** annee;
     const retraitNet = retraitBrut - impots;
@@ -507,6 +550,7 @@ export function projeter(hypotheses: Hypotheses, rendement?: number): Projection
       impots,
       retraitNet,
       rente: renteAnnee,
+      csm,
       capitalFin,
       capitalFinReel: capitalFin / deflateur,
       retraitNetReel: (retraitNet + renteAnnee) / deflateur,

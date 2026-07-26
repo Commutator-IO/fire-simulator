@@ -73,6 +73,7 @@ export function Detail({
   // The pension column only earns its place once a pension is actually drawn;
   // otherwise it would be a column of zeros for everyone.
   const aRente = projection.annees.some((a) => a.rente > 0);
+  const aCsm = projection.annees.some((a) => a.csm > 0);
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
@@ -157,6 +158,11 @@ export function Detail({
                       {t.detail.colRente}
                     </th>
                   )}
+                  {aCsm && (
+                    <th scope="col" className="px-4 py-3 text-right font-medium">
+                      {t.detail.colCsm}
+                    </th>
+                  )}
                   <th scope="col" className="px-4 py-3 text-right font-medium">
                     {t.detail.colCapitalFin}
                   </th>
@@ -190,6 +196,11 @@ export function Detail({
                     {aRente && (
                       <td className="px-4 py-2 text-right text-brand-700">
                         {a.rente > 0 ? eur(a.rente) : '—'}
+                      </td>
+                    )}
+                    {aCsm && (
+                      <td className="px-4 py-2 text-right">
+                        {a.csm > 0 ? `− ${eur(a.csm)}` : '—'}
                       </td>
                     )}
                     <td className="px-4 py-2 text-right">{eur(a.capitalFin)}</td>

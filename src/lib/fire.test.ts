@@ -3,6 +3,7 @@ import {
   BORNES,
   DEFAUTS,
   borner,
+  cotisationCapitalAnnuelle,
   estimationRente,
   niveauDe,
   patrimoineRequis,
@@ -157,6 +158,7 @@ describe('edge cases', () => {
                     anneesCotisees,
                     anneesAvantRetraite: 10,
                     salaireMoyen,
+                    cotisationCapital: 0.065,
                   };
                   const nombres = [
                     ...Object.values(simuler(h)),
@@ -251,6 +253,32 @@ describe('a future pension', () => {
     expect(sans.anneeEpuisement).not.toBeNull();
     expect(avec.capitalFinal).toBeGreaterThanOrEqual(sans.capitalFinal);
     expect(avec.anneesTenues).toBeGreaterThan(sans.anneesTenues);
+  });
+
+  it('levies the health contribution only until the pension starts', () => {
+    const h = {
+      ...BASE,
+      anneesCotisees: 30,
+      anneesAvantRetraite: 5,
+      salaireMoyen: 40_000,
+      cotisationCapital: 0.065,
+    };
+    const p = projeter(h);
+    expect(p.annees[0].csm).toBeGreaterThan(0); // still living off capital
+    expect(p.annees[5].csm).toBe(0); // pension drawn, exempt
+  });
+
+  it('exempts capital income below the country allowance', () => {
+    // A small return stays under the French abattement, so nothing is due.
+    expect(cotisationCapitalAnnuelle(10_000, 0.065, 'france')).toBe(0);
+    // Above it, only the excess is charged.
+    expect(cotisationCapitalAnnuelle(33_550, 0.065, 'france')).toBeCloseTo(650, 6);
+  });
+
+  it('charges nothing when the rate is left at zero', () => {
+    expect(cotisationCapitalAnnuelle(100_000, 0, 'france')).toBe(0);
+    const p = projeter({ ...BASE, cotisationCapital: 0 });
+    expect(p.annees.every((a) => a.csm === 0)).toBe(true);
   });
 
   it('counts an already-drawn pension in the first year, but not during the gap', () => {

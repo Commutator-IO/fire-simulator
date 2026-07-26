@@ -43,6 +43,7 @@ const CLES = {
   cotise: 'cotise',
   avant: 'avant',
   salaire: 'salaire',
+  csm: 'csm',
   langue: 'lang',
   vue: 'vue',
   videPatrimoine: 'vide',
@@ -149,6 +150,7 @@ export function encoderEtat(
     arrondi(defauts.anneesAvantRetraite),
   );
   ajouter(CLES.salaire, arrondi(etat.salaireMoyen), arrondi(defauts.salaireMoyen));
+  ajouter(CLES.csm, enPoints(etat.cotisationCapital), enPoints(defauts.cotisationCapital));
   if (langue !== null) params.set(CLES.langue, langue);
   if (vue !== undefined && vue !== 'patrimoine') params.set(CLES.vue, vue);
 
@@ -319,6 +321,12 @@ export function decoderEtat(recherche: string, defauts: Hypotheses = DEFAUTS): H
       defauts.salaireMoyen,
       BORNES.salaireMoyen.min,
       BORNES.salaireMoyen.max,
+    ),
+    cotisationCapital: taux(
+      CLES.csm,
+      defauts.cotisationCapital,
+      BORNES.cotisationCapital.min,
+      BORNES.cotisationCapital.max,
     ),
   };
 }

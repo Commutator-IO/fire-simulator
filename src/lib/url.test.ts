@@ -56,6 +56,7 @@ describe('decoding', () => {
       anneesCotisees: 24,
       anneesAvantRetraite: 13,
       salaireMoyen: 48_000,
+      cotisationCapital: 0.065,
     });
     expect(decoderEtat(encoderEtat(depart))).toEqual(depart);
   });

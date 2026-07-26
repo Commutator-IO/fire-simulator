@@ -356,6 +356,11 @@ const FR = {
     salaireLabel: 'Salaire annuel brut moyen',
     salaireHint:
       'Moyenne sur la carrière. Une pension à taux plein vaut environ la moitié de ce salaire ; à défaut, une pension moyenne nationale est utilisée.',
+    csmLabel: 'Cotisation santé sur les revenus du capital',
+    csmHint:
+      'Prélevée tant que vous vivez de votre capital sans pension, et seulement si vous y êtes assujetti — en France, la cotisation subsidiaire maladie, 6,5 % au-delà d’un abattement d’environ 23 550 €. Elle s’arrête au versement de la pension, un retraité en étant exonéré. Laissez à zéro si elle ne vous concerne pas.',
+    csmRepereAucune: 'aucune',
+    csmRepereFrance: 'CSM',
     renteResume: (
       mensuel: string,
       ageLegal: number,
@@ -520,6 +525,7 @@ const FR = {
     colImpots: 'Impôts',
     colRevenuNet: 'Revenu net',
     colRente: 'Rente',
+    colCsm: 'Cotisation santé',
     colCapitalFin: 'Capital à la fin',
     colReel: 'En euros d’aujourd’hui',
   },
@@ -1013,6 +1019,11 @@ const EN: Dictionnaire = {
     salaireLabel: 'Average gross annual salary',
     salaireHint:
       'Averaged over the career. A full-rate pension is worth about half of it; failing a figure, a national average pension is used.',
+    csmLabel: 'Health contribution on capital income',
+    csmHint:
+      'Levied while you live off capital without a pension, and only if you are liable — in France the cotisation subsidiaire maladie, 6.5% above an allowance of about €23,550. It stops when the pension starts, a pensioner being exempt. Leave at zero if it does not apply to you.',
+    csmRepereAucune: 'none',
+    csmRepereFrance: 'CSM',
     renteResume: (
       mensuel: string,
       ageLegal: number,
@@ -1181,6 +1192,7 @@ const EN: Dictionnaire = {
     colImpots: 'Tax',
     colRevenuNet: 'Net income',
     colRente: 'Pension',
+    colCsm: 'Health levy',
     colCapitalFin: 'Capital at end',
     colReel: 'In today’s money',
   },

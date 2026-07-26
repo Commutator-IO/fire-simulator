@@ -551,6 +551,23 @@ function Simulateur({
                         placeholder="—"
                         hint={t.saisie.salaireHint}
                       />
+                      <div className="sm:col-span-2">
+                        <Curseur
+                          label={t.saisie.csmLabel}
+                          valeur={enPoints(h.cotisationCapital)}
+                          min={enPoints(BORNES.cotisationCapital.min)}
+                          max={enPoints(BORNES.cotisationCapital.max)}
+                          pas={0.1}
+                          onChange={(v) => maj('cotisationCapital', v / 100)}
+                          rendu={(v) => tauxPct(v / 100)}
+                          saisie={{ suffixe: '%', decimales: 2 }}
+                          reperes={[
+                            { valeur: 0, label: t.saisie.csmRepereAucune },
+                            { valeur: 6.5, label: t.saisie.csmRepereFrance },
+                          ]}
+                          hint={t.saisie.csmHint}
+                        />
+                      </div>
                       {rente.netAnnuel > 0 && (
                         <p className="rounded-xl bg-brand-50 px-4 py-3 text-xs leading-relaxed text-brand-800 sm:col-span-2">
                           {t.saisie.renteResume(
