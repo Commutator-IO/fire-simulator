@@ -55,6 +55,7 @@ export type CleActif =
   // France
   | 'livretA'
   | 'lep'
+  | 'autreLivret'
   | 'liquidites'
   | 'fondsEuros'
   | 'uniteCompte'
@@ -162,6 +163,20 @@ const FRANCE: Actif[] = [
     note: {
       fr: 'Sous condition de revenus. Taux réglementé, net d’impôt, plafond de 10 000 €.',
       en: 'Means-tested. Regulated rate, free of tax, ceiling of €10,000.',
+    },
+  },
+  {
+    cle: 'autreLivret',
+    pays: 'france',
+    categorie: 'liquide',
+    signe: 1,
+    productif: true,
+    impositionRetrait: 0,
+    rendementParDefaut: 0.02,
+    libelle: { fr: 'Autre livret ou épargne', en: 'Other savings account' },
+    note: {
+      fr: 'Un livret bancaire, un compte à terme, une épargne non listée plus haut : sans plafond ni condition de revenus. Indiquez le rendement net que vous en attendez.',
+      en: 'A bank passbook, a term account, any savings not listed above: no ceiling and no means test. Enter the net return you expect from it.',
     },
   },
   {

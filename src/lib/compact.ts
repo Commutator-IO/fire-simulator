@@ -50,6 +50,7 @@ const ACTIFS_COURT: Record<string, string> = {
   // France
   livretA: 'la',
   lep: 'lp',
+  autreLivret: 'lv',
   liquidites: 'lq',
   fondsEuros: 'fe',
   uniteCompte: 'uc',
