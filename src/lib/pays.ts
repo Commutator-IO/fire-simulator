@@ -79,14 +79,6 @@ export type Pays = {
   regimes: Regime[];
 };
 
-/**
- * Age at which a full career is assumed to start, shared by both countries.
- *
- * With the retirement age, it sets how much of a full career an early retiree
- * has completed — and therefore how partial their pension is.
- */
-export const AGE_DEBUT_CARRIERE = 23;
-
 const FRANCE: Regime[] = [
   {
     cle: 'fr-cto',

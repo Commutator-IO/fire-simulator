@@ -22,10 +22,10 @@ describe('compactage des liens', () => {
 
   it('fait un aller-retour fidèle', () => {
     const longue =
-      '?patrimoine=680000&rendement=3.9&retrait=3.5&age=50&salaire=48000&pea=200000&pea-taux=6' +
+      '?patrimoine=680000&rendement=3.9&retrait=3.5&cotise=27&avant=14&salaire=48000&pea=200000&pea-taux=6' +
       '&scpi=40000&reserveSasu=225000&creditResidence=150000&vue=synthese&lang=en';
     expect(etendre(minifier(longue))).toBe(longue);
-    expect(minifier('?age=50&salaire=48000')).toBe('?a=50&s=48000');
+    expect(minifier('?cotise=27&avant=14&salaire=48000')).toBe('?k=27&g=14&s=48000');
   });
 
   it('raccourcit réellement une requête chargée', () => {

@@ -53,7 +53,8 @@ describe('decoding', () => {
       dureeExigee: 20,
       modeRetrait: 'proportionnel',
       pays: 'japon',
-      age: 52,
+      anneesCotisees: 24,
+      anneesAvantRetraite: 13,
       salaireMoyen: 48_000,
     });
     expect(decoderEtat(encoderEtat(depart))).toEqual(depart);

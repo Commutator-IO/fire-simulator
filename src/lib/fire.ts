@@ -1,5 +1,4 @@
 import {
-  AGE_DEBUT_CARRIERE,
   PAYS,
   PAYS_PAR_DEFAUT,
   estClePays,
@@ -66,22 +65,27 @@ export type Hypotheses = {
    */
   pays: ClePays;
   /**
-   * Age at (early) retirement, i.e. now. 0 means "not filled in": no pension is
-   * modelled and the plan runs on capital alone, as before.
+   * Years of pension contributions already credited — the figure your national
+   * pension account gives you (quarters ÷ 4). 0 means "not filled in": no
+   * pension is modelled and the plan runs on capital alone, as before.
    *
-   * When set, a partial pension is estimated from it — see `estimationRente` —
-   * and starts at the country's legal age, covering part of the spending from
-   * then on. This is what tells apart "I retire at the legal age" from "I retire
-   * ten years early and live off capital until the pension kicks in".
+   * Taken as a fact rather than guessed from an age, since a real career has
+   * gaps — study, unemployment, part-time — that an "started at 23, worked
+   * straight through" assumption would miss. It sets how partial the pension is.
    */
-  age: number;
+  anneesCotisees: number;
+  /**
+   * Years from now until the legal retirement age, when the pension starts. The
+   * plan lives on capital alone until then.
+   */
+  anneesAvantRetraite: number;
   /**
    * Average gross annual salary over the career, in today's euros. 0 means "not
    * filled in": the pension then falls back to the country's average full
    * pension instead of a salary-based estimate.
    *
-   * With it, the pension is a replacement rate of this salary, cut down for the
-   * quarters missing when work stops early — the whole point of the question.
+   * With it, the pension is a replacement rate of this salary, cut down by the
+   * proration and the décote — the whole point of the question.
    */
   salaireMoyen: number;
 };
@@ -177,7 +181,8 @@ export const BORNES = {
   inflation: { min: -0.02, max: 0.1 },
   horizon: { min: 5, max: 60 },
   dureeExigee: { min: 5, max: 60 },
-  age: { min: 0, max: 75 },
+  anneesCotisees: { min: 0, max: 50 },
+  anneesAvantRetraite: { min: 0, max: 50 },
   salaireMoyen: { min: 0, max: 1_000_000 },
 } as const;
 
@@ -201,8 +206,9 @@ export const DEFAUTS: Hypotheses = {
   dureeExigee: 30,
   modeRetrait: 'indexe',
   pays: PAYS_PAR_DEFAUT,
-  // 0: no pension modelled, so the plan opens on capital alone.
-  age: 0,
+  // 0 contributions: no pension modelled, so the plan opens on capital alone.
+  anneesCotisees: 0,
+  anneesAvantRetraite: 0,
   salaireMoyen: 0,
 };
 
@@ -228,7 +234,10 @@ export function borner(h: Hypotheses): Hypotheses {
     dureeExigee: Math.min(horizon, Math.round(borne(h.dureeExigee, BORNES.dureeExigee))),
     modeRetrait: h.modeRetrait === 'proportionnel' ? 'proportionnel' : 'indexe',
     pays: estClePays(h.pays) ? h.pays : PAYS_PAR_DEFAUT,
-    age: Math.round(borne(h.age, BORNES.age)),
+    anneesCotisees: Math.round(borne(h.anneesCotisees, BORNES.anneesCotisees)),
+    anneesAvantRetraite: Math.round(
+      borne(h.anneesAvantRetraite, BORNES.anneesAvantRetraite),
+    ),
     salaireMoyen: borne(h.salaireMoyen, BORNES.salaireMoyen),
   };
 }
@@ -265,10 +274,11 @@ export type EstimationRente = {
  * magnitude of its effect on the capital — above all, whether stopping work
  * early, with too few contribution quarters, is what makes the capital run out.
  *
- * From the age work stops and the average salary, two French mechanics are
- * modelled, both country-parameterised (see `pays.ts`):
+ * From the years contributed, the years until the legal age and the average
+ * salary, two French mechanics are modelled, both country-parameterised (see
+ * `pays.ts`):
  *  - proration — the pension is scaled by the share of a full career actually
- *    worked, so fewer years mean a smaller pension;
+ *    contributed, so fewer years mean a smaller pension;
  *  - décote — claiming at the legal age with missing quarters cuts it further,
  *    a penalty per missing quarter that vanishes at the full-rate age (67 in
  *    France), which is why waiting can be worth more than the extra years.
@@ -277,8 +287,8 @@ export type EstimationRente = {
  * a blank salary it falls back to the country's average full pension. Linear
  * proration and a flat pension tax keep it an estimate — and it says so.
  *
- * At age 0 — "not filled in" — there is no pension, and the plan runs on capital
- * alone exactly as before.
+ * With no contributions entered — "not filled in" — there is no pension, and the
+ * plan runs on capital alone exactly as before.
  */
 export function estimationRente(hypotheses: Hypotheses): EstimationRente {
   const h = borner(hypotheses);
@@ -303,14 +313,11 @@ export function estimationRente(hypotheses: Hypotheses): EstimationRente {
     brutAnnuel: 0,
     netAnnuel: 0,
   };
-  if (h.age <= 0) return vide;
+  if (h.anneesCotisees <= 0) return vide;
 
-  // Years contributed, from an assumed career start to the age work stops,
-  // capped at what a full pension requires.
-  const anneesCotisees = Math.min(
-    anneesCarriereRequise,
-    Math.max(0, h.age - AGE_DEBUT_CARRIERE),
-  );
+  // Contributed years, taken as given (from the pension account), capped at what
+  // a full pension requires.
+  const anneesCotisees = Math.min(anneesCarriereRequise, h.anneesCotisees);
   const proratisation =
     anneesCarriereRequise > 0 ? anneesCotisees / anneesCarriereRequise : 0;
 
@@ -332,7 +339,7 @@ export function estimationRente(hypotheses: Hypotheses): EstimationRente {
   return {
     ageLegal,
     ageTauxPlein,
-    delai: Math.max(0, ageLegal - h.age),
+    delai: h.anneesAvantRetraite,
     anneesCotisees,
     proratisation,
     decote,

@@ -347,9 +347,12 @@ const FR = {
     dureeLabel: 'Le capital doit tenir au moins',
     dureeHint:
       'C’est ce qui départage les trois réponses : capital jamais épuisé, épuisé après cette durée, ou avant. Préserver le capital pour toujours et le consommer sur une vie sont deux plans également valables. Plafonné par l’horizon de projection.',
-    ageLabel: 'Âge où vous arrêtez de travailler',
-    ageHint:
-      'Facultatif. Avec le salaire ci-dessous, il estime la pension versée à l’âge légal — réduite si vous arrêtez tôt, faute de trimestres cotisés. Laissez vide pour ignorer les pensions.',
+    cotiseesLabel: 'Années déjà cotisées',
+    cotiseesHint:
+      'D’après votre compte retraite (vos trimestres validés ÷ 4). C’est ce qui décide de la proratisation : plus il en manque sur une carrière complète, plus la pension est réduite. Laissez vide pour ignorer les pensions.',
+    avantLabel: 'Années avant l’âge légal',
+    avantHint: (ageLegal: number) =>
+      `Dans combien d’années vous atteignez l’âge légal de départ (${ageLegal} ans), où la pension commence. Le plan vit du seul capital jusque-là.`,
     salaireLabel: 'Salaire annuel brut moyen',
     salaireHint:
       'Moyenne sur la carrière. Une pension à taux plein vaut environ la moitié de ce salaire ; à défaut, une pension moyenne nationale est utilisée.',
@@ -1001,9 +1004,12 @@ const EN: Dictionnaire = {
     horizonUnite: 'years',
     horizonHint:
       'Early retirement is counted in decades: forty years is nothing out of the ordinary.',
-    ageLabel: 'Age you stop working',
-    ageHint:
-      'Optional. With the salary below, it estimates the pension paid at the legal age — smaller if you stop early, for want of contribution quarters. Leave empty to ignore pensions.',
+    cotiseesLabel: 'Years already contributed',
+    cotiseesHint:
+      'From your pension account (validated quarters ÷ 4). It sets the proration: the more you are short of a full career, the smaller the pension. Leave empty to ignore pensions.',
+    avantLabel: 'Years to the legal age',
+    avantHint: (ageLegal: number) =>
+      `In how many years you reach the legal retirement age (${ageLegal}), when the pension starts. The plan runs on capital alone until then.`,
     salaireLabel: 'Average gross annual salary',
     salaireHint:
       'Averaged over the career. A full-rate pension is worth about half of it; failing a figure, a national average pension is used.',

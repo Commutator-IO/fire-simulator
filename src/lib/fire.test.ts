@@ -145,7 +145,7 @@ describe('edge cases', () => {
         for (const retrait of [0, 0.04, 0.2]) {
           for (const imposition of [0, 0.6]) {
             for (const inflation of [-0.02, 0.1]) {
-              for (const age of [0, 50, 75]) {
+              for (const anneesCotisees of [0, 30, 50]) {
                 for (const salaireMoyen of [0, 60_000]) {
                   const h = {
                     ...BASE,
@@ -154,7 +154,8 @@ describe('edge cases', () => {
                     retrait,
                     imposition,
                     inflation,
-                    age,
+                    anneesCotisees,
+                    anneesAvantRetraite: 10,
                     salaireMoyen,
                   };
                   const nombres = [
@@ -174,15 +175,21 @@ describe('edge cases', () => {
 });
 
 describe('a future pension', () => {
-  it('is nothing until an age is given', () => {
-    const e = estimationRente({ ...BASE, age: 0, salaireMoyen: 40_000 });
+  it('is nothing until contributed years are given', () => {
+    const e = estimationRente({ ...BASE, anneesCotisees: 0, salaireMoyen: 40_000 });
     expect(e.brutAnnuel).toBe(0);
     expect(e.netAnnuel).toBe(0);
   });
 
-  it('prorates and applies a décote when work stops early in France', () => {
-    const e = estimationRente({ ...BASE, pays: 'france', age: 50, salaireMoyen: 40_000 });
-    // Started at 23, stopped at 50 → 27 of the 43 required years.
+  it('prorates and applies a décote for missing quarters in France', () => {
+    const e = estimationRente({
+      ...BASE,
+      pays: 'france',
+      anneesCotisees: 27,
+      anneesAvantRetraite: 14,
+      salaireMoyen: 40_000,
+    });
+    // 27 of the 43 required years.
     expect(e.delai).toBe(14);
     expect(e.proratisation).toBeCloseTo(27 / 43, 6);
     // 16 years short is 64 quarters, but the décote is capped by the 12 quarters
@@ -194,41 +201,67 @@ describe('a future pension', () => {
   });
 
   it('reaches the full rate for a complete career', () => {
-    const e = estimationRente({ ...BASE, pays: 'france', age: 66, salaireMoyen: 40_000 });
+    const e = estimationRente({
+      ...BASE,
+      pays: 'france',
+      anneesCotisees: 43,
+      salaireMoyen: 40_000,
+    });
     expect(e.proratisation).toBe(1);
     expect(e.decote).toBe(0);
     expect(e.brutAnnuel).toBeCloseTo(20_000, 6);
   });
 
   it('falls back to the country-average full pension without a salary', () => {
-    const e = estimationRente({ ...BASE, pays: 'france', age: 60, salaireMoyen: 0 });
+    const e = estimationRente({ ...BASE, pays: 'france', anneesCotisees: 30, salaireMoyen: 0 });
     expect(e.pleineBrute).toBe(pays('france').retraite.renteReferenceBrute);
   });
 
   it('applies no décote where the system has none (Japan)', () => {
-    const e = estimationRente({ ...BASE, pays: 'japon', age: 50, salaireMoyen: 40_000 });
+    const e = estimationRente({
+      ...BASE,
+      pays: 'japon',
+      anneesCotisees: 27,
+      salaireMoyen: 40_000,
+    });
     expect(e.decote).toBe(0);
     expect(e.proratisation).toBeCloseTo(27 / 40, 6);
   });
 
   it('pays nothing before the legal age, then the net pension after it', () => {
-    const p = projeter({ ...BASE, age: 50, salaireMoyen: 40_000 }); // delai = 14
+    const p = projeter({
+      ...BASE,
+      anneesCotisees: 30,
+      anneesAvantRetraite: 14,
+      salaireMoyen: 40_000,
+    });
     expect(p.annees[13].rente).toBe(0); // year 14, still the gap
     expect(p.annees[14].rente).toBeGreaterThan(0); // year 15, pension started
   });
 
   it('spares the capital in indexed mode, pushing back depletion', () => {
     const base = { ...BASE, patrimoine: 250_000, retrait: 0.07, horizon: 60, imposition: 0.2 };
-    const sans = projeter({ ...base, age: 0 });
-    const avec = projeter({ ...base, age: 45, salaireMoyen: 50_000 });
+    const sans = projeter({ ...base, anneesCotisees: 0 });
+    const avec = projeter({
+      ...base,
+      anneesCotisees: 22,
+      anneesAvantRetraite: 19,
+      salaireMoyen: 50_000,
+    });
     expect(sans.anneeEpuisement).not.toBeNull();
     expect(avec.capitalFinal).toBeGreaterThanOrEqual(sans.capitalFinal);
     expect(avec.anneesTenues).toBeGreaterThan(sans.anneesTenues);
   });
 
   it('counts an already-drawn pension in the first year, but not during the gap', () => {
-    expect(sim({ age: 66, salaireMoyen: 40_000 }).renteAnnuelle).toBeGreaterThan(0);
-    expect(sim({ age: 50, salaireMoyen: 40_000 }).renteAnnuelle).toBe(0);
+    // Already at the legal age (no years before it) → counted in year one.
+    expect(
+      sim({ anneesCotisees: 43, anneesAvantRetraite: 0, salaireMoyen: 40_000 }).renteAnnuelle,
+    ).toBeGreaterThan(0);
+    // Still years away → the first year runs on capital alone.
+    expect(
+      sim({ anneesCotisees: 27, anneesAvantRetraite: 14, salaireMoyen: 40_000 }).renteAnnuelle,
+    ).toBe(0);
   });
 });
 

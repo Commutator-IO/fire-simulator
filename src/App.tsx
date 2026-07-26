@@ -526,13 +526,22 @@ function Simulateur({
                     />
                     <div className="grid gap-7 border-t border-ink-200 pt-7 sm:col-span-2 sm:grid-cols-2">
                       <Montant
-                        label={t.saisie.ageLabel}
-                        valeur={h.age}
-                        onChange={(v) => maj('age', v)}
+                        label={t.saisie.cotiseesLabel}
+                        valeur={h.anneesCotisees}
+                        onChange={(v) => maj('anneesCotisees', v)}
                         suffixe={t.saisie.horizonUnite}
-                        max={BORNES.age.max}
+                        max={BORNES.anneesCotisees.max}
                         placeholder="—"
-                        hint={t.saisie.ageHint}
+                        hint={t.saisie.cotiseesHint}
+                      />
+                      <Montant
+                        label={t.saisie.avantLabel}
+                        valeur={h.anneesAvantRetraite}
+                        onChange={(v) => maj('anneesAvantRetraite', v)}
+                        suffixe={t.saisie.horizonUnite}
+                        max={BORNES.anneesAvantRetraite.max}
+                        placeholder="—"
+                        hint={t.saisie.avantHint(rente.ageLegal)}
                       />
                       <Montant
                         label={t.saisie.salaireLabel}
@@ -542,7 +551,7 @@ function Simulateur({
                         placeholder="—"
                         hint={t.saisie.salaireHint}
                       />
-                      {h.age > 0 && rente.netAnnuel > 0 && (
+                      {rente.netAnnuel > 0 && (
                         <p className="rounded-xl bg-brand-50 px-4 py-3 text-xs leading-relaxed text-brand-800 sm:col-span-2">
                           {t.saisie.renteResume(
                             eur(rente.netAnnuel / 12),
