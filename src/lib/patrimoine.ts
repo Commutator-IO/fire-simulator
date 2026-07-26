@@ -175,8 +175,8 @@ const FRANCE: Actif[] = [
     rendementParDefaut: 0.02,
     libelle: { fr: 'Autre livret ou épargne', en: 'Other savings account' },
     note: {
-      fr: 'Un livret bancaire, un compte à terme, une épargne non listée plus haut : sans plafond ni condition de revenus. Indiquez le rendement net que vous en attendez.',
-      en: 'A bank passbook, a term account, any savings not listed above: no ceiling and no means test. Enter the net return you expect from it.',
+      fr: 'Un livret bancaire, un compte à terme, une épargne non listée plus haut : sans plafond ni condition. Contrairement au Livret A, au LDDS et au LEP, ses intérêts sont fiscalisés — indiquez donc le rendement net, une fois la flat tax déduite.',
+      en: 'A bank passbook, a term account, any savings not listed above: no ceiling, no conditions. Unlike the Livret A, LDDS and LEP, its interest is taxed — so enter the net return, once the flat tax is taken out.',
     },
   },
   {
