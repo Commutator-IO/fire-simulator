@@ -620,6 +620,13 @@ function Simulateur({
                             : t.stats.eurosAujourdhui
                         }
                       />
+                      {rente.netAnnuel > 0 && (
+                        <Stat
+                          label={t.stats.rente}
+                          valeur={eur(rente.netAnnuel / 12)}
+                          annexe={t.stats.renteAnnexe(rente.ageLegal, rente.delai)}
+                        />
+                      )}
                     </dl>
 
                   </div>

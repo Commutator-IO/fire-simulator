@@ -424,6 +424,9 @@ const FR = {
     capitalDans: (annees: number) => `Capital dans ${annees} ans`,
     eurosCourants: 'euros courants',
     eurosAujourdhui: 'd’aujourd’hui',
+    rente: 'Rente nette estimée',
+    renteAnnexe: (ageLegal: number, delai: number) =>
+      delai > 0 ? `/mois, à ${ageLegal} ans` : `/mois, dès ${ageLegal} ans`,
     noteImpot:
       'L’impôt est supposé porter sur la totalité du retrait, à un taux unique. C’est une simplification volontaire : les enveloppes réelles ne taxent que la part de plus-value, chacune à sa façon.',
     mentionLegale:
@@ -1079,6 +1082,9 @@ const EN: Dictionnaire = {
     capitalDans: (annees: number) => `Capital in ${annees} years`,
     eurosCourants: 'nominal',
     eurosAujourdhui: 'in today’s money',
+    rente: 'Estimated net pension',
+    renteAnnexe: (ageLegal: number, delai: number) =>
+      delai > 0 ? `/mo, at ${ageLegal}` : `/mo, from ${ageLegal}`,
     noteImpot:
       'Tax is assumed to fall on the whole withdrawal, at a single rate. That is a deliberate simplification: real accounts tax only the capital-gain share, each in its own way.',
     mentionLegale:
