@@ -347,6 +347,37 @@ const FR = {
     dureeLabel: 'Le capital doit tenir au moins',
     dureeHint:
       'C’est ce qui départage les trois réponses : capital jamais épuisé, épuisé après cette durée, ou avant. Préserver le capital pour toujours et le consommer sur une vie sont deux plans également valables. Plafonné par l’horizon de projection.',
+    cotiseesLabel: 'Années déjà cotisées',
+    cotiseesHint:
+      'D’après votre compte retraite (vos trimestres validés ÷ 4). C’est ce qui décide de la proratisation : plus il en manque sur une carrière complète, plus la pension est réduite. Laissez vide pour ignorer les pensions.',
+    avantLabel: 'Années avant l’âge légal',
+    avantHint: (ageLegal: number) =>
+      `Dans combien d’années vous atteignez l’âge légal de départ (${ageLegal} ans), où la pension commence. Le plan vit du seul capital jusque-là.`,
+    salaireLabel: 'Salaire annuel brut moyen',
+    salaireHint:
+      'Moyenne sur la carrière. Une pension à taux plein vaut environ la moitié de ce salaire ; à défaut, une pension moyenne nationale est utilisée.',
+    csmLabel: 'Cotisation santé sur les revenus du capital',
+    csmHint:
+      'Prélevée tant que vous vivez de votre capital sans pension, et seulement si vous y êtes assujetti — en France, la cotisation subsidiaire maladie, 6,5 % au-delà d’un abattement d’environ 23 550 €. Elle s’arrête au versement de la pension, un retraité en étant exonéré. Laissez à zéro si elle ne vous concerne pas.',
+    csmRepereAucune: 'aucune',
+    csmRepereFrance: 'CSM',
+    renteResume: (
+      mensuel: string,
+      ageLegal: number,
+      delai: number,
+      proratisation: string,
+      decote: string | null,
+      ageTauxPlein: number,
+    ) => {
+      const debut =
+        delai > 0
+          ? `à partir de ${ageLegal} ans, dans ${delai} an${delai > 1 ? 's' : ''} — d’ici là, le plan vit du seul capital`
+          : 'dès à présent';
+      const cause = decote
+        ? `, décote de ${decote} pour trimestres manquants comprise (évitable en partant à ${ageTauxPlein} ans)`
+        : '';
+      return `Rente estimée : environ ${mensuel} nets par mois ${debut}. Elle vaut ${proratisation} d’une carrière complète${cause}. Hypothèse générale, indépendante de vos droits réels.`;
+    },
     modeLabel: 'Façon de retirer',
     modeIndexe: 'Montant fixe indexé',
     modeProportionnel: '% du capital',
@@ -401,6 +432,9 @@ const FR = {
     capitalDans: (annees: number) => `Capital dans ${annees} ans`,
     eurosCourants: 'euros courants',
     eurosAujourdhui: 'd’aujourd’hui',
+    rente: 'Rente nette estimée',
+    renteAnnexe: (ageLegal: number, delai: number) =>
+      delai > 0 ? `/mois, à ${ageLegal} ans` : `/mois, dès ${ageLegal} ans`,
     noteImpot:
       'L’impôt est supposé porter sur la totalité du retrait, à un taux unique. C’est une simplification volontaire : les enveloppes réelles ne taxent que la part de plus-value, chacune à sa façon.',
     mentionLegale:
@@ -432,6 +466,7 @@ const FR = {
     seriePays: (libelle: string, retrait: string, mensuel: string) =>
       `${libelle} — retrait ${retrait}, ${mensuel} net par mois`,
     repereDuree: (annees: number) => `${annees} ans exigés`,
+    repereRente: (annees: number) => `rente dans ${annees} an${annees > 1 ? 's' : ''}`,
     eurosCourants: 'Euros courants',
     pouvoirAchat: 'Pouvoir d’achat',
     noteCourant:
@@ -489,6 +524,8 @@ const FR = {
     colRetraitBrut: 'Retrait brut',
     colImpots: 'Impôts',
     colRevenuNet: 'Revenu net',
+    colRente: 'Rente',
+    colCsm: 'Cotisation santé',
     colCapitalFin: 'Capital à la fin',
     colReel: 'En euros d’aujourd’hui',
   },
@@ -973,6 +1010,37 @@ const EN: Dictionnaire = {
     horizonUnite: 'years',
     horizonHint:
       'Early retirement is counted in decades: forty years is nothing out of the ordinary.',
+    cotiseesLabel: 'Years already contributed',
+    cotiseesHint:
+      'From your pension account (validated quarters ÷ 4). It sets the proration: the more you are short of a full career, the smaller the pension. Leave empty to ignore pensions.',
+    avantLabel: 'Years to the legal age',
+    avantHint: (ageLegal: number) =>
+      `In how many years you reach the legal retirement age (${ageLegal}), when the pension starts. The plan runs on capital alone until then.`,
+    salaireLabel: 'Average gross annual salary',
+    salaireHint:
+      'Averaged over the career. A full-rate pension is worth about half of it; failing a figure, a national average pension is used.',
+    csmLabel: 'Health contribution on capital income',
+    csmHint:
+      'Levied while you live off capital without a pension, and only if you are liable — in France the cotisation subsidiaire maladie, 6.5% above an allowance of about €23,550. It stops when the pension starts, a pensioner being exempt. Leave at zero if it does not apply to you.',
+    csmRepereAucune: 'none',
+    csmRepereFrance: 'CSM',
+    renteResume: (
+      mensuel: string,
+      ageLegal: number,
+      delai: number,
+      proratisation: string,
+      decote: string | null,
+      ageTauxPlein: number,
+    ) => {
+      const debut =
+        delai > 0
+          ? `from age ${ageLegal}, in ${delai} year${delai > 1 ? 's' : ''} — until then the plan runs on capital alone`
+          : 'from now';
+      const cause = decote
+        ? `, including a ${decote} décote for missing quarters (avoidable by leaving at ${ageTauxPlein})`
+        : '';
+      return `Estimated pension: about ${mensuel} net per month ${debut}. It is worth ${proratisation} of a full career${cause}. A general assumption, independent of your actual entitlements.`;
+    },
     dureeLabel: 'The capital has to last at least',
     dureeHint:
       'This is what separates the three answers: capital never exhausted, exhausted after this many years, or before. Preserving capital for ever and spending it over a lifetime are both legitimate plans. Capped by the projection horizon.',
@@ -1031,6 +1099,9 @@ const EN: Dictionnaire = {
     capitalDans: (annees: number) => `Capital in ${annees} years`,
     eurosCourants: 'nominal',
     eurosAujourdhui: 'in today’s money',
+    rente: 'Estimated net pension',
+    renteAnnexe: (ageLegal: number, delai: number) =>
+      delai > 0 ? `/mo, at ${ageLegal}` : `/mo, from ${ageLegal}`,
     noteImpot:
       'Tax is assumed to fall on the whole withdrawal, at a single rate. That is a deliberate simplification: real accounts tax only the capital-gain share, each in its own way.',
     mentionLegale:
@@ -1062,6 +1133,7 @@ const EN: Dictionnaire = {
     seriePays: (libelle: string, retrait: string, mensuel: string) =>
       `${libelle} — ${retrait} withdrawal, ${mensuel} net a month`,
     repereDuree: (annees: number) => `${annees} years required`,
+    repereRente: (annees: number) => `pension in ${annees} year${annees > 1 ? 's' : ''}`,
     eurosCourants: 'Nominal euros',
     pouvoirAchat: 'Purchasing power',
     noteCourant:
@@ -1119,6 +1191,8 @@ const EN: Dictionnaire = {
     colRetraitBrut: 'Gross withdrawal',
     colImpots: 'Tax',
     colRevenuNet: 'Net income',
+    colRente: 'Pension',
+    colCsm: 'Health levy',
     colCapitalFin: 'Capital at end',
     colReel: 'In today’s money',
   },

@@ -53,6 +53,10 @@ describe('decoding', () => {
       dureeExigee: 20,
       modeRetrait: 'proportionnel',
       pays: 'japon',
+      anneesCotisees: 24,
+      anneesAvantRetraite: 13,
+      salaireMoyen: 48_000,
+      cotisationCapital: 0.065,
     });
     expect(decoderEtat(encoderEtat(depart))).toEqual(depart);
   });

@@ -31,6 +31,8 @@ type Props = {
   mode: ModeAffichage;
   /** Year the capital is required to reach, drawn as a vertical marker. */
   dureeExigee: number;
+  /** Year a future pension starts, drawn as a vertical marker; 0 for none. */
+  anneeRente?: number;
 };
 
 const L = 64; // left margin
@@ -60,7 +62,14 @@ function pasLisible(brut: number): number {
  * as a horizontal reference: staying above that line *is* the answer to
  * "without touching the capital".
  */
-export function Projection({ series, bande, patrimoineInitial, mode, dureeExigee }: Props) {
+export function Projection({
+  series,
+  bande,
+  patrimoineInitial,
+  mode,
+  dureeExigee,
+  anneeRente = 0,
+}: Props) {
   const t = useTextes();
   const { eur, eurCompact } = useFormats();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -233,6 +242,29 @@ export function Projection({ series, bande, patrimoineInitial, mode, dureeExigee
               fill="var(--color-ink-400)"
             >
               {t.projection.repereDuree(dureeExigee)}
+            </text>
+          </g>
+        )}
+
+        {/* The year a future pension starts and begins sparing the capital. */}
+        {anneeRente > 0 && anneeRente < horizon && (
+          <g>
+            <line
+              x1={x(anneeRente)}
+              x2={x(anneeRente)}
+              y1={T}
+              y2={H - B}
+              stroke="var(--color-brand-400)"
+              strokeWidth="1"
+              strokeDasharray="2 3"
+            />
+            <text
+              x={x(anneeRente) + 5}
+              y={T + 24}
+              fontSize="10"
+              fill="var(--color-brand-600)"
+            >
+              {t.projection.repereRente(anneeRente)}
             </text>
           </g>
         )}

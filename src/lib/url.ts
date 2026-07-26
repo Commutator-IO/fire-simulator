@@ -40,6 +40,10 @@ const CLES = {
   duree: 'duree',
   mode: 'mode',
   pays: 'pays',
+  cotise: 'cotise',
+  avant: 'avant',
+  salaire: 'salaire',
+  csm: 'csm',
   langue: 'lang',
   vue: 'vue',
   videPatrimoine: 'vide',
@@ -139,6 +143,14 @@ export function encoderEtat(
   ajouter(CLES.duree, arrondi(etat.dureeExigee), arrondi(defauts.dureeExigee));
   ajouter(CLES.mode, etat.modeRetrait, defauts.modeRetrait);
   ajouter(CLES.pays, etat.pays, defauts.pays);
+  ajouter(CLES.cotise, arrondi(etat.anneesCotisees), arrondi(defauts.anneesCotisees));
+  ajouter(
+    CLES.avant,
+    arrondi(etat.anneesAvantRetraite),
+    arrondi(defauts.anneesAvantRetraite),
+  );
+  ajouter(CLES.salaire, arrondi(etat.salaireMoyen), arrondi(defauts.salaireMoyen));
+  ajouter(CLES.csm, enPoints(etat.cotisationCapital), enPoints(defauts.cotisationCapital));
   if (langue !== null) params.set(CLES.langue, langue);
   if (vue !== undefined && vue !== 'patrimoine') params.set(CLES.vue, vue);
 
@@ -292,6 +304,30 @@ export function decoderEtat(recherche: string, defauts: Hypotheses = DEFAUTS): H
       ? mode
       : defauts.modeRetrait) as ModeRetrait,
     pays: estClePays(paysLu) ? paysLu : defauts.pays,
+    anneesCotisees: nombre(
+      p.get(CLES.cotise),
+      defauts.anneesCotisees,
+      BORNES.anneesCotisees.min,
+      BORNES.anneesCotisees.max,
+    ),
+    anneesAvantRetraite: nombre(
+      p.get(CLES.avant),
+      defauts.anneesAvantRetraite,
+      BORNES.anneesAvantRetraite.min,
+      BORNES.anneesAvantRetraite.max,
+    ),
+    salaireMoyen: nombre(
+      p.get(CLES.salaire),
+      defauts.salaireMoyen,
+      BORNES.salaireMoyen.min,
+      BORNES.salaireMoyen.max,
+    ),
+    cotisationCapital: taux(
+      CLES.csm,
+      defauts.cotisationCapital,
+      BORNES.cotisationCapital.min,
+      BORNES.cotisationCapital.max,
+    ),
   };
 }
 
