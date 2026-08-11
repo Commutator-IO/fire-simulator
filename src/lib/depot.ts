@@ -10,6 +10,9 @@ export const DEPOT = 'https://github.com/Commutator-IO/fire-simulator';
 
 export const LIEN_ISSUES = `${DEPOT}/issues`;
 
+/** The site this tool belongs to, linked from the footer. */
+export const SITE = 'https://www.commutator.io';
+
 /**
  * URL of a new issue, prefilled with a template. `lienSimulation` is the
  * shareable link of the simulation being viewed, so the report reproduces

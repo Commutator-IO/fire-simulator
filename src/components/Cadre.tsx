@@ -1,4 +1,4 @@
-import { DEPOT, LIEN_ISSUES } from '../lib/depot';
+import { DEPOT, LIEN_ISSUES, SITE } from '../lib/depot';
 import { useTextes } from '../lib/contexte';
 import { CODES_LANGUES, LANGUES, NOMS_LANGUES, type Langue } from '../lib/i18n';
 import type { Vue } from '../lib/url';
@@ -180,6 +180,12 @@ export function Pied() {
         <div className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-3">
           <p>{t.pied.resume}</p>
           <p className="flex flex-wrap gap-x-5 gap-y-1">
+            {/* Retour au site dont l'outil dépend : dans le même onglet, parce
+                que c'est une navigation vers le parent, pas une référence
+                externe qu'on consulte à côté. */}
+            <a href={SITE} className="transition hover:text-ink-900">
+              {t.pied.site}
+            </a>
             <a
               href={LIEN_ISSUES}
               target="_blank"

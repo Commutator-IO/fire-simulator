@@ -670,6 +670,7 @@ const FR = {
     resume: 'Simulateur d’indépendance financière — hypothèses simplifiées.',
     signaler: 'Signaler une erreur',
     code: 'Code source',
+    site: 'commutator.io',
     mention:
       'Outil informatif. Les montants affichés supposent un rendement constant et une fiscalité réduite à un taux unique : ils ne constituent ni une prévision, ni un conseil en investissement. Rien n’est enregistré, aucune donnée ne quitte votre navigateur.',
   },
@@ -1336,6 +1337,7 @@ const EN: Dictionnaire = {
     resume: 'Financial independence simulator — simplified assumptions.',
     signaler: 'Report an error',
     code: 'Source code',
+    site: 'commutator.io',
     mention:
       'An informational tool. The amounts shown assume a constant return and tax reduced to a single rate: they are neither a forecast nor investment advice. Nothing is stored, and no data leaves your browser.',
   },
