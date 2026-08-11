@@ -398,11 +398,15 @@ Chaque poussée sur `main` déclenche [le workflow GitHub Actions](.github/workf
 lint, tests, build, puis publication sur GitHub Pages. Une pull request fait
 tourner les vérifications sans déployer.
 
-Le site est actuellement servi depuis
-<https://commutator-io.github.io/fire-simulator/>. Les chemins produits par le
-build sont relatifs, si bien qu'aucun réglage n'est à changer le jour où un
-domaine dédié le servira depuis la racine — il suffira d'ajouter
-l'enregistrement DNS et le domaine dans les réglages Pages du dépôt.
+Le site est servi depuis <https://fire.commutator.io> ; l'adresse de projet
+<https://commutator-io.github.io/fire-simulator/> y redirige. Les chemins
+produits par le build sont relatifs, si bien que les deux fonctionnent sans
+réglage particulier.
+
+C'est `fire.commutator.io` qui fait foi : c'est l'URL déclarée dans
+[`public/sitemap.xml`](public/sitemap.xml) et dans
+[`public/robots.txt`](public/robots.txt). Un changement de domaine demande de
+mettre à jour ces deux fichiers.
 
 ## La suite
 

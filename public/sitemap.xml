@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml"
+>
+  <url>
+    <loc>https://fire.commutator.io/</loc>
+    <lastmod>2026-08-11</lastmod>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://fire.commutator.io/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fire.commutator.io/?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://fire.commutator.io/"/>
+  </url>
+
+  <url>
+    <loc>https://fire.commutator.io/?vue=fire</loc>
+    <lastmod>2026-08-11</lastmod>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://fire.commutator.io/?vue=fire"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fire.commutator.io/?vue=fire&amp;lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://fire.commutator.io/?vue=fire"/>
+  </url>
+
+  <url>
+    <loc>https://fire.commutator.io/?vue=synthese</loc>
+    <lastmod>2026-08-11</lastmod>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://fire.commutator.io/?vue=synthese"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fire.commutator.io/?vue=synthese&amp;lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://fire.commutator.io/?vue=synthese"/>
+  </url>
+</urlset>
