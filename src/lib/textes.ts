@@ -441,6 +441,10 @@ const FR = {
       'Simulation indicative, à rendement constant. Elle ne remplace pas l’avis d’un professionnel et ne constitue pas un conseil en investissement.',
   },
 
+  impression: {
+    note: 'Version imprimée du plan de retraits, détail compris. Pour un document condensé, l’onglet Synthèse est conçu pour l’impression. Cette simulation en ligne :',
+  },
+
   partage: {
     copier: 'Copier le lien de cette simulation',
     copie: 'Lien copié',
@@ -1107,6 +1111,10 @@ const EN: Dictionnaire = {
       'Tax is assumed to fall on the whole withdrawal, at a single rate. That is a deliberate simplification: real accounts tax only the capital-gain share, each in its own way.',
     mentionLegale:
       'An indicative simulation, at a constant return. It does not replace professional advice and is not investment advice.',
+  },
+
+  impression: {
+    note: 'Printed withdrawal plan, detail included. For a condensed document, the Summary tab is designed for printing. This simulation online:',
   },
 
   partage: {

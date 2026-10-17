@@ -90,7 +90,7 @@ export function Objectif({
               <button
                 type="button"
                 onClick={() => onPatrimoine(requis)}
-                className="mt-5 self-start rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700"
+                className="mt-5 self-start rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 print:hidden"
               >
                 {t.objectif.appliquer}
               </button>

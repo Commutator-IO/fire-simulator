@@ -123,7 +123,7 @@ export function Detail({
         <button
           type="button"
           onClick={() => setTableauOuvert((v) => !v)}
-          className="text-sm font-medium text-brand-600 transition hover:text-brand-700"
+          className="text-sm font-medium text-brand-600 transition hover:text-brand-700 print:hidden"
           aria-expanded={tableauOuvert}
         >
           {tableauOuvert ? t.detail.masquerTableau : t.detail.afficherTableau}

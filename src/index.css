@@ -138,6 +138,35 @@
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
+
+  /* The withdrawal plan: a long page made for scrolling, laid out here for
+     paper. Screen-sized spacing goes, headings stay with what follows them,
+     and the chart, the tables and the cards are never cut mid-height. */
+  .impression-plan section > div {
+    padding-top: 6mm;
+    padding-bottom: 6mm;
+  }
+
+  .impression-plan h2,
+  .impression-plan h3 {
+    break-after: avoid;
+  }
+
+  .impression-plan figure,
+  .impression-plan tr,
+  .impression-plan dl,
+  .impression-plan p {
+    break-inside: avoid;
+  }
+
+  .impression-plan .card {
+    box-shadow: none;
+  }
+
+  /* The method reads as an appendix: it starts on its own page. */
+  .impression-plan #methode {
+    break-before: page;
+  }
 }
 
 /* --- Slider ------------------------------------------------------------- */

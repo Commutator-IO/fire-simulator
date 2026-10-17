@@ -317,10 +317,17 @@ function Simulateur({
       {vue === 'locatif' && <Locatif />}
 
       {vue === 'fire' && (
-      <main>
+      <main className="impression-plan">
+        {/* On paper the address bar is gone: the link is how the reader gets
+            back to this exact plan, and the summary is the condensed version. */}
+        <p className="hidden text-xs leading-relaxed text-ink-500 print:block">
+          {t.impression.note}{' '}
+          <span className="break-all text-ink-700">{lien}</span>
+        </p>
+
         {/* ---------------------------------------------------------- Hero */}
         <section className="border-b border-ink-200/70 bg-white">
-          <div className="mx-auto max-w-6xl px-5 pt-12 pb-12 sm:pt-18 sm:pb-16">
+          <div className="mx-auto max-w-6xl px-5 pt-12 pb-12 sm:pt-18 sm:pb-16 print:pt-6 print:pb-6">
             <p className="mb-5 inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">
               <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
               {t.hero.badge}
@@ -469,7 +476,7 @@ function Simulateur({
                 <button
                   type="button"
                   onClick={() => setAvanceOuvert((v) => !v)}
-                  className="mt-7 text-sm font-medium text-brand-600 transition hover:text-brand-700"
+                  className="mt-7 text-sm font-medium text-brand-600 transition hover:text-brand-700 print:hidden"
                   aria-expanded={avanceOuvert}
                 >
                   {avanceOuvert ? t.saisie.masquer : t.saisie.afficher}{' '}
@@ -611,7 +618,7 @@ function Simulateur({
                   hors de l'écran passe pour disparu, ce qu'il faisait avant.
                   Aucune hauteur maximale : un ascenseur dans un panneau
                   épinglé est plus laid que le débordement qu'il corrige. */}
-              <div className="lg:sticky lg:top-24">
+              <div className="lg:sticky lg:top-24 print:static">
                 <div className="card overflow-hidden">
                   <Verdict h={h} r={r} niveau={niveau} projection={central.projection} />
 
@@ -658,7 +665,9 @@ function Simulateur({
                   </div>
                 </div>
 
-                <BoutonPartage lien={lien} />
+                <div className="print:hidden">
+                  <BoutonPartage lien={lien} />
+                </div>
               </div>
 
               <p className="mt-5 rounded-xl bg-ink-50 px-4 py-3 text-xs leading-relaxed text-ink-500">
@@ -686,7 +695,7 @@ function Simulateur({
                     : t.projection.introPays}
                 </p>
               </div>
-              <div className="grid w-full gap-3 sm:w-80">
+              <div className="grid w-full gap-3 sm:w-80 print:hidden">
                 <Segments
                   valeur={comparaison}
                   options={[
@@ -709,7 +718,7 @@ function Simulateur({
               </div>
             </div>
 
-            <div className="card mt-8 p-5 sm:p-8">
+            <div className="card mt-8 break-inside-avoid p-5 sm:p-8">
               <Projection
                 series={series}
                 bande={comparaison === 'rendement' ? ['pessimiste', 'optimiste'] : undefined}
@@ -779,7 +788,7 @@ function Simulateur({
       {/* On mobile the verdict sits far above the sliders, so the answer is
           kept visible at all times. */}
       {vue === 'fire' && (
-      <div className="sticky bottom-0 z-20 border-t border-ink-200 bg-white/95 backdrop-blur lg:hidden">
+      <div className="sticky bottom-0 z-20 border-t border-ink-200 bg-white/95 backdrop-blur lg:hidden print:hidden">
         <div className="flex items-center justify-between gap-4 px-5 py-3">
           <div>
             <p className="text-xs text-ink-400">{t.mobile.revenu}</p>
