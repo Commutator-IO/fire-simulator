@@ -47,6 +47,7 @@ const CLES = {
   verse: 'verse',
   ageLegal: 'agelegal',
   tauxPlein: 'tauxplein',
+  releve: 'releve',
   langue: 'lang',
   vue: 'vue',
   videPatrimoine: 'vide',
@@ -157,6 +158,7 @@ export function encoderEtat(
   ajouter(CLES.verse, arrondi(etat.versements), arrondi(defauts.versements));
   ajouter(CLES.ageLegal, arrondi(etat.ageLegal), arrondi(defauts.ageLegal));
   ajouter(CLES.tauxPlein, arrondi(etat.ageTauxPlein), arrondi(defauts.ageTauxPlein));
+  ajouter(CLES.releve, arrondi(etat.renteReleve), arrondi(defauts.renteReleve));
   if (langue !== null) params.set(CLES.langue, langue);
   if (vue !== undefined && vue !== 'patrimoine') params.set(CLES.vue, vue);
 
@@ -351,6 +353,12 @@ export function decoderEtat(recherche: string, defauts: Hypotheses = DEFAUTS): H
       defauts.ageTauxPlein,
       BORNES.ageTauxPlein.min,
       BORNES.ageTauxPlein.max,
+    ),
+    renteReleve: nombre(
+      p.get(CLES.releve),
+      defauts.renteReleve,
+      BORNES.renteReleve.min,
+      BORNES.renteReleve.max,
     ),
   };
 }

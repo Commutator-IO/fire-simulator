@@ -43,6 +43,7 @@ const SCALAIRES: Record<string, string> = {
   verse: 'b',
   agelegal: 'a',
   tauxplein: 't',
+  releve: 'r',
   vue: 'v',
   lang: 'l',
   vide: 'x',

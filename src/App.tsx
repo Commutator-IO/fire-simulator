@@ -152,7 +152,8 @@ function Simulateur({
       h.modeRetrait !== DEFAUTS.modeRetrait ||
       // Same for custom pension ages: they reshape the pension the verdict counts.
       h.ageLegal !== DEFAUTS.ageLegal ||
-      h.ageTauxPlein !== DEFAUTS.ageTauxPlein,
+      h.ageTauxPlein !== DEFAUTS.ageTauxPlein ||
+      h.renteReleve !== DEFAUTS.renteReleve,
   );
 
   const maj = <K extends keyof Hypotheses>(cle: K, valeur: Hypotheses[K]) =>
@@ -600,6 +601,16 @@ function Simulateur({
                           tr(paysCourant.libelle),
                         )}
                       />
+                      <Montant
+                        label={t.saisie.releveLabel}
+                        valeur={h.renteReleve}
+                        onChange={(v) => maj('renteReleve', v)}
+                        max={BORNES.renteReleve.max}
+                        placeholder="—"
+                        hint={t.saisie.releveHint(
+                          pct(paysCourant.retraite.tauxImpositionRente, 0),
+                        )}
+                      />
                       <div className="sm:col-span-2">
                         <Curseur
                           label={t.saisie.csmLabel}
@@ -617,9 +628,10 @@ function Simulateur({
                           hint={t.saisie.csmHint}
                         />
                       </div>
-                      {rente.netAnnuel > 0 && (
+                      {rente.source !== null && rente.netAnnuel > 0 && (
                         <p className="rounded-xl bg-brand-50 px-4 py-3 text-xs leading-relaxed text-brand-800 sm:col-span-2">
                           {t.saisie.renteResume(
+                            rente.source,
                             eur(rente.netAnnuel / 12),
                             rente.ageLegal,
                             rente.delai,

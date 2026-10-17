@@ -355,7 +355,7 @@ const FR = {
       'C’est ce qui départage les trois réponses : capital jamais épuisé, épuisé après cette durée, ou avant. Préserver le capital pour toujours et le consommer sur une vie sont deux plans également valables. Plafonné par l’horizon de projection.',
     cotiseesLabel: 'Années déjà cotisées',
     cotiseesHint:
-      'D’après votre compte retraite (vos trimestres validés ÷ 4). C’est ce qui décide de la proratisation : plus il en manque sur une carrière complète, plus la pension est réduite. Laissez vide pour ignorer les pensions.',
+      'D’après votre compte retraite (vos trimestres validés ÷ 4). C’est ce qui décide de la proratisation : plus il en manque sur une carrière complète, plus la pension est réduite. Laissez vide, ainsi que le montant du relevé, pour ignorer les pensions.',
     avantLabel: 'Années avant l’âge légal',
     avantHint: (ageLegal: number) =>
       `Dans combien d’années vous atteignez l’âge légal de départ (${ageLegal} ans), où la pension commence. Le plan vit du seul capital jusque-là.`,
@@ -368,12 +368,16 @@ const FR = {
     ageTauxPleinLabel: 'Âge du taux plein automatique',
     ageTauxPleinHint: (agePays: number, pays: string) =>
       `Laissé vide, ${agePays} ans en ${pays}. La décote ne joue qu’entre l’âge d’ouverture et celui-ci : plus l’écart est court, plus elle est faible.`,
+    releveLabel: 'Pension brute mensuelle du relevé',
+    releveHint: (taux: string) =>
+      `Le montant indiqué par votre relevé de situation ou votre estimation officielle, à l’âge où vous comptez partir. Il remplace l’estimation par proratisation et décote ; seul l’impôt forfaitaire de ${taux} est appliqué pour obtenir le net. Laissez vide pour garder l’estimation.`,
     csmLabel: 'Cotisation santé sur les revenus du capital',
     csmHint:
       'Prélevée tant que vous vivez de votre capital sans pension, et seulement si vous y êtes assujetti — en France, la cotisation subsidiaire maladie, 6,5 % au-delà d’un abattement d’environ 23 550 €. Elle s’arrête au versement de la pension, un retraité en étant exonéré. Laissez à zéro si elle ne vous concerne pas.',
     csmRepereAucune: 'aucune',
     csmRepereFrance: 'CSM',
     renteResume: (
+      source: 'releve' | 'estimation',
       mensuel: string,
       ageLegal: number,
       delai: number,
@@ -385,6 +389,8 @@ const FR = {
         delai > 0
           ? `à partir de ${ageLegal} ans, dans ${delai} an${delai > 1 ? 's' : ''} — d’ici là, le plan vit du seul capital`
           : 'dès à présent';
+      if (source === 'releve')
+        return `Rente d’après votre relevé : environ ${mensuel} nets par mois ${debut}. Le montant saisi remplace l’estimation.`;
       const cause = decote
         ? `, décote de ${decote} pour trimestres manquants comprise (évitable en partant à ${ageTauxPlein} ans)`
         : '';
@@ -1044,7 +1050,7 @@ const EN: Dictionnaire = {
       'Early retirement is counted in decades: forty years is nothing out of the ordinary.',
     cotiseesLabel: 'Years already contributed',
     cotiseesHint:
-      'From your pension account (validated quarters ÷ 4). It sets the proration: the more you are short of a full career, the smaller the pension. Leave empty to ignore pensions.',
+      'From your pension account (validated quarters ÷ 4). It sets the proration: the more you are short of a full career, the smaller the pension. Leave empty, along with the statement amount, to ignore pensions.',
     avantLabel: 'Years to the legal age',
     avantHint: (ageLegal: number) =>
       `In how many years you reach the legal retirement age (${ageLegal}), when the pension starts. The plan runs on capital alone until then.`,
@@ -1057,12 +1063,16 @@ const EN: Dictionnaire = {
     ageTauxPleinLabel: 'Age of the automatic full rate',
     ageTauxPleinHint: (agePays: number, pays: string) =>
       `Left empty, ${agePays} in ${pays}. The décote only applies between the opening age and this one: the shorter the gap, the smaller it is.`,
+    releveLabel: 'Monthly gross pension from your statement',
+    releveHint: (taux: string) =>
+      `The amount shown on your official pension statement or estimate, at the age you plan to leave. It replaces the estimate from proration and décote; only the flat ${taux} tax is applied to reach the net figure. Leave empty to keep the estimate.`,
     csmLabel: 'Health contribution on capital income',
     csmHint:
       'Levied while you live off capital without a pension, and only if you are liable — in France the cotisation subsidiaire maladie, 6.5% above an allowance of about €23,550. It stops when the pension starts, a pensioner being exempt. Leave at zero if it does not apply to you.',
     csmRepereAucune: 'none',
     csmRepereFrance: 'CSM',
     renteResume: (
+      source: 'releve' | 'estimation',
       mensuel: string,
       ageLegal: number,
       delai: number,
@@ -1074,6 +1084,8 @@ const EN: Dictionnaire = {
         delai > 0
           ? `from age ${ageLegal}, in ${delai} year${delai > 1 ? 's' : ''} — until then the plan runs on capital alone`
           : 'from now';
+      if (source === 'releve')
+        return `Pension from your statement: about ${mensuel} net per month ${debut}. The amount entered replaces the estimate.`;
       const cause = decote
         ? `, including a ${decote} décote for missing quarters (avoidable by leaving at ${ageTauxPlein})`
         : '';

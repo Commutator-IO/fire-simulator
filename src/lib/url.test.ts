@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { decoderComposition, decoderEtat, decoderVue, encoderEtat } from './url';
 import { actif, compositionVide, type CleActif } from './patrimoine';
 import { BORNES, DEFAUTS, type Hypotheses } from './fire';
+import { etendre, minifier } from './compact';
 
 const etat = (sur: Partial<Hypotheses> = {}): Hypotheses => ({ ...DEFAUTS, ...sur });
 
@@ -60,6 +61,7 @@ describe('decoding', () => {
       versements: 420_000,
       ageLegal: 57,
       ageTauxPlein: 59,
+      renteReleve: 1_850,
     });
     expect(decoderEtat(encoderEtat(depart))).toEqual(depart);
   });
@@ -217,6 +219,24 @@ describe('retirement ages', () => {
     const h = decoderEtat('?patrimoine=750000');
     expect(h.ageLegal).toBe(0);
     expect(h.ageTauxPlein).toBe(0);
+  });
+});
+
+describe('pension from the statement', () => {
+  it('is written only once entered, and comes back', () => {
+    const depart = etat({ renteReleve: 1_850 });
+    expect(encoderEtat(depart)).toBe('?releve=1850');
+    expect(decoderEtat(encoderEtat(depart))).toEqual(depart);
+  });
+
+  it('survives the minified link', () => {
+    const depart = etat({ renteReleve: 1_850 });
+    expect(minifier(encoderEtat(depart))).toBe('?r=1850');
+    expect(decoderEtat(etendre(minifier(encoderEtat(depart))))).toEqual(depart);
+  });
+
+  it('reopens an older link on the estimate', () => {
+    expect(decoderEtat('?patrimoine=750000').renteReleve).toBe(0);
   });
 });
 

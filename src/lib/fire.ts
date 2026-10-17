@@ -116,6 +116,16 @@ export type Hypotheses = {
   ageLegal: number;
   /** Age of the automatic full rate, overriding the country's; 0 likewise. */
   ageTauxPlein: number;
+  /**
+   * Monthly gross pension read off the official pension statement, in today's
+   * euros. 0 means "not filled in": the pension is then estimated from the
+   * proration and the décote, as before.
+   *
+   * The statement knows the actual career — every quarter, every salary, every
+   * scheme — so when it is at hand it replaces the estimate outright. It alone
+   * is enough for a pension to be modelled, contributed years or not.
+   */
+  renteReleve: number;
 };
 
 /**
@@ -223,6 +233,7 @@ export const BORNES = {
   // 0 stands for "the country's"; anything else is held within these.
   ageLegal: { min: 0, max: 75 },
   ageTauxPlein: { min: 0, max: 75 },
+  renteReleve: { min: 0, max: 50_000 },
 } as const;
 
 /** Lowest age accepted once an age is entered at all. */
@@ -256,6 +267,7 @@ export const DEFAUTS: Hypotheses = {
   versements: 0,
   ageLegal: 0,
   ageTauxPlein: 0,
+  renteReleve: 0,
 };
 
 /** Gap applied to the return in the pessimistic and optimistic scenarios. */
@@ -289,6 +301,7 @@ export function borner(h: Hypotheses): Hypotheses {
     versements: borne(h.versements, BORNES.versements),
     ageLegal: borneAge(h.ageLegal),
     ageTauxPlein: borneAge(h.ageTauxPlein),
+    renteReleve: borne(h.renteReleve, BORNES.renteReleve),
   };
 }
 
@@ -350,6 +363,11 @@ export function cotisationCapitalAnnuelle(
 // ---------------------------------------------------------------------------
 
 export type EstimationRente = {
+  /**
+   * Where the amount comes from: the pension statement the user copied in, or
+   * the coarse estimate below. Null when no pension is modelled.
+   */
+  source: 'releve' | 'estimation' | null;
   /** Legal retirement age of the country; the pension starts here. */
   ageLegal: number;
   /** Age of the automatic full rate — no décote from here even if quarters short. */
@@ -395,8 +413,11 @@ export type EstimationRente = {
  * narrows or widens with them. The delay itself stays the user's figure — the
  * simulator does not know their age, only how far they are from the legal one.
  *
- * With no contributions entered — "not filled in" — there is no pension, and the
- * plan runs on capital alone exactly as before.
+ * An amount copied from the pension statement overrides the whole estimate: only
+ * the country's flat pension tax is then applied to reach the net figure.
+ *
+ * With neither contributions nor a statement entered — "not filled in" — there
+ * is no pension, and the plan runs on capital alone exactly as before.
  */
 export function estimationRente(hypotheses: Hypotheses): EstimationRente {
   const h = borner(hypotheses);
@@ -410,6 +431,7 @@ export function estimationRente(hypotheses: Hypotheses): EstimationRente {
   } = pays(h.pays).retraite;
 
   const vide: EstimationRente = {
+    source: null,
     ageLegal,
     ageTauxPlein,
     delai: 0,
@@ -420,6 +442,16 @@ export function estimationRente(hypotheses: Hypotheses): EstimationRente {
     brutAnnuel: 0,
     netAnnuel: 0,
   };
+  if (h.renteReleve > 0) {
+    const brutAnnuel = h.renteReleve * 12;
+    return {
+      ...vide,
+      source: 'releve',
+      delai: h.anneesAvantRetraite,
+      brutAnnuel,
+      netAnnuel: brutAnnuel * (1 - tauxImpositionRente),
+    };
+  }
   if (h.anneesCotisees <= 0) return vide;
 
   // Contributed years, taken as given (from the pension account), capped at what
@@ -444,6 +476,7 @@ export function estimationRente(hypotheses: Hypotheses): EstimationRente {
   const brutAnnuel = pleineBrute * proratisation * (1 - decote);
 
   return {
+    source: 'estimation',
     ageLegal,
     ageTauxPlein,
     delai: h.anneesAvantRetraite,

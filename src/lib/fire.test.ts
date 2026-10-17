@@ -672,3 +672,48 @@ describe('custom retirement ages', () => {
     expect(borner({ ...carriere, ageLegal: Number.NaN }).ageLegal).toBe(0);
   });
 });
+
+describe('a pension from the official statement', () => {
+  const carriere = {
+    ...BASE,
+    pays: 'france' as const,
+    anneesCotisees: 27,
+    anneesAvantRetraite: 5,
+    salaireMoyen: 40_000,
+  };
+
+  it('overrides the estimate, taxed at the country rate', () => {
+    const e = estimationRente({ ...carriere, renteReleve: 1_500 });
+    expect(e.source).toBe('releve');
+    expect(e.brutAnnuel).toBeCloseTo(18_000, 6);
+    expect(e.netAnnuel).toBeCloseTo(
+      18_000 * (1 - pays('france').retraite.tauxImpositionRente),
+      6,
+    );
+    expect(e.delai).toBe(5);
+    expect(e.brutAnnuel).not.toBeCloseTo(estimationRente(carriere).brutAnnuel, 0);
+  });
+
+  it('keeps the estimate at 0', () => {
+    const e = estimationRente({ ...carriere, renteReleve: 0 });
+    expect(e.source).toBe('estimation');
+    expect(e).toEqual(estimationRente(carriere));
+  });
+
+  it('is enough on its own, without contributed years', () => {
+    const e = estimationRente({ ...BASE, anneesCotisees: 0, renteReleve: 1_000 });
+    expect(e.source).toBe('releve');
+    expect(e.brutAnnuel).toBeCloseTo(12_000, 6);
+  });
+
+  it('models no pension when neither is entered', () => {
+    expect(estimationRente({ ...BASE, anneesCotisees: 0 }).source).toBeNull();
+  });
+
+  it('clamps the amount entered', () => {
+    expect(borner({ ...carriere, renteReleve: -5 }).renteReleve).toBe(0);
+    expect(borner({ ...carriere, renteReleve: 1e12 }).renteReleve).toBe(
+      BORNES.renteReleve.max,
+    );
+  });
+});
