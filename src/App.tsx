@@ -709,7 +709,7 @@ function Simulateur({
                       />
                       {rente.netAnnuel > 0 && (
                         <Stat
-                          label={t.stats.rente}
+                          label={rente.source === 'releve' ? t.stats.renteReleve : t.stats.rente}
                           valeur={eur(rente.netAnnuel / 12)}
                           annexe={t.stats.renteAnnexe(rente.ageLegal, rente.delai)}
                         />

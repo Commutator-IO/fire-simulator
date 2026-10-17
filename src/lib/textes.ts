@@ -451,6 +451,7 @@ const FR = {
     eurosCourants: 'euros courants',
     eurosAujourdhui: 'd’aujourd’hui',
     rente: 'Rente nette estimée',
+    renteReleve: 'Rente nette d’après le relevé',
     renteAnnexe: (ageLegal: number, delai: number) =>
       delai > 0 ? `/mois, à ${ageLegal} ans` : `/mois, dès ${ageLegal} ans`,
     noteImpot:
@@ -1150,6 +1151,7 @@ const EN: Dictionnaire = {
     eurosCourants: 'nominal',
     eurosAujourdhui: 'in today’s money',
     rente: 'Estimated net pension',
+    renteReleve: 'Net pension from your statement',
     renteAnnexe: (ageLegal: number, delai: number) =>
       delai > 0 ? `/mo, at ${ageLegal}` : `/mo, from ${ageLegal}`,
     noteImpot:
