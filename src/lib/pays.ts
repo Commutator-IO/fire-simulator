@@ -4,12 +4,11 @@ import type { Traduit } from './i18n';
  * Countries of residence, their tax regimes and their starting hypotheses.
  *
  * The rest of the simulator knows only α, a single rate applied to whatever is
- * withdrawn. This module is where that abstract rate meets the real world: each
- * regime carries the rate an actual resident faces, what it is made of, and
- * what the simplification costs — because in every country listed here the tax
- * bites on the *gain* portion of a withdrawal, not on the whole of it, so the
- * simulator overestimates the tax. Saying it once per regime is what keeps the
- * figures honest.
+ * withdrawn — on the gain share of it once the total contributed is known (see
+ * `versements` in `fire.ts`). This module is where that abstract rate meets the
+ * real world: each regime carries the rate an actual resident faces, what it is
+ * made of, and what the flat-rate model still glosses over. Saying it once per
+ * regime is what keeps the figures honest.
  *
  * Rates are held as fractions, like everywhere else in the engine.
  */
@@ -106,8 +105,8 @@ const FRANCE: Regime[] = [
       en: '12.8% income tax and 18.6% social levies, the latter raised from 17.2% on 1 January 2026.',
     },
     reserve: {
-      fr: 'Le prélèvement forfaitaire unique ne frappe que la plus-value contenue dans le retrait, pas le capital retiré : le simulateur surestime donc l’impôt, d’autant plus que votre portefeuille est jeune.',
-      en: 'The flat tax bites only on the capital gain contained in a withdrawal, never on the principal: the simulator therefore overstates the tax, the more so the younger your portfolio.',
+      fr: 'Le prélèvement forfaitaire unique ne frappe que la plus-value contenue dans le retrait, pas le capital retiré. Renseignez le total versé pour que le simulateur en tienne compte ; sans lui, il taxe tout le retrait et surestime l’impôt, d’autant plus que votre portefeuille est jeune.',
+      en: 'The flat tax bites only on the capital gain contained in a withdrawal, never on the principal. Enter the total contributed for the simulator to account for it; without it the whole withdrawal is taxed and the tax overstated, the more so the younger your portfolio.',
     },
   },
   {
@@ -124,8 +123,8 @@ const FRANCE: Regime[] = [
       en: 'Social levies only: after five years the plan’s gains no longer attract income tax.',
     },
     reserve: {
-      fr: 'Les versements sont plafonnés à 150 000 €, et le taux retenu est celui du jour du retrait — la hausse de 2026 frappe donc aussi les gains accumulés avant elle. Là encore, seule la part de plus-value du retrait est taxée.',
-      en: 'Contributions are capped at €150,000, and the rate applied is the one in force on the day of withdrawal — so the 2026 increase also hits gains accumulated before it. Here too, only the capital-gain share of a withdrawal is taxed.',
+      fr: 'Les versements sont plafonnés à 150 000 €, et le taux retenu est celui du jour du retrait — la hausse de 2026 frappe donc aussi les gains accumulés avant elle. Seule la part de plus-value du retrait est taxée, au prorata : c’est ce que modélise le total versé.',
+      en: 'Contributions are capped at €150,000, and the rate applied is the one in force on the day of withdrawal — so the 2026 increase also hits gains accumulated before it. Only the capital-gain share of a withdrawal is taxed, pro rata — which is what the total contributed models.',
     },
   },
   {
@@ -142,8 +141,8 @@ const FRANCE: Regime[] = [
       en: '7.5% income tax and 17.2% social levies — life insurance did not follow the 2026 increase.',
     },
     reserve: {
-      fr: 'L’abattement annuel de 4 600 € (9 200 € pour un couple) sur la part imposable n’est pas modélisé : pour un retrait modeste, l’impôt réel est nettement plus faible que celui affiché.',
-      en: 'The annual allowance of €4,600 (€9,200 for a couple) on the taxable share is not modelled: on a modest withdrawal the real tax is markedly lower than the figure shown.',
+      fr: 'Seule la part de plus-value du retrait est imposée, au prorata — renseignez le total versé pour l’appliquer. L’abattement annuel de 4 600 € (9 200 € pour un couple) sur les gains soumis à l’impôt sur le revenu n’est pas modélisé : pour un retrait modeste, l’impôt réel est plus faible que celui affiché.',
+      en: 'Only the capital-gain share of a withdrawal is taxed, pro rata — enter the total contributed to apply it. The annual allowance of €4,600 (€9,200 for a couple) on the gains subject to income tax is not modelled: on a modest withdrawal the real tax is lower than the figure shown.',
     },
   },
 ];
@@ -163,8 +162,8 @@ const JAPON: Regime[] = [
       en: '15% national income tax, 5% local inhabitant tax and the 2.1% reconstruction surtax levied on the national portion, in force until 2037.',
     },
     reserve: {
-      fr: 'Le taux porte sur la plus-value, prélevée à la source sur un compte tokutei kōza. Déclarer ces gains plutôt que de s’en tenir à la retenue peut relever vos cotisations d’assurance maladie : l’arbitrage ne se voit pas dans ce simulateur.',
-      en: 'The rate applies to the capital gain, withheld at source on a tokutei kōza account. Filing those gains rather than relying on the withholding can raise your health insurance premiums: that trade-off is invisible here.',
+      fr: 'Le taux porte sur la plus-value, prélevée à la source sur un compte tokutei kōza — renseignez le total versé pour que le simulateur l’applique. Déclarer ces gains plutôt que de s’en tenir à la retenue peut relever vos cotisations d’assurance maladie : l’arbitrage ne se voit pas dans ce simulateur.',
+      en: 'The rate applies to the capital gain, withheld at source on a tokutei kōza account — enter the total contributed for the simulator to apply it. Filing those gains rather than relying on the withholding can raise your health insurance premiums: that trade-off is invisible here.',
     },
   },
   {

@@ -73,6 +73,7 @@ export function Comparaison({
                   h.depensesCibles,
                   h.retrait,
                   regime.imposition,
+                  h.versements,
                 );
                 const estActif = actif?.cle === regime.cle;
                 return (

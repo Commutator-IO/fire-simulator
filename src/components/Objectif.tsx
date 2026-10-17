@@ -44,11 +44,17 @@ export function Objectif({
         />
 
         <p className="mt-5 rounded-xl bg-ink-50 px-4 py-3 text-xs leading-relaxed text-ink-500">
-          {t.objectif.explication(
-            pct(h.retrait, 1),
-            tauxPct(h.imposition),
-            eur(h.retrait * (1 - h.imposition)),
-          )}
+          {h.versements > 0
+            ? t.objectif.explicationVerse(
+                pct(h.retrait, 1),
+                tauxPct(h.imposition),
+                eur(h.versements),
+              )
+            : t.objectif.explication(
+                pct(h.retrait, 1),
+                tauxPct(h.imposition),
+                eur(h.retrait * (1 - h.imposition)),
+              )}
         </p>
       </div>
 

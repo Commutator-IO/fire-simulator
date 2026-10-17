@@ -450,6 +450,21 @@ function Simulateur({
                     />
                   </div>
 
+                  <div className="mt-6">
+                    <Montant
+                      label={t.saisie.versementsLabel}
+                      valeur={h.versements}
+                      onChange={(v) => maj('versements', v)}
+                      max={BORNES.versements.max}
+                      placeholder="—"
+                      hint={
+                        h.versements > 0
+                          ? t.saisie.versementsHintRempli(pct(r.partPlusValue, 0))
+                          : t.saisie.versementsHintVide
+                      }
+                    />
+                  </div>
+
                   <p className="mt-4 rounded-xl bg-white px-4 py-3 text-xs leading-relaxed text-ink-500">
                     {regimeActif ? (
                       <>
@@ -698,7 +713,9 @@ function Simulateur({
               </div>
 
               <p className="mt-5 rounded-xl bg-ink-50 px-4 py-3 text-xs leading-relaxed text-ink-500">
-                {t.stats.noteImpot}
+                {h.versements > 0
+                  ? t.stats.noteImpotPart(pct(r.partPlusValue, 0))
+                  : t.stats.noteImpot}
               </p>
 
               <p className="mt-4 px-2 text-xs leading-relaxed text-ink-400">

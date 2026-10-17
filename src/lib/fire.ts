@@ -97,6 +97,18 @@ export type Hypotheses = {
    */
   cotisationCapital: number;
   /**
+   * V — total amount paid into the portfolio, in euros. 0 means "not filled
+   * in": the whole withdrawal is then taxed, as before.
+   *
+   * Every regime modelled taxes only the capital-gain share of a withdrawal,
+   * never the principal. With V known, that share is 1 − V ÷ capital, and each
+   * withdrawal carries principal out with it in the same proportion — the
+   * French rule for the PEA and life insurance, and a fair reading of the
+   * average-cost method elsewhere. The share rises over the years as the
+   * remaining capital keeps growing.
+   */
+  versements: number;
+  /**
    * Legal retirement age, overriding the country's. 0 means "the country's":
    * special schemes, long careers and active categories open pension rights
    * earlier, and the estimate would otherwise be off by exactly that much.
@@ -118,7 +130,7 @@ export type Verdict = 'sans-patrimoine' | 'preserve' | 'limite' | 'entame';
 export type Resultat = {
   /** R — gross yearly withdrawal, X × Z. */
   retraitBrut: number;
-  /** T — tax on the withdrawal, R × α. */
+  /** T — tax on the withdrawal, R × α × g. */
   impots: number;
   /** Rnet — net yearly income. */
   revenuNetAnnuel: number;
@@ -144,6 +156,8 @@ export type Resultat = {
    * early retirement it is 0, the first year running on capital alone.
    */
   renteAnnuelle: number;
+  /** g — capital-gain share of the first withdrawal, 1 when V is not filled in. */
+  partPlusValue: number;
 };
 
 export type AnneeProjection = {
@@ -158,6 +172,8 @@ export type AnneeProjection = {
   rente: number;
   /** Health contribution on capital income this year; 0 once the pension is drawn. */
   csm: number;
+  /** Capital-gain share of this year's withdrawal, the base the tax applies to. */
+  partPlusValue: number;
   capitalFin: number;
   /** Capital restated in year-0 euros, i.e. in purchasing power. */
   capitalFinReel: number;
@@ -203,6 +219,7 @@ export const BORNES = {
   anneesAvantRetraite: { min: 0, max: 50 },
   salaireMoyen: { min: 0, max: 1_000_000 },
   cotisationCapital: { min: 0, max: 0.15 },
+  versements: { min: 0, max: 100_000_000 },
   // 0 stands for "the country's"; anything else is held within these.
   ageLegal: { min: 0, max: 75 },
   ageTauxPlein: { min: 0, max: 75 },
@@ -236,6 +253,7 @@ export const DEFAUTS: Hypotheses = {
   anneesAvantRetraite: 0,
   salaireMoyen: 0,
   cotisationCapital: 0,
+  versements: 0,
   ageLegal: 0,
   ageTauxPlein: 0,
 };
@@ -268,6 +286,7 @@ export function borner(h: Hypotheses): Hypotheses {
     ),
     salaireMoyen: borne(h.salaireMoyen, BORNES.salaireMoyen),
     cotisationCapital: borne(h.cotisationCapital, BORNES.cotisationCapital),
+    versements: borne(h.versements, BORNES.versements),
     ageLegal: borneAge(h.ageLegal),
     ageTauxPlein: borneAge(h.ageTauxPlein),
   };
@@ -276,6 +295,17 @@ export function borner(h: Hypotheses): Hypotheses {
 /** An age override: 0 stays "the country's", anything else within bounds. */
 const borneAge = (v: number) =>
   Number.isFinite(v) && v > 0 ? Math.round(Math.min(BORNES.ageLegal.max, Math.max(AGE_MIN, v))) : 0;
+
+/**
+ * g — the capital-gain share of a withdrawal taken from `capital`, of which
+ * `principal` is what was paid in. 1 when nothing was entered (the whole
+ * withdrawal taxed), 0 when the portfolio is at or below what went into it.
+ */
+export function partPlusValue(capital: number, principal: number, renseigne: boolean): number {
+  if (!renseigne) return 1;
+  if (capital <= 0) return 0;
+  return Math.min(1, Math.max(0, 1 - principal / capital));
+}
 
 /**
  * The legal and full-rate ages in force: the user's when entered, the
@@ -452,6 +482,12 @@ export function verdictDe(h: Hypotheses): Verdict {
 /**
  * Capital needed to fund `depenses` net per year, at the same Z and α.
  *
+ * With a total contributed V, only the gain share of the withdrawal is taxed,
+ * so the first-year net income of a capital X is X·Z − α·Z·(X − V). Solving for
+ * X gives (D − Z·α·V) ÷ (Z·(1 − α)), valid while X ≥ V — that is, D ≥ Z·V.
+ * Below it the capital sits under what went in, nothing is taxed, and X = D ÷ Z.
+ * The two meet at D = Z·V, so the answer is continuous.
+ *
  * Null when no finite amount does it: without a withdrawal, or with everything
  * taxed away, no capital ever produces an income.
  */
@@ -459,10 +495,13 @@ export function patrimoineRequis(
   depenses: number,
   retrait: number,
   imposition: number,
+  versements = 0,
 ): number | null {
+  if (depenses <= 0 || retrait <= 0) return null;
+  if (versements > 0 && depenses <= retrait * versements) return depenses / retrait;
   const net = retrait * (1 - imposition);
-  if (depenses <= 0 || net <= 0) return null;
-  return depenses / net;
+  if (net <= 0) return null;
+  return (depenses - retrait * imposition * versements) / net;
 }
 
 // ---------------------------------------------------------------------------
@@ -478,9 +517,17 @@ export function simuler(hypotheses: Hypotheses): Resultat {
   // is 0 — the first year runs on capital alone.
   const rente = estimationRente(h);
   const renteAnnuelle = rente.delai === 0 ? rente.netAnnuel : 0;
+  // The first withdrawal is taken after the first year's return, as in the
+  // projection, so the gain share is read on that capital.
+  const g = partPlusValue(
+    h.patrimoine * (1 + h.rendement),
+    h.versements,
+    h.versements > 0,
+  );
+  const taux = h.imposition * g;
   const retraitSouhaite = h.patrimoine * h.retrait;
-  const retraitBrut = Math.max(0, retraitSouhaite - renteAnnuelle / (1 - h.imposition));
-  const impots = retraitBrut * h.imposition;
+  const retraitBrut = Math.max(0, retraitSouhaite - renteAnnuelle / (1 - taux));
+  const impots = retraitBrut * taux;
   // Total net income: what the portfolio pays after tax, plus the pension.
   const revenuNetAnnuel = retraitBrut - impots + renteAnnuelle;
   const marge = h.rendement - h.retrait;
@@ -499,8 +546,14 @@ export function simuler(hypotheses: Hypotheses): Resultat {
     // purchasing power is not being spent either.
     preserveEnReel: h.retrait === 0 || h.retrait <= h.rendement - h.inflation,
     ecartDepenses: h.depensesCibles > 0 ? revenuNetAnnuel - h.depensesCibles : null,
-    patrimoineRequis: patrimoineRequis(h.depensesCibles, h.retrait, h.imposition),
+    patrimoineRequis: patrimoineRequis(
+      h.depensesCibles,
+      h.retrait,
+      h.imposition,
+      h.versements,
+    ),
     renteAnnuelle,
+    partPlusValue: g,
   };
 }
 
@@ -536,6 +589,10 @@ export function projeter(hypotheses: Hypotheses, rendement?: number): Projection
   const annees: AnneeProjection[] = [];
   let capital = h.patrimoine;
   let anneeEpuisement: number | null = null;
+  // Principal still invested. Each withdrawal takes it out in proportion to
+  // its weight in the capital; whatever the return adds is gain.
+  const renseigne = h.versements > 0;
+  let principal = h.versements;
 
   // In indexed mode the amount is set once, on the starting capital, then only
   // follows inflation — it never re-reads the capital.
@@ -545,6 +602,8 @@ export function projeter(hypotheses: Hypotheses, rendement?: number): Projection
     const capitalDebut = capital;
     const gains = capitalDebut * y;
     const disponible = Math.max(0, capitalDebut + gains);
+    const g = partPlusValue(disponible, principal, renseigne);
+    const taux = h.imposition * g;
 
     // Net pension for the year: today's euros, uprated for inflation, and only
     // once the legal age is reached.
@@ -559,12 +618,12 @@ export function projeter(hypotheses: Hypotheses, rendement?: number): Projection
         ? Math.max(
             0,
             retraitInitial * (1 + h.inflation) ** (annee - 1) -
-              renteAnnee / (1 - h.imposition),
+              renteAnnee / (1 - taux),
           )
         : disponible * h.retrait;
 
     const retraitBrut = Math.min(souhaite, disponible);
-    const impots = retraitBrut * h.imposition;
+    const impots = retraitBrut * taux;
 
     // The plan breaks the first year the desired draw cannot be taken. Testing
     // the shortfall rather than "capital = 0" also catches the year the last
@@ -581,6 +640,12 @@ export function projeter(hypotheses: Hypotheses, rendement?: number): Projection
         ? cotisationCapitalAnnuelle(gains, h.cotisationCapital, h.pays)
         : 0;
     const capitalFin = Math.max(0, disponible - retraitBrut - csm);
+    // Whatever leaves the portfolio — withdrawal or contribution — is sold in
+    // proportion, principal and gain alike.
+    if (renseigne && disponible > 0) {
+      const sorti = Math.min(disponible, retraitBrut + csm);
+      principal = Math.max(0, principal - sorti * Math.min(1, principal / disponible));
+    }
 
     const deflateur = (1 + h.inflation) ** annee;
     const retraitNet = retraitBrut - impots;
@@ -593,6 +658,7 @@ export function projeter(hypotheses: Hypotheses, rendement?: number): Projection
       retraitNet,
       rente: renteAnnee,
       csm,
+      partPlusValue: g,
       capitalFin,
       capitalFinReel: capitalFin / deflateur,
       retraitNetReel: (retraitNet + renteAnnee) / deflateur,

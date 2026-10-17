@@ -329,7 +329,13 @@ const FR = {
     changementPays:
       'Changer de pays recharge ses hypothèses de départ — imposition, taux de retrait et inflation.',
     impositionLabel: 'Imposition des retraits',
-    impositionHint: 'Appliquée à la totalité des sommes retirées, de 0 à 60 %.',
+    impositionHint:
+      'De 0 à 60 %. Appliquée à la part de plus-value des retraits — à leur totalité tant que le total versé n’est pas renseigné.',
+    versementsLabel: 'Total versé sur ces placements',
+    versementsHintVide:
+      'Ce que vous y avez mis, hors gains. Seule la plus-value d’un retrait est imposée : sans ce montant, le simulateur taxe tout le retrait et surestime l’impôt.',
+    versementsHintRempli: (part: string) =>
+      `La plus-value représente ${part} du premier retrait : elle seule est imposée. Chaque retrait emporte versements et gains au prorata, si bien que cette part monte avec les années.`,
     tauxPersonnaliseFort: 'Taux personnalisé.',
     tauxPersonnaliseCorps: (taux: string, pays: string) =>
       `${taux} ne correspond à aucune enveloppe unique en ${pays} — c’est le cas d’un portefeuille réparti sur plusieurs, et le taux que produit l’estimateur de patrimoine. Choisissez une enveloppe ci-dessus pour raisonner sur un seul régime.`,
@@ -442,7 +448,9 @@ const FR = {
     renteAnnexe: (ageLegal: number, delai: number) =>
       delai > 0 ? `/mois, à ${ageLegal} ans` : `/mois, dès ${ageLegal} ans`,
     noteImpot:
-      'L’impôt est supposé porter sur la totalité du retrait, à un taux unique. C’est une simplification volontaire : les enveloppes réelles ne taxent que la part de plus-value, chacune à sa façon.',
+      'Faute de total versé, l’impôt porte ici sur la totalité du retrait, alors que les enveloppes réelles ne taxent que la part de plus-value. Renseignez-le pour une assiette juste.',
+    noteImpotPart: (part: string) =>
+      `L’impôt ne porte que sur la part de plus-value du retrait — ${part} la première année, davantage ensuite à mesure que le capital restant s’enrichit. Le taux reste unique : abattements et barèmes propres à chaque enveloppe ne sont pas modélisés.`,
     mentionLegale:
       'Simulation indicative, à rendement constant. Elle ne remplace pas l’avis d’un professionnel et ne constitue pas un conseil en investissement.',
   },
@@ -524,7 +532,8 @@ const FR = {
       'Le rendement d’un côté, le retrait de l’autre : la différence reste dans le capital.',
     rendementGenere: 'Rendement généré',
     variationCapital: 'Variation du capital',
-    note: 'L’impôt est calculé sur les sommes retirées, pas sur le rendement : ce qui reste investi n’est pas imposé dans cette simulation. C’est une simplification assumée — les enveloppes réelles ont chacune leurs règles.',
+    impotsPart: (taux: string, part: string) => `${taux} sur ${part} du retrait`,
+    note: 'L’impôt est calculé sur les sommes retirées, pas sur le rendement : ce qui reste investi n’est pas imposé. Il ne frappe que leur part de plus-value si le total versé est renseigné, leur totalité sinon — les enveloppes réelles ont en outre chacune leurs règles.',
     afficherTableau: '+ Afficher la projection année par année',
     masquerTableau: '− Masquer la projection année par année',
     caption: 'Projection du capital et des retraits, année par année',
@@ -569,6 +578,8 @@ const FR = {
       `Soit ${mois} par mois. Ce montant s’entend après impôt : c’est ce qui arrive sur votre compte.`,
     explication: (retrait: string, imposition: string, net: string) =>
       `Le calcul renverse la formule du retrait : patrimoine requis = dépenses ÷ (taux de retrait × part qui vous reste après impôt). Avec ${retrait} de retrait et ${imposition} d’imposition, chaque euro de patrimoine vous verse ${net} net par an.`,
+    explicationVerse: (retrait: string, imposition: string, verse: string) =>
+      `Le calcul renverse la formule du retrait. Seule la plus-value étant imposée, patrimoine requis = (dépenses − retrait × imposition × total versé) ÷ (retrait × (1 − imposition)) — ici ${retrait} de retrait, ${imposition} d’imposition et ${verse} versés.`,
     aucunTitre: 'Aucun patrimoine ne suffit',
     aucunCorpsVide: 'Indiquez d’abord vos dépenses annuelles.',
     aucunCorpsImpossible:
@@ -591,7 +602,10 @@ const FR = {
     fRetrait: 'Retrait brut annuel',
     fRetraitNote: 'X le patrimoine, Z le taux de retrait',
     fImpots: 'Impôts',
-    fImpotsNote: 'α le taux d’imposition',
+    fImpotsNote: 'α le taux d’imposition, g la part de plus-value du retrait (1 sans total versé)',
+    fPart: 'Part de plus-value',
+    fPartNote:
+      'Vₙ les versements encore investis, réduits à chaque retrait au prorata de leur poids dans le capital',
     fNet: 'Revenu net',
     fPreserve: 'Capital préservé si',
     fPreserveNote: 'Y le rendement annuel',
@@ -601,15 +615,16 @@ const FR = {
     fRetraitIndexeNote: 'en mode indexé, X₀ le patrimoine de départ',
     fProjection: 'Capital de l’année n',
     fCible: 'Patrimoine cible',
+    fCibleNote: 'V le total versé, 0 s’il n’est pas renseigné',
     scenariosNote: (ecart: string) =>
       `Les scénarios comparés reprennent le même calcul avec un rendement diminué puis augmenté de ${ecart}.`,
     limitesTitre: 'Ce que le simulateur ne fait pas',
     limiteVolatiliteFort: 'Pas de volatilité.',
     limiteVolatilite:
       'Le rendement est constant. Dans la réalité, l’ordre des bonnes et des mauvaises années compte autant que leur moyenne : deux krachs en début de retrait ne se rattrapent pas. Une simulation de Monte-Carlo répondrait à cette question, pas celle-ci.',
-    limiteFiscaliteFort: 'Pas de fiscalité fine.',
+    limiteFiscaliteFort: 'Une fiscalité simplifiée.',
     limiteFiscalite:
-      'Un taux unique s’applique à la totalité des sommes retirées, alors qu’en pratique seule la part de plus-value est imposée. Les enveloppes proposées donnent le bon taux, pas la bonne assiette : le simulateur surestime donc l’impôt, d’autant plus que le portefeuille est jeune.',
+      'Un taux unique s’applique à la part de plus-value des retraits — à leur totalité si le total versé n’est pas renseigné, auquel cas l’impôt est surestimé, d’autant plus que le portefeuille est jeune. Les abattements, celui de l’assurance-vie notamment, les barèmes progressifs et les plafonds d’enveloppe ne sont pas modélisés.',
     limitePaysFort: 'Pas de coût de la vie, ni de devise.',
     limitePays:
       'La comparaison entre pays ne fait varier que l’imposition. Les montants restent en euros, et un train de vie ne coûte pas le même prix à Paris et à Tokyo. Les règles de résidence fiscale, les conventions contre la double imposition et l’imposition à la sortie du territoire sont hors sujet ici.',
@@ -1006,7 +1021,13 @@ const EN: Dictionnaire = {
     changementPays:
       'Switching country reloads its starting assumptions — tax, withdrawal rate and inflation.',
     impositionLabel: 'Tax on withdrawals',
-    impositionHint: 'Applied to the whole of every withdrawal, from 0 to 60%.',
+    impositionHint:
+      'From 0 to 60%. Applied to the capital-gain share of each withdrawal — to the whole of it until the total contributed is entered.',
+    versementsLabel: 'Total contributed to these investments',
+    versementsHintVide:
+      'What you paid in, gains excluded. Only the gain in a withdrawal is taxed: without this figure the simulator taxes the whole withdrawal and overstates the tax.',
+    versementsHintRempli: (part: string) =>
+      `The gain makes up ${part} of the first withdrawal, and only that is taxed. Each withdrawal takes contributions and gains out pro rata, so the share rises over the years.`,
     tauxPersonnaliseFort: 'Custom rate.',
     tauxPersonnaliseCorps: (taux: string, pays: string) =>
       `${taux} matches no single account type in ${pays} — which is what a portfolio spread across several looks like, and what the capital estimator produces. Pick one above to reason on a single regime.`,
@@ -1120,7 +1141,9 @@ const EN: Dictionnaire = {
     renteAnnexe: (ageLegal: number, delai: number) =>
       delai > 0 ? `/mo, at ${ageLegal}` : `/mo, from ${ageLegal}`,
     noteImpot:
-      'Tax is assumed to fall on the whole withdrawal, at a single rate. That is a deliberate simplification: real accounts tax only the capital-gain share, each in its own way.',
+      'With no total contributed, tax falls here on the whole withdrawal, whereas real accounts tax only the capital-gain share. Enter it for the right base.',
+    noteImpotPart: (part: string) =>
+      `Tax falls only on the capital-gain share of the withdrawal — ${part} in the first year, more afterwards as the remaining capital grows. The rate stays single: each account’s allowances and brackets are not modelled.`,
     mentionLegale:
       'An indicative simulation, at a constant return. It does not replace professional advice and is not investment advice.',
   },
@@ -1202,7 +1225,8 @@ const EN: Dictionnaire = {
       'The return on one side, the withdrawal on the other: the difference stays in the capital.',
     rendementGenere: 'Return generated',
     variationCapital: 'Change in capital',
-    note: 'Tax is charged on what is withdrawn, not on the return: whatever stays invested is untaxed in this simulation. That is a deliberate simplification — real accounts each have their own rules.',
+    impotsPart: (taux: string, part: string) => `${taux} on ${part} of the withdrawal`,
+    note: 'Tax is charged on what is withdrawn, not on the return: whatever stays invested is untaxed. It bites only on the gain share of each withdrawal when the total contributed is entered, on the whole of it otherwise — and real accounts each have their own rules on top.',
     afficherTableau: '+ Show the year-by-year projection',
     masquerTableau: '− Hide the year-by-year projection',
     caption: 'Year-by-year projection of capital and withdrawals',
@@ -1246,6 +1270,8 @@ const EN: Dictionnaire = {
       `That is ${mois} a month. This figure is after tax: it is what lands in your account.`,
     explication: (retrait: string, imposition: string, net: string) =>
       `The calculation turns the withdrawal formula around: capital required = spending ÷ (withdrawal rate × the share left to you after tax). At a ${retrait} withdrawal and ${imposition} tax, every euro of capital pays you ${net} net a year.`,
+    explicationVerse: (retrait: string, imposition: string, verse: string) =>
+      `The calculation turns the withdrawal formula around. Since only the gain is taxed, capital required = (spending − withdrawal rate × tax × total contributed) ÷ (withdrawal rate × (1 − tax)) — here a ${retrait} withdrawal, ${imposition} tax and ${verse} contributed.`,
     aucunTitre: 'No amount of capital is enough',
     aucunCorpsVide: 'Start by entering your yearly spending.',
     aucunCorpsImpossible:
@@ -1268,7 +1294,10 @@ const EN: Dictionnaire = {
     fRetrait: 'Gross annual withdrawal',
     fRetraitNote: 'X the capital, Z the withdrawal rate',
     fImpots: 'Tax',
-    fImpotsNote: 'α the tax rate',
+    fImpotsNote: 'α the tax rate, g the capital-gain share of the withdrawal (1 without a total contributed)',
+    fPart: 'Capital-gain share',
+    fPartNote:
+      'Vₙ the contributions still invested, reduced at each withdrawal in proportion to their weight in the capital',
     fNet: 'Net income',
     fPreserve: 'Capital preserved if',
     fPreserveNote: 'Y the annual return',
@@ -1278,15 +1307,16 @@ const EN: Dictionnaire = {
     fRetraitIndexeNote: 'in indexed mode, X₀ the starting capital',
     fProjection: 'Capital in year n',
     fCible: 'Capital target',
+    fCibleNote: 'V the total contributed, 0 when not entered',
     scenariosNote: (ecart: string) =>
       `The compared scenarios run the same calculation with the return lowered then raised by ${ecart}.`,
     limitesTitre: 'What the simulator does not do',
     limiteVolatiliteFort: 'No volatility.',
     limiteVolatilite:
       'The return is constant. In reality the order of the good and bad years matters as much as their average: two crashes early in retirement are never made up. A Monte-Carlo simulation would answer that question; this one does not.',
-    limiteFiscaliteFort: 'No fine-grained tax.',
+    limiteFiscaliteFort: 'Simplified tax.',
     limiteFiscalite:
-      'A single rate applies to the whole of every withdrawal, whereas in practice only the capital-gain share is taxed. The account types give the right rate, not the right base: the simulator therefore overstates the tax, the more so the younger the portfolio.',
+      'A single rate applies to the capital-gain share of withdrawals — to the whole of them if the total contributed is not entered, in which case the tax is overstated, the more so the younger the portfolio. Allowances, life insurance’s in particular, progressive brackets and account caps are not modelled.',
     limitePaysFort: 'No cost of living, no currency.',
     limitePays:
       'The comparison between countries varies the tax and nothing else. Amounts stay in euros, and a way of life does not cost the same in Paris and in Tokyo. Tax residence rules, double-taxation treaties and exit taxation are out of scope here.',

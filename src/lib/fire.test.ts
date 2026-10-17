@@ -7,6 +7,7 @@ import {
   agesRetraite,
   estimationRente,
   niveauDe,
+  partPlusValue,
   patrimoineRequis,
   projeter,
   scenarios,
@@ -539,6 +540,90 @@ describe('scenarios by country', () => {
     expect(japon.resultat.revenuNetAnnuel / japon.resultat.retraitBrut).toBeGreaterThan(
       france.resultat.revenuNetAnnuel / france.resultat.retraitBrut,
     );
+  });
+});
+
+describe('taxing the gain, not the withdrawal', () => {
+  it('taxes the whole withdrawal when the total contributed is not entered', () => {
+    const r = simuler({ ...BASE, versements: 0 });
+    expect(r.partPlusValue).toBe(1);
+    expect(r.impots).toBeCloseTo(r.retraitBrut * BASE.imposition, 6);
+    const p = projeter({ ...BASE, versements: 0 });
+    for (const a of p.annees) expect(a.partPlusValue).toBe(1);
+  });
+
+  it('is unchanged from before for anyone who leaves it empty', () => {
+    // The default carries no contributions, so existing links compute as they did.
+    expect(DEFAUTS.versements).toBe(0);
+    expect(simuler(BASE).impots).toBeCloseTo(BASE.patrimoine * BASE.retrait * BASE.imposition, 6);
+  });
+
+  it('taxes the whole withdrawal at a 100 % gain share', () => {
+    // A single euro contributed against a million: the share rounds to 1.
+    const r = simuler({ ...BASE, versements: 1e-6 });
+    expect(r.partPlusValue).toBeCloseTo(1, 9);
+    expect(r.impots).toBeCloseTo(r.retraitBrut * BASE.imposition, 4);
+  });
+
+  it('taxes nothing at a 0 % gain share', () => {
+    // Everything in the capital was paid in, and then some.
+    const h = { ...BASE, rendement: 0, versements: BASE.patrimoine * 2 };
+    expect(simuler(h).impots).toBe(0);
+    expect(projeter(h).annees.every((a) => a.impots === 0)).toBe(true);
+  });
+
+  it('taxes the gain share read after the first year’s return', () => {
+    const h = { ...BASE, versements: 600_000 };
+    const r = simuler(h);
+    const disponible = BASE.patrimoine * (1 + BASE.rendement);
+    expect(r.partPlusValue).toBeCloseTo(1 - 600_000 / disponible, 9);
+    expect(r.impots).toBeCloseTo(r.retraitBrut * BASE.imposition * r.partPlusValue, 6);
+    // The first projected year agrees with the first-year figures.
+    expect(projeter(h).annees[0].impots).toBeCloseTo(r.impots, 6);
+  });
+
+  it('lets the share rise over the projection as the capital grows', () => {
+    const p = projeter({ ...BASE, rendement: 0.06, retrait: 0.03, versements: 600_000 });
+    const parts = p.annees.map((a) => a.partPlusValue);
+    for (let i = 1; i < parts.length; i++) expect(parts[i]).toBeGreaterThan(parts[i - 1]);
+  });
+
+  it('takes the principal out pro rata, so it is never taxed twice', () => {
+    // Withdrawing everything in one go: the tax is exactly α on the gain.
+    const h = { ...BASE, rendement: 0.05, retrait: 0.2, versements: 800_000 };
+    const p = projeter(h);
+    const impotsTotaux = p.annees.reduce((s, a) => s + a.impots, 0);
+    const retraitsTotaux = p.annees.reduce((s, a) => s + a.retraitBrut, 0);
+    // Gains withdrawn in total = withdrawals − principal paid in (all of it
+    // ends up withdrawn once the capital is exhausted).
+    expect(p.capitalFinal).toBeLessThan(1);
+    expect(impotsTotaux).toBeCloseTo((retraitsTotaux - 800_000) * h.imposition, 0);
+  });
+
+  it('lowers the tax compared with taxing the whole withdrawal', () => {
+    const sans = simuler(BASE);
+    const avec = simuler({ ...BASE, versements: 600_000 });
+    expect(avec.impots).toBeLessThan(sans.impots);
+    expect(avec.revenuNetAnnuel).toBeGreaterThan(sans.revenuNetAnnuel);
+  });
+
+  it('computes the share from capital and principal', () => {
+    expect(partPlusValue(100, 60, true)).toBeCloseTo(0.4, 9);
+    expect(partPlusValue(100, 150, true)).toBe(0);
+    expect(partPlusValue(0, 10, true)).toBe(0);
+    expect(partPlusValue(100, 60, false)).toBe(1);
+  });
+
+  it('reverses the formula with a total contributed', () => {
+    const X = patrimoineRequis(40_000, 0.04, 0.3, 600_000);
+    expect(X).not.toBeNull();
+    // X·Z − α·Z·(X − V) = D
+    const x = X ?? 0;
+    expect(x * 0.04 - 0.3 * 0.04 * (x - 600_000)).toBeCloseTo(40_000, 6);
+    // Below Z·V the capital is all principal, nothing is taxed.
+    expect(patrimoineRequis(20_000, 0.04, 0.3, 600_000)).toBeCloseTo(500_000, 6);
+    // Without V, the former formula.
+    expect(patrimoineRequis(40_000, 0.04, 0.3)).toBeCloseTo(40_000 / (0.04 * 0.7), 6);
   });
 });
 

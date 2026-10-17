@@ -28,6 +28,8 @@ describe('compactage des liens', () => {
     expect(minifier('?cotise=27&avant=14&salaire=48000')).toBe('?k=27&g=14&s=48000');
     expect(minifier('?agelegal=62&tauxplein=64')).toBe('?a=62&t=64');
     expect(etendre('?a=62&t=64')).toBe('?agelegal=62&tauxplein=64');
+    expect(minifier('?verse=300000')).toBe('?b=300000');
+    expect(etendre('?b=300000')).toBe('?verse=300000');
   });
 
   it('raccourcit réellement une requête chargée', () => {

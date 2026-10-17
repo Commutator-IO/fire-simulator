@@ -57,6 +57,7 @@ describe('decoding', () => {
       anneesAvantRetraite: 13,
       salaireMoyen: 48_000,
       cotisationCapital: 0.065,
+      versements: 420_000,
       ageLegal: 57,
       ageTauxPlein: 59,
     });
@@ -216,5 +217,15 @@ describe('retirement ages', () => {
     const h = decoderEtat('?patrimoine=750000');
     expect(h.ageLegal).toBe(0);
     expect(h.ageTauxPlein).toBe(0);
+  });
+});
+
+describe('total contributed', () => {
+  it('is written only once entered', () => {
+    expect(encoderEtat(etat({ versements: 300_000 }))).toBe('?verse=300000');
+  });
+
+  it('reopens an older link on the whole-withdrawal tax', () => {
+    expect(decoderEtat('?patrimoine=750000').versements).toBe(0);
   });
 });

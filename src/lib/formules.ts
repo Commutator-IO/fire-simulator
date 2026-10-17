@@ -36,8 +36,13 @@ export const OPTIONS_KATEX: KatexOptions = {
 
 export const FORMULES: Formule[] = [
   { terme: 'fRetrait', note: 'fRetraitNote', tex: String.raw`R = X \times Z` },
-  { terme: 'fImpots', note: 'fImpotsNote', tex: String.raw`T = R \times \alpha` },
-  { terme: 'fNet', tex: String.raw`R_{\mathrm{net}} = X \times Z \times (1 - \alpha)` },
+  { terme: 'fImpots', note: 'fImpotsNote', tex: String.raw`T = R \times \alpha \times g` },
+  {
+    terme: 'fPart',
+    note: 'fPartNote',
+    tex: String.raw`g_n = 1 - \frac{V_n}{C_{n-1} \times (1 + Y)}`,
+  },
+  { terme: 'fNet', tex: String.raw`R_{\mathrm{net}} = R \times (1 - \alpha \times g)` },
   { terme: 'fPreserve', note: 'fPreserveNote', tex: String.raw`Z \leqslant Y` },
   { terme: 'fReel', note: 'fReelNote', tex: String.raw`Z \leqslant Y - i` },
   {
@@ -51,6 +56,7 @@ export const FORMULES: Formule[] = [
   },
   {
     terme: 'fCible',
-    tex: String.raw`X = \frac{D}{Z \times (1 - \alpha)}`,
+    note: 'fCibleNote',
+    tex: String.raw`X = \frac{D - Z \times \alpha \times V}{Z \times (1 - \alpha)}`,
   },
 ];

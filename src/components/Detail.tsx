@@ -86,7 +86,11 @@ export function Detail({
         />
         <Ligne
           label={t.detail.impots}
-          note={tauxPct(h.imposition)}
+          note={
+            h.versements > 0
+              ? t.detail.impotsPart(tauxPct(h.imposition), pct(r.partPlusValue, 0))
+              : tauxPct(h.imposition)
+          }
           montant={r.impots}
           negatif
         />
