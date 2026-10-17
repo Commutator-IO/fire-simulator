@@ -1,16 +1,16 @@
 name: sbom
 
-# The site's dependency inventory (SBOM), and a weekly re-scan of it.
+# A weekly reminder: the SBOM of what is live, scanned again against current
+# vulnerability data every Monday.
 #
 # A scan at build time only knows the advisories published before the build.
-# The ones that concern a live site come out later, so the inventory is kept
-# and checked again against current vulnerability data every Monday.
+# The ones that concern a live site come out later, so deploy.yml keeps the
+# inventory of each deployment and this workflow re-scans the last one, as it
+# was stored — what is actually live, even if a later deployment failed. A
+# failing run is the reminder: GitHub notifies the repository's watchers.
 #
-# Two inventories are scanned:
-#   staging     generated from the commit being checked (main, or a pull request)
-#   production  the SBOM that deploy.yml kept when it last published. It is
-#               scanned as it was stored, so the scan covers what is actually
-#               live even if a later deployment failed.
+# Nothing here gates a push or a pull request; a manual run is available for
+# checking on demand.
 #
 # The site is served as static files, so most of these packages only run during
 # the build. When a finding cannot be reached in what is served, record it in
@@ -18,19 +18,6 @@ name: sbom
 # setting: the VEX file keeps the decision, its reason and its date in one place.
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - package.json
-      - package-lock.json
-      - .github/vex.openvex.json
-      - .github/workflows/sbom.yml
-  pull_request:
-    paths:
-      - package.json
-      - package-lock.json
-      - .github/vex.openvex.json
-      - .github/workflows/sbom.yml
   schedule:
     - cron: '23 5 * * 1'
   workflow_dispatch:
@@ -41,43 +28,7 @@ permissions:
   actions: read
 
 jobs:
-  staging:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Inventory the dependencies (SBOM)
-        uses: anchore/sbom-action@v0
-        env:
-          # Syft leaves npm dev dependencies out by default. Here the whole
-          # build chain is one — Vite, Tailwind, PostCSS — and it is what turns
-          # the source into the files that are served, so it is inventoried too.
-          SYFT_JAVASCRIPT_INCLUDE_DEV_DEPENDENCIES: 'true'
-        with:
-          path: .
-          format: cyclonedx-json
-          output-file: sbom.cdx.json
-          upload-artifact: false
-
-      - name: Keep the SBOM
-        uses: actions/upload-artifact@v4
-        with:
-          name: sbom-staging-${{ github.sha }}
-          path: sbom.cdx.json
-          retention-days: 90
-
-      - name: Scan against current vulnerability data
-        uses: anchore/scan-action@v7
-        with:
-          sbom: sbom.cdx.json
-          vex: .github/vex.openvex.json
-          severity-cutoff: high
-          fail-build: true
-          output-format: table
-
   production:
-    # A push or a pull request changes main, not what is live.
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       # For the VEX file only. The inventory comes from the deployment.
