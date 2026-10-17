@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "preview": "vite preview",
-    "formules": "node --disable-warning=ExperimentalWarning --experimental-strip-types scripts/formules.ts"
+    "formules": "node --disable-warning=ExperimentalWarning --experimental-strip-types scripts/formules.ts",
+    "og": "node --disable-warning=ExperimentalWarning --experimental-strip-types scripts/og.ts"
   },
   "dependencies": {
     "react": "^19.2.7",
