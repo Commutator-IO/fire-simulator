@@ -26,6 +26,8 @@ describe('compactage des liens', () => {
       '&scpi=40000&reserveSasu=225000&creditResidence=150000&vue=synthese&lang=en';
     expect(etendre(minifier(longue))).toBe(longue);
     expect(minifier('?cotise=27&avant=14&salaire=48000')).toBe('?k=27&g=14&s=48000');
+    expect(minifier('?agelegal=62&tauxplein=64')).toBe('?a=62&t=64');
+    expect(etendre('?a=62&t=64')).toBe('?agelegal=62&tauxplein=64');
   });
 
   it('raccourcit réellement une requête chargée', () => {

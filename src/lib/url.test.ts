@@ -57,6 +57,8 @@ describe('decoding', () => {
       anneesAvantRetraite: 13,
       salaireMoyen: 48_000,
       cotisationCapital: 0.065,
+      ageLegal: 57,
+      ageTauxPlein: 59,
     });
     expect(decoderEtat(encoderEtat(depart))).toEqual(depart);
   });
@@ -200,5 +202,19 @@ describe('the active tab', () => {
     expect(encoderEtat(DEFAUTS, { vue: 'patrimoine' })).toBe('');
     expect(encoderEtat(DEFAUTS, { vue: 'fire' })).toBe('?vue=fire');
     expect(encoderEtat(DEFAUTS, { vue: 'synthese' })).toBe('?vue=synthese');
+  });
+});
+
+describe('retirement ages', () => {
+  it('writes them only once entered', () => {
+    expect(encoderEtat(etat({ ageLegal: 62, ageTauxPlein: 64 }))).toBe(
+      '?agelegal=62&tauxplein=64',
+    );
+  });
+
+  it('reopens an older link on the country ages', () => {
+    const h = decoderEtat('?patrimoine=750000');
+    expect(h.ageLegal).toBe(0);
+    expect(h.ageTauxPlein).toBe(0);
   });
 });

@@ -96,6 +96,14 @@ export type Hypotheses = {
    * exempt); the country's abattement and cap shape the base — see `pays.ts`.
    */
   cotisationCapital: number;
+  /**
+   * Legal retirement age, overriding the country's. 0 means "the country's":
+   * special schemes, long careers and active categories open pension rights
+   * earlier, and the estimate would otherwise be off by exactly that much.
+   */
+  ageLegal: number;
+  /** Age of the automatic full rate, overriding the country's; 0 likewise. */
+  ageTauxPlein: number;
 };
 
 /**
@@ -195,7 +203,13 @@ export const BORNES = {
   anneesAvantRetraite: { min: 0, max: 50 },
   salaireMoyen: { min: 0, max: 1_000_000 },
   cotisationCapital: { min: 0, max: 0.15 },
+  // 0 stands for "the country's"; anything else is held within these.
+  ageLegal: { min: 0, max: 75 },
+  ageTauxPlein: { min: 0, max: 75 },
 } as const;
+
+/** Lowest age accepted once an age is entered at all. */
+export const AGE_MIN = 50;
 
 /**
  * The simulation a first-time visitor lands on.
@@ -222,6 +236,8 @@ export const DEFAUTS: Hypotheses = {
   anneesAvantRetraite: 0,
   salaireMoyen: 0,
   cotisationCapital: 0,
+  ageLegal: 0,
+  ageTauxPlein: 0,
 };
 
 /** Gap applied to the return in the pessimistic and optimistic scenarios. */
@@ -252,7 +268,29 @@ export function borner(h: Hypotheses): Hypotheses {
     ),
     salaireMoyen: borne(h.salaireMoyen, BORNES.salaireMoyen),
     cotisationCapital: borne(h.cotisationCapital, BORNES.cotisationCapital),
+    ageLegal: borneAge(h.ageLegal),
+    ageTauxPlein: borneAge(h.ageTauxPlein),
   };
+}
+
+/** An age override: 0 stays "the country's", anything else within bounds. */
+const borneAge = (v: number) =>
+  Number.isFinite(v) && v > 0 ? Math.round(Math.min(BORNES.ageLegal.max, Math.max(AGE_MIN, v))) : 0;
+
+/**
+ * The legal and full-rate ages in force: the user's when entered, the
+ * country's otherwise. The full-rate age never falls below the legal one — an
+ * early legal age with the country's full-rate age simply widens the window.
+ */
+export function agesRetraite(hypotheses: Hypotheses): {
+  ageLegal: number;
+  ageTauxPlein: number;
+} {
+  const h = borner(hypotheses);
+  const r = pays(h.pays).retraite;
+  const ageLegal = h.ageLegal > 0 ? h.ageLegal : r.ageLegal;
+  const tauxPlein = h.ageTauxPlein > 0 ? h.ageTauxPlein : r.ageTauxPlein;
+  return { ageLegal, ageTauxPlein: Math.max(ageLegal, tauxPlein) };
 }
 
 /**
@@ -322,14 +360,18 @@ export type EstimationRente = {
  * a blank salary it falls back to the country's average full pension. Linear
  * proration and a flat pension tax keep it an estimate — and it says so.
  *
+ * The two ages default to the country's but can be overridden: special schemes,
+ * long careers and active categories open rights earlier, and the décote window
+ * narrows or widens with them. The delay itself stays the user's figure — the
+ * simulator does not know their age, only how far they are from the legal one.
+ *
  * With no contributions entered — "not filled in" — there is no pension, and the
  * plan runs on capital alone exactly as before.
  */
 export function estimationRente(hypotheses: Hypotheses): EstimationRente {
   const h = borner(hypotheses);
+  const { ageLegal, ageTauxPlein } = agesRetraite(h);
   const {
-    ageLegal,
-    ageTauxPlein,
     anneesCarriereRequise,
     tauxRemplacement,
     decoteParTrimestre,

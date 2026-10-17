@@ -356,6 +356,12 @@ const FR = {
     salaireLabel: 'Salaire annuel brut moyen',
     salaireHint:
       'Moyenne sur la carrière. Une pension à taux plein vaut environ la moitié de ce salaire ; à défaut, une pension moyenne nationale est utilisée.',
+    ageLegalLabel: 'Âge d’ouverture des droits',
+    ageLegalHint: (agePays: number, pays: string) =>
+      `Laissé vide, celui du régime général en ${pays} : ${agePays} ans. À modifier pour un régime spécial, une carrière longue ou une catégorie active, qui ouvrent les droits plus tôt.`,
+    ageTauxPleinLabel: 'Âge du taux plein automatique',
+    ageTauxPleinHint: (agePays: number, pays: string) =>
+      `Laissé vide, ${agePays} ans en ${pays}. La décote ne joue qu’entre l’âge d’ouverture et celui-ci : plus l’écart est court, plus elle est faible.`,
     csmLabel: 'Cotisation santé sur les revenus du capital',
     csmHint:
       'Prélevée tant que vous vivez de votre capital sans pension, et seulement si vous y êtes assujetti — en France, la cotisation subsidiaire maladie, 6,5 % au-delà d’un abattement d’environ 23 550 €. Elle s’arrête au versement de la pension, un retraité en étant exonéré. Laissez à zéro si elle ne vous concerne pas.',
@@ -1024,6 +1030,12 @@ const EN: Dictionnaire = {
     salaireLabel: 'Average gross annual salary',
     salaireHint:
       'Averaged over the career. A full-rate pension is worth about half of it; failing a figure, a national average pension is used.',
+    ageLegalLabel: 'Age pension rights open',
+    ageLegalHint: (agePays: number, pays: string) =>
+      `Left empty, the general scheme’s in ${pays}: ${agePays}. Change it for a special scheme, a long career or an active category, which open rights earlier.`,
+    ageTauxPleinLabel: 'Age of the automatic full rate',
+    ageTauxPleinHint: (agePays: number, pays: string) =>
+      `Left empty, ${agePays} in ${pays}. The décote only applies between the opening age and this one: the shorter the gap, the smaller it is.`,
     csmLabel: 'Health contribution on capital income',
     csmHint:
       'Levied while you live off capital without a pension, and only if you are liable — in France the cotisation subsidiaire maladie, 6.5% above an allowance of about €23,550. It stops when the pension starts, a pensioner being exempt. Leave at zero if it does not apply to you.',

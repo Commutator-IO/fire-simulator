@@ -40,6 +40,8 @@ const SCALAIRES: Record<string, string> = {
   avant: 'g',
   salaire: 's',
   csm: 'j',
+  agelegal: 'a',
+  tauxplein: 't',
   vue: 'v',
   lang: 'l',
   vide: 'x',

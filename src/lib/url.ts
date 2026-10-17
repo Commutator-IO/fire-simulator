@@ -44,6 +44,8 @@ const CLES = {
   avant: 'avant',
   salaire: 'salaire',
   csm: 'csm',
+  ageLegal: 'agelegal',
+  tauxPlein: 'tauxplein',
   langue: 'lang',
   vue: 'vue',
   videPatrimoine: 'vide',
@@ -151,6 +153,8 @@ export function encoderEtat(
   );
   ajouter(CLES.salaire, arrondi(etat.salaireMoyen), arrondi(defauts.salaireMoyen));
   ajouter(CLES.csm, enPoints(etat.cotisationCapital), enPoints(defauts.cotisationCapital));
+  ajouter(CLES.ageLegal, arrondi(etat.ageLegal), arrondi(defauts.ageLegal));
+  ajouter(CLES.tauxPlein, arrondi(etat.ageTauxPlein), arrondi(defauts.ageTauxPlein));
   if (langue !== null) params.set(CLES.langue, langue);
   if (vue !== undefined && vue !== 'patrimoine') params.set(CLES.vue, vue);
 
@@ -327,6 +331,18 @@ export function decoderEtat(recherche: string, defauts: Hypotheses = DEFAUTS): H
       defauts.cotisationCapital,
       BORNES.cotisationCapital.min,
       BORNES.cotisationCapital.max,
+    ),
+    ageLegal: nombre(
+      p.get(CLES.ageLegal),
+      defauts.ageLegal,
+      BORNES.ageLegal.min,
+      BORNES.ageLegal.max,
+    ),
+    ageTauxPlein: nombre(
+      p.get(CLES.tauxPlein),
+      defauts.ageTauxPlein,
+      BORNES.ageTauxPlein.min,
+      BORNES.ageTauxPlein.max,
     ),
   };
 }

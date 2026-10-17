@@ -149,7 +149,10 @@ function Simulateur({
       // The required duration decides the colour of the verdict: a link that
       // customises it must open on the setting that explains that colour.
       h.dureeExigee !== DEFAUTS.dureeExigee ||
-      h.modeRetrait !== DEFAUTS.modeRetrait,
+      h.modeRetrait !== DEFAUTS.modeRetrait ||
+      // Same for custom pension ages: they reshape the pension the verdict counts.
+      h.ageLegal !== DEFAUTS.ageLegal ||
+      h.ageTauxPlein !== DEFAUTS.ageTauxPlein,
   );
 
   const maj = <K extends keyof Hypotheses>(cle: K, valeur: Hypotheses[K]) =>
@@ -557,6 +560,30 @@ function Simulateur({
                         max={BORNES.salaireMoyen.max}
                         placeholder="—"
                         hint={t.saisie.salaireHint}
+                      />
+                      <Montant
+                        label={t.saisie.ageLegalLabel}
+                        valeur={h.ageLegal}
+                        onChange={(v) => maj('ageLegal', v)}
+                        suffixe={t.saisie.horizonUnite}
+                        max={BORNES.ageLegal.max}
+                        placeholder={String(paysCourant.retraite.ageLegal)}
+                        hint={t.saisie.ageLegalHint(
+                          paysCourant.retraite.ageLegal,
+                          tr(paysCourant.libelle),
+                        )}
+                      />
+                      <Montant
+                        label={t.saisie.ageTauxPleinLabel}
+                        valeur={h.ageTauxPlein}
+                        onChange={(v) => maj('ageTauxPlein', v)}
+                        suffixe={t.saisie.horizonUnite}
+                        max={BORNES.ageTauxPlein.max}
+                        placeholder={String(paysCourant.retraite.ageTauxPlein)}
+                        hint={t.saisie.ageTauxPleinHint(
+                          paysCourant.retraite.ageTauxPlein,
+                          tr(paysCourant.libelle),
+                        )}
                       />
                       <div className="sm:col-span-2">
                         <Curseur

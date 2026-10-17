@@ -4,6 +4,7 @@ import {
   DEFAUTS,
   borner,
   cotisationCapitalAnnuelle,
+  agesRetraite,
   estimationRente,
   niveauDe,
   patrimoineRequis,
@@ -538,5 +539,51 @@ describe('scenarios by country', () => {
     expect(japon.resultat.revenuNetAnnuel / japon.resultat.retraitBrut).toBeGreaterThan(
       france.resultat.revenuNetAnnuel / france.resultat.retraitBrut,
     );
+  });
+});
+
+describe('custom retirement ages', () => {
+  const carriere = {
+    ...BASE,
+    pays: 'france' as const,
+    anneesCotisees: 27,
+    anneesAvantRetraite: 5,
+    salaireMoyen: 40_000,
+  };
+
+  it('keeps the country ages when left empty', () => {
+    expect(agesRetraite(carriere)).toEqual({ ageLegal: 64, ageTauxPlein: 67 });
+    expect(estimationRente(carriere).decote).toBeCloseTo(0.15, 6);
+  });
+
+  it('narrows the décote window for an early-opening scheme', () => {
+    // An active category: rights open at 57, full rate at 59.
+    const e = estimationRente({ ...carriere, ageLegal: 57, ageTauxPlein: 59 });
+    expect(e.ageLegal).toBe(57);
+    expect(e.ageTauxPlein).toBe(59);
+    // Two years to the full rate: 8 quarters × 1.25 %.
+    expect(e.decote).toBeCloseTo(0.1, 6);
+    expect(e.brutAnnuel).toBeGreaterThan(estimationRente(carriere).brutAnnuel);
+  });
+
+  it('removes the décote when both ages coincide', () => {
+    expect(estimationRente({ ...carriere, ageLegal: 62, ageTauxPlein: 62 }).decote).toBe(0);
+  });
+
+  it('never lets the full-rate age fall below the legal one', () => {
+    const a = agesRetraite({ ...carriere, ageLegal: 66, ageTauxPlein: 60 });
+    expect(a).toEqual({ ageLegal: 66, ageTauxPlein: 66 });
+  });
+
+  it('widens the window when only the legal age is lowered', () => {
+    // 62 with the country's 67: 20 quarters, the statutory cap.
+    expect(estimationRente({ ...carriere, ageLegal: 62 }).decote).toBeCloseTo(0.25, 6);
+  });
+
+  it('clamps an entered age, and keeps 0 as "the country’s"', () => {
+    expect(borner({ ...carriere, ageLegal: 12 }).ageLegal).toBe(50);
+    expect(borner({ ...carriere, ageLegal: 200 }).ageLegal).toBe(BORNES.ageLegal.max);
+    expect(borner({ ...carriere, ageLegal: 0 }).ageLegal).toBe(0);
+    expect(borner({ ...carriere, ageLegal: Number.NaN }).ageLegal).toBe(0);
   });
 });
