@@ -76,6 +76,11 @@ jobs:
       - name: Inventory the dependencies (SBOM)
         if: github.event_name != 'pull_request'
         uses: anchore/sbom-action@v0
+        env:
+          # Syft leaves npm dev dependencies out by default. Here the whole
+          # build chain is one — Vite, Tailwind, PostCSS — and it is what turns
+          # the source into the files that are served, so it is inventoried too.
+          SYFT_JAVASCRIPT_INCLUDE_DEV_DEPENDENCIES: 'true'
         with:
           path: .
           format: cyclonedx-json
