@@ -9,9 +9,9 @@ imprimable qui réunit les deux. Deux autres — portefeuille boursier et
 immobilier locatif — sont annoncés dans la navigation mais pas encore écrits.
 
 Le moteur ([src/lib/fire.ts](src/lib/fire.ts)) ne dépend de rien et reste une
-fonction pure : quatorze paramètres bornés entrent, une projection sort. Cette
+fonction pure : dix-huit paramètres bornés entrent, une projection sort. Cette
 frontière est ce qui rend la suite possible — tout ce qui suit s'ajoute autour,
-sans réécrire le cœur. 225 tests couvrent le moteur, les formats, le
+sans réécrire le cœur. 253 tests couvrent le moteur, les formats, le
 dictionnaire et l'adresse.
 
 Les chantiers ci-dessous sont regroupés par nature, et chacun porte une
@@ -96,45 +96,21 @@ sert de critère, sans rien changer à l'interface. Et une lecture par période 
 
 ## 4. Imposer la plus-value, pas le retrait
 
-**Priorité haute.** Biais connu, signalé à chaque régime.
+**Fait — v0.1.0.** Un champ « total versé », facultatif, fixe l'assiette : seule
+la part de plus-value d'un retrait est imposée, et chaque retrait emporte
+versements et gains au prorata, si bien que cette part monte avec les années.
+Laissé vide, tout le retrait reste taxé comme avant.
 
-Le taux appliqué est le bon ; l'assiette ne l'est pas. En France comme au Japon,
-seule la **part de plus-value** d'un retrait est taxée, jamais le capital
-investi. Le simulateur taxe la totalité : il surestime l'impôt, d'autant plus que
-le portefeuille est jeune. Sur un patrimoine constitué à 60 % d'apports, l'écart
-dépasse le point de pourcentage — assez pour renverser une comparaison entre
-enveloppes.
-
-**Ce qu'il faudrait.** Un paramètre de plus : la part de plus-value dans le
-patrimoine (ou, plus parlant, le total versé). L'assiette devient
-`retrait × (plus-value / patrimoine)`, ratio qui évolue chaque année. Pour le
-PEA et l'assurance-vie, la règle française est explicitement proportionnelle :
-c'est modélisable fidèlement.
-
-**Ce que ça débloque.** L'abattement annuel de l'assurance-vie (4 600 € /
-9 200 €), aujourd'hui hors modèle, devient calculable — et il change le
-classement des enveloppes pour les retraits modestes.
+**Reste à faire.** L'abattement annuel de l'assurance-vie (4 600 € / 9 200 €),
+désormais calculable puisque l'assiette est juste — il change le classement des
+enveloppes pour les retraits modestes.
 
 ## 5. Des âges de retraite paramétrables
 
-**Priorité moyenne.** Limite connue de la fonctionnalité « rente future ».
-
-Les âges légal et de taux plein sont figés par pays (64 et 67 en France). C'est
-faux pour tous ceux qui relèvent d'un régime spécial, d'une carrière longue ou
-d'une catégorie active : leur âge d'ouverture des droits peut être inférieur de
-plusieurs années, et l'estimation affichée est alors décalée d'autant.
-
-**Deux réponses, pas exclusives.**
-
-- Rendre les deux âges **modifiables**, avec la valeur du pays comme repère. Peu
-  coûteux, et suffisant pour la plupart des cas.
-- Permettre de **saisir directement les montants du relevé** de carrière (les
-  services publics de retraite les affichent par âge de départ). Une saisie
-  réelle vaut mieux qu'une estimation par proratisation, et court-circuite tout
-  le modèle d'estimation quand l'utilisateur a l'information sous les yeux.
-
-Le modèle actuel — proratisation linéaire, décote plafonnée, taux de
-remplacement moyen — reste utile par défaut, pour qui n'a pas son relevé.
+**Fait — v0.1.0.** L'âge d'ouverture des droits et celui du taux plein sont
+modifiables, la valeur du pays servant de défaut ; la fenêtre de décote les
+suit. Un montant saisi depuis le relevé de carrière remplace l'estimation, et
+l'interface dit laquelle des deux est affichée.
 
 ## 6. Veille sur les taux
 
@@ -245,7 +221,7 @@ vies. Les montants restent en euros, le coût de la vie n'entre nulle part.
 **Priorité moyenne.**
 
 Le moteur, l'échelle, les formats, le dictionnaire et l'adresse sont couverts
-(225 tests). Les composants ne le sont pas : rien ne vérifie qu'un clic sur
+(253 tests). Les composants ne le sont pas : rien ne vérifie qu'un clic sur
 « Japon » recharge les hypothèses du pays, ni que le verdict bascule au bon
 moment, ni que la rente apparaît la bonne année.
 
@@ -262,10 +238,9 @@ automatisée, aujourd'hui faite à la main.
   un lien partagé sur un forum ou une messagerie n'affiche rien aujourd'hui.
 - **Export CSV** de la projection année par année, pour continuer dans un
   tableur.
-- **Impression de la page principale** : la synthèse s'imprime proprement depuis
-  qu'elle existe, mais l'onglet « vivre de mon patrimoine » fait cinq écrans et
-  s'imprime mal. Une feuille de style tiendrait en quelques lignes — ou bien on
-  assume que la synthèse est *le* format imprimable, et on renvoie vers elle.
+- ~~**Impression de la page principale**~~ — fait en v0.1.0 : l'onglet
+  « vivre de mon patrimoine » a sa feuille de style d'impression, et renvoie
+  vers la synthèse pour une version condensée.
 - **Langues supplémentaires** : le dictionnaire est typé, une clé manquante
   casse la compilation. L'allemand et l'espagnol iraient de pair avec les pays
   du point 9, le japonais avec le pays déjà modélisé.
